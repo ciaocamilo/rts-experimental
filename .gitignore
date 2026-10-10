@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+public/vendor/
+RTS_SDD_v0.3.md
+__pycache__/
+*.pyc

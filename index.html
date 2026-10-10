@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RTS experimental</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #111; color: #eee; font: 14px system-ui, sans-serif; }
+      #view { position: fixed; inset: 0; }
+      #hud { position: fixed; top: 8px; left: 8px; padding: 6px 10px; background: rgba(0,0,0,.6); border-radius: 4px; pointer-events: none; white-space: pre; }
+      #controls { position: fixed; top: 8px; right: 8px; z-index: 2; display: flex; gap: 6px; }
+      #controls button { font: inherit; padding: 4px 10px; }
+      #panel { position: fixed; left: 8px; bottom: 8px; z-index: 2; display: none; flex-direction: column; gap: 6px; max-width: min(560px, calc(100vw - 16px)); padding: 8px 10px; background: rgba(0,0,0,.7); border-radius: 4px; }
+      #panel .panel-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+      #panel button { font: inherit; padding: 3px 8px; cursor: pointer; }
+      #panel button.active { outline: 2px solid #4ade80; }
+      #panel .queue-item { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border: 1px solid #555; border-radius: 3px; }
+      #panel .queue-item.first { border-color: #4ade80; }
+      #panel .queue-item button { padding: 0 5px; }
+      #overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); font-size: 22px; white-space: pre-line; text-align: center; }
+      #overlay.visible { display: flex; }
+      #help { position: fixed; top: 44px; right: 8px; z-index: 3; display: none; width: 340px; max-height: calc(100vh - 150px); overflow-y: auto; box-sizing: border-box; padding: 8px 12px; background: rgba(0,0,0,.82); border: 1px solid #555; border-radius: 4px; font-size: 13px; line-height: 1.35; }
+      #help.visible { display: block; }
+      #help h2 { margin: 0 0 4px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+      #help ul { margin: 2px 0 6px; padding-left: 16px; }
+      #help .mark { display: inline-block; min-width: 14px; text-align: center; font-weight: bold; }
+      #drag-box { position: fixed; display: none; border: 1px solid #7cfc00; background: rgba(124,252,0,.12); pointer-events: none; }
+      #unsupported { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: #111; font-size: 18px; }
+    </style>
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+    <div id="hud"></div>
+    <div id="controls">
+      <button id="btn-pause" type="button">Pausar</button>
+      <button id="btn-restart" type="button">Reiniciar</button>
+      <button id="btn-help" type="button">Ayuda (H)</button>
+      <button id="btn-export" type="button">Exportar diagnóstico</button>
+    </div>
+    <div id="help" class="visible">
+      <h2>Ayuda <button id="help-close" type="button">Cerrar</button></h2>
+      <p style="margin:0 0 4px">Destruya el centro urbano rival antes de perder el propio. Partida máxima: 20 minutos.</p>
+      <ul>
+        <li><b>Cámara:</b> WASD o flechas; rueda para acercar o alejar.</li>
+        <li><b>Selección:</b> clic o arrastre (solo unidades propias); Shift suma o quita; Esc limpia.</li>
+        <li><b>Clic derecho:</b> suelo = mover; recurso = recolectar (aldeanos); enemigo = atacar (militares); obra propia = reanudar.</li>
+        <li><b>Construir:</b> con aldeanos seleccionados use el panel inferior (casa 50 madera, cuartel 150 madera) y confirme con clic izquierdo.</li>
+        <li><b>Producir:</b> clic en un edificio propio para entrenar y ver o cancelar la cola.</li>
+        <li><b>Combate:</b> los militares libres atacan solos a menos de 6 celdas.</li>
+        <li><b>Pausa:</b> botón Pausar; ocultar la pestaña también pausa.</li>
+      </ul>
+      <p style="margin:0 0 2px"><b>Bandos</b> (además del color):</p>
+      <ul>
+        <li><span class="mark">○</span> disco blanco, azul: usted.</li>
+        <li><span class="mark">◆</span> rombo oscuro, rojo: rival (IA en Python).</li>
+      </ul>
+      <p style="margin:0">Formas: cilindro = aldeano, cubo = soldado, cono = arquero. Sin audio en esta versión. «Exportar diagnóstico» descarga un JSON local con versiones, rendimiento y órdenes.</p>
+    </div>
+    <div id="panel"></div>
+    <div id="overlay"></div>
+    <div id="drag-box"></div>
+    <div id="unsupported">Navegador incompatible: se requiere WebGL, Worker y WebAssembly.</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

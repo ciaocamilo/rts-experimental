@@ -1,0 +1,465 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rts.local/contracts/worker-v2.schema.json",
+  "title": "Contrato de mensajes Worker v2 (SDD v0.3, 8.1)",
+  "oneOf": [
+    { "$ref": "#/$defs/InitMessage" },
+    { "$ref": "#/$defs/ReadyMessage" },
+    { "$ref": "#/$defs/ObserveMessage" },
+    { "$ref": "#/$defs/DecisionMessage" },
+    { "$ref": "#/$defs/ErrorMessage" }
+  ],
+  "$defs": {
+    "ProtocolVersion": { "const": 2 },
+    "SessionId": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" },
+    "Generation": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+    "RequestId": { "type": "integer", "minimum": 1, "maximum": 1000000000 },
+    "Tick": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+    "PlayerId": { "enum": [0, 1] },
+    "EntityId": { "type": "integer", "minimum": 1, "maximum": 1000000000 },
+    "Version": { "type": "string", "minLength": 1, "maxLength": 32 },
+    "Coord": { "type": "number", "minimum": -1, "maximum": 1024 },
+    "Count": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+    "Millis": { "type": "number", "minimum": 0, "maximum": 3600000 },
+    "UnitKind": { "enum": ["villager", "soldier", "archer"] },
+    "BuildingKind": { "enum": ["townCenter", "house", "barracks"] },
+    "ResourceKind": { "enum": ["food", "wood"] },
+    "ErrorCode": {
+      "enum": ["INVALID_MESSAGE", "INCOMPATIBLE_VERSION", "PAYLOAD_TOO_LARGE", "STALE_RESPONSE", "POLICY_ERROR", "LOAD_ERROR", "TIMEOUT"]
+    },
+    "Point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "z"],
+      "properties": { "x": { "$ref": "#/$defs/Coord" }, "z": { "$ref": "#/$defs/Coord" } }
+    },
+
+    "InitMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "protocol_version", "session_id", "worker_generation", "expected", "config"],
+      "properties": {
+        "type": { "const": "INIT" },
+        "protocol_version": { "$ref": "#/$defs/ProtocolVersion" },
+        "session_id": { "$ref": "#/$defs/SessionId" },
+        "worker_generation": { "$ref": "#/$defs/Generation" },
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pyodide", "python", "policy"],
+          "properties": {
+            "pyodide": { "$ref": "#/$defs/Version" },
+            "python": { "$ref": "#/$defs/Version" },
+            "policy": { "$ref": "#/$defs/Version" }
+          }
+        },
+        "config": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_commands"],
+          "properties": { "max_commands": { "type": "integer", "minimum": 0, "maximum": 4 } }
+        }
+      }
+    },
+
+    "ReadyMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "protocol_version", "session_id", "worker_generation", "versions", "timings_ms"],
+      "properties": {
+        "type": { "const": "READY" },
+        "protocol_version": { "$ref": "#/$defs/ProtocolVersion" },
+        "session_id": { "$ref": "#/$defs/SessionId" },
+        "worker_generation": { "$ref": "#/$defs/Generation" },
+        "versions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pyodide", "python", "policy"],
+          "properties": {
+            "pyodide": { "$ref": "#/$defs/Version" },
+            "python": { "$ref": "#/$defs/Version" },
+            "policy": { "$ref": "#/$defs/Version" }
+          }
+        },
+        "timings_ms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pyodide_load", "policy_load", "total"],
+          "properties": {
+            "pyodide_load": { "$ref": "#/$defs/Millis" },
+            "policy_load": { "$ref": "#/$defs/Millis" },
+            "total": { "$ref": "#/$defs/Millis" }
+          }
+        }
+      }
+    },
+
+    "PlayerView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "food", "wood", "pop", "pop_capacity"],
+      "properties": {
+        "id": { "$ref": "#/$defs/PlayerId" },
+        "food": { "$ref": "#/$defs/Count" },
+        "wood": { "$ref": "#/$defs/Count" },
+        "pop": { "$ref": "#/$defs/Count" },
+        "pop_capacity": { "$ref": "#/$defs/Count" }
+      }
+    },
+    "UnitView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "owner", "kind", "x", "z", "hp", "task", "activity", "dest", "blocked_reason", "carry", "target_id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/EntityId" },
+        "owner": { "$ref": "#/$defs/PlayerId" },
+        "kind": { "$ref": "#/$defs/UnitKind" },
+        "x": { "$ref": "#/$defs/Coord" },
+        "z": { "$ref": "#/$defs/Coord" },
+        "hp": { "$ref": "#/$defs/Count" },
+        "task": { "enum": ["idle", "moving", "blocked"] },
+        "activity": { "enum": ["idle", "moving", "blocked", "gathering", "delivering", "building", "attacking"] },
+        "dest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Point" }] },
+        "blocked_reason": { "enum": [null, "UNREACHABLE", "STUCK"] },
+        "carry": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "amount"],
+              "properties": { "kind": { "$ref": "#/$defs/ResourceKind" }, "amount": { "$ref": "#/$defs/Count" } }
+            }
+          ]
+        },
+        "target_id": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/EntityId" }] }
+      }
+    },
+    "QueueItemView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "remaining"],
+      "properties": {
+        "id": { "$ref": "#/$defs/EntityId" },
+        "kind": { "$ref": "#/$defs/UnitKind" },
+        "remaining": { "$ref": "#/$defs/Count" }
+      }
+    },
+    "BuildingView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "owner", "kind", "cell_x", "cell_z", "hp", "complete", "build_done", "queue"],
+      "properties": {
+        "id": { "$ref": "#/$defs/EntityId" },
+        "owner": { "$ref": "#/$defs/PlayerId" },
+        "kind": { "$ref": "#/$defs/BuildingKind" },
+        "cell_x": { "$ref": "#/$defs/Coord" },
+        "cell_z": { "$ref": "#/$defs/Coord" },
+        "hp": { "$ref": "#/$defs/Count" },
+        "complete": { "type": "boolean" },
+        "build_done": { "$ref": "#/$defs/Count" },
+        "queue": { "type": "array", "maxItems": 5, "items": { "$ref": "#/$defs/QueueItemView" } }
+      }
+    },
+    "CostView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["food", "wood"],
+      "properties": { "food": { "$ref": "#/$defs/Count" }, "wood": { "$ref": "#/$defs/Count" } }
+    },
+    "RulesView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_population", "queue_limit", "house_housing", "unit_cost", "building_cost", "footprint"],
+      "properties": {
+        "max_population": { "$ref": "#/$defs/Count" },
+        "queue_limit": { "$ref": "#/$defs/Count" },
+        "house_housing": { "$ref": "#/$defs/Count" },
+        "unit_cost": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["villager", "soldier", "archer"],
+          "properties": {
+            "villager": { "$ref": "#/$defs/CostView" },
+            "soldier": { "$ref": "#/$defs/CostView" },
+            "archer": { "$ref": "#/$defs/CostView" }
+          }
+        },
+        "building_cost": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["house", "barracks"],
+          "properties": { "house": { "$ref": "#/$defs/CostView" }, "barracks": { "$ref": "#/$defs/CostView" } }
+        },
+        "footprint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["townCenter", "house", "barracks"],
+          "properties": {
+            "townCenter": { "$ref": "#/$defs/Count" },
+            "house": { "$ref": "#/$defs/Count" },
+            "barracks": { "$ref": "#/$defs/Count" }
+          }
+        }
+      }
+    },
+    "ResourceNodeView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "cell_x", "cell_z", "remaining"],
+      "properties": {
+        "id": { "$ref": "#/$defs/EntityId" },
+        "kind": { "$ref": "#/$defs/ResourceKind" },
+        "cell_x": { "$ref": "#/$defs/Coord" },
+        "cell_z": { "$ref": "#/$defs/Coord" },
+        "remaining": { "$ref": "#/$defs/Count" }
+      }
+    },
+    "TerrainRect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "z", "w", "h"],
+      "properties": {
+        "x": { "$ref": "#/$defs/Coord" },
+        "z": { "$ref": "#/$defs/Coord" },
+        "w": { "type": "integer", "minimum": 1, "maximum": 1024 },
+        "h": { "type": "integer", "minimum": 1, "maximum": 1024 }
+      }
+    },
+    "OrderResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "accepted", "code"],
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "accepted": { "type": "boolean" },
+        "code": { "oneOf": [{ "type": "null" }, { "type": "string", "pattern": "^[A-Z_]{1,32}$" }] }
+      }
+    },
+
+    "ObserveMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type", "protocol_version", "session_id", "worker_generation", "request_id", "observation_tick",
+        "player_id", "seed", "game_version", "map_version", "balance_version",
+        "players", "units", "buildings", "resource_nodes", "map", "rules", "previous_results"
+      ],
+      "properties": {
+        "type": { "const": "OBSERVE" },
+        "protocol_version": { "$ref": "#/$defs/ProtocolVersion" },
+        "session_id": { "$ref": "#/$defs/SessionId" },
+        "worker_generation": { "$ref": "#/$defs/Generation" },
+        "request_id": { "$ref": "#/$defs/RequestId" },
+        "observation_tick": { "$ref": "#/$defs/Tick" },
+        "player_id": { "$ref": "#/$defs/PlayerId" },
+        "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "game_version": { "$ref": "#/$defs/Version" },
+        "map_version": { "$ref": "#/$defs/Version" },
+        "balance_version": { "$ref": "#/$defs/Version" },
+        "players": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/PlayerView" } },
+        "units": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/UnitView" } },
+        "buildings": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/BuildingView" } },
+        "resource_nodes": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/ResourceNodeView" } },
+        "map": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["size", "terrain"],
+          "properties": {
+            "size": { "type": "integer", "minimum": 8, "maximum": 1024 },
+            "terrain": { "type": "array", "maxItems": 256, "items": { "$ref": "#/$defs/TerrainRect" } }
+          }
+        },
+        "rules": { "$ref": "#/$defs/RulesView" },
+        "previous_results": { "type": "array", "maxItems": 64, "items": { "$ref": "#/$defs/OrderResult" } }
+      }
+    },
+
+    "CommandId": { "type": "string", "pattern": "^[0-9]{1,10}:[0-3]$" },
+    "EntityIds": { "type": "array", "minItems": 1, "maxItems": 100, "items": { "$ref": "#/$defs/EntityId" } },
+    "NoPayload": { "type": "object", "additionalProperties": false, "properties": {} },
+    "TargetPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_id"],
+      "properties": { "target_id": { "$ref": "#/$defs/EntityId" } }
+    },
+    "Command": {
+      "oneOf": [
+        { "$ref": "#/$defs/MoveCommand" },
+        { "$ref": "#/$defs/StopCommand" },
+        { "$ref": "#/$defs/GatherCommand" },
+        { "$ref": "#/$defs/AttackCommand" },
+        { "$ref": "#/$defs/ResumeBuildCommand" },
+        { "$ref": "#/$defs/BuildCommand" },
+        { "$ref": "#/$defs/TrainCommand" },
+        { "$ref": "#/$defs/CancelBuildCommand" },
+        { "$ref": "#/$defs/CancelTrainingCommand" }
+      ]
+    },
+    "MoveCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "type", "entity_ids", "payload"],
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "type": { "const": "Move" },
+        "entity_ids": { "$ref": "#/$defs/EntityIds" },
+        "payload": { "$ref": "#/$defs/Point" }
+      }
+    },
+    "StopCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "type", "entity_ids", "payload"],
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "type": { "const": "Stop" },
+        "entity_ids": { "$ref": "#/$defs/EntityIds" },
+        "payload": { "$ref": "#/$defs/NoPayload" }
+      }
+    },
+    "GatherCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "type", "entity_ids", "payload"],
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "type": { "const": "Gather" },
+        "entity_ids": { "$ref": "#/$defs/EntityIds" },
+        "payload": { "$ref": "#/$defs/TargetPayload" }
+      }
+    },
+    "AttackCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "type", "entity_ids", "payload"],
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "type": { "const": "Attack" },
+        "entity_ids": { "$ref": "#/$defs/EntityIds" },
+        "payload": { "$ref": "#/$defs/TargetPayload" }
+      }
+    },
+    "ResumeBuildCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "type", "entity_ids", "payload"],
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "type": { "const": "ResumeBuild" },
+        "entity_ids": { "$ref": "#/$defs/EntityIds" },
+        "payload": { "$ref": "#/$defs/TargetPayload" }
+      }
+    },
+    "BuildCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "type", "entity_ids", "payload"],
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "type": { "const": "Build" },
+        "entity_ids": { "$ref": "#/$defs/EntityIds" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["building_kind", "cell_x", "cell_z"],
+          "properties": {
+            "building_kind": { "$ref": "#/$defs/BuildingKind" },
+            "cell_x": { "$ref": "#/$defs/Coord" },
+            "cell_z": { "$ref": "#/$defs/Coord" }
+          }
+        }
+      }
+    },
+    "TrainCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "type", "entity_ids", "payload"],
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "type": { "const": "Train" },
+        "entity_ids": { "$ref": "#/$defs/EntityIds" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["unit_kind"],
+          "properties": { "unit_kind": { "$ref": "#/$defs/UnitKind" } }
+        }
+      }
+    },
+    "CancelBuildCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "type", "entity_ids", "payload"],
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "type": { "const": "CancelBuild" },
+        "entity_ids": { "$ref": "#/$defs/EntityIds" },
+        "payload": { "$ref": "#/$defs/NoPayload" }
+      }
+    },
+    "CancelTrainingCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "type", "entity_ids", "payload"],
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "type": { "const": "CancelTraining" },
+        "entity_ids": { "$ref": "#/$defs/EntityIds" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["queue_item_id"],
+          "properties": { "queue_item_id": { "type": "integer", "minimum": 1, "maximum": 1000000000 } }
+        }
+      }
+    },
+
+    "DecisionMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type", "protocol_version", "session_id", "worker_generation", "request_id", "observation_tick",
+        "player_id", "policy_version", "commands", "reason_codes", "metrics"
+      ],
+      "properties": {
+        "type": { "const": "DECISION" },
+        "protocol_version": { "$ref": "#/$defs/ProtocolVersion" },
+        "session_id": { "$ref": "#/$defs/SessionId" },
+        "worker_generation": { "$ref": "#/$defs/Generation" },
+        "request_id": { "$ref": "#/$defs/RequestId" },
+        "observation_tick": { "$ref": "#/$defs/Tick" },
+        "player_id": { "$ref": "#/$defs/PlayerId" },
+        "policy_version": { "$ref": "#/$defs/Version" },
+        "commands": { "type": "array", "maxItems": 4, "items": { "$ref": "#/$defs/Command" } },
+        "reason_codes": {
+          "type": "array",
+          "maxItems": 8,
+          "items": { "type": "string", "pattern": "^[A-Z_]{1,32}$" }
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["policy_ms", "convert_ms"],
+          "properties": { "policy_ms": { "$ref": "#/$defs/Millis" }, "convert_ms": { "$ref": "#/$defs/Millis" } }
+        }
+      }
+    },
+
+    "ErrorMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "protocol_version", "code", "message"],
+      "properties": {
+        "type": { "const": "ERROR" },
+        "protocol_version": { "$ref": "#/$defs/ProtocolVersion" },
+        "session_id": { "$ref": "#/$defs/SessionId" },
+        "worker_generation": { "$ref": "#/$defs/Generation" },
+        "request_id": { "$ref": "#/$defs/RequestId" },
+        "code": { "$ref": "#/$defs/ErrorCode" },
+        "message": { "type": "string", "maxLength": 200 }
+      }
+    }
+  }
+}
