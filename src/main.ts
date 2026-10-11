@@ -7,7 +7,7 @@ import { loadMusicInWorker } from "./audio/music-loader";
 import { loadSettings } from "./audio/settings";
 import { BALANCE, TICKS_PER_SECOND, validateBalance } from "./content/balance";
 import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH, validateMapLayout } from "./content/map";
-import { AUDIO_VERSION, BALANCE_VERSION, GAME_VERSION, MAP_VERSION } from "./content/versions";
+import { AUDIO_VERSION, BALANCE_VERSION, GAME_VERSION, GRAPHICS_VERSION, MAP_VERSION } from "./content/versions";
 import { createFixture, type FixtureName } from "./core/fixtures";
 import { hashState } from "./core/hash";
 import { validateInitialReachability } from "./core/map-check";
@@ -23,7 +23,7 @@ import { SceneView } from "./rendering/scene-view";
 import { CommandPanel } from "./ui/command-panel";
 import { describeResult } from "./ui/messages";
 
-const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos"];
+const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos", "realismo"];
 
 function supported(): boolean {
   if (typeof Worker === "undefined" || typeof WebAssembly === "undefined") return false;
@@ -269,7 +269,7 @@ function start(): void {
       `${audioLine()}\n` +
       `Rutas en cola ${s.pathQueue.length} · sobrecargas ${session.overloadEvents}` +
       `${fixtureName ? ` · fixture ${fixtureName}` : ""}${errors.length > 0 ? ` · errores ${errors.length}` : ""}\n` +
-      `v${GAME_VERSION} · ${MAP_VERSION} · ${BALANCE_VERSION} · ${AUDIO_VERSION} · semilla ${s.seed}\n` +
+      `v${GAME_VERSION} · ${MAP_VERSION} · ${BALANCE_VERSION} · ${AUDIO_VERSION} · GFX: ${GRAPHICS_VERSION} · semilla ${s.seed}\n` +
       `H: ayuda · Esc: cancelar/limpiar selección`;
 
     panel.refresh(s, selection, controller.placing, session.paused);

@@ -6,6 +6,7 @@ import { AssetLibrary, type Quality } from "./assets";
 import { applyConstruction, type BuildingRig, buildBuilding, GeometryCache } from "./buildings";
 import { ArrowPool } from "./effects";
 import { type FlameRig, FlameFactory, updateFlames } from "./fire";
+import { CollapseFx, PARTICLE_SCALE } from "./particles";
 import { barState, flameCount } from "./health";
 import { Lighting } from "./lighting";
 import { buildBushGeometries, buildTreeGeometries, Materials, VISUAL } from "./models";
@@ -137,6 +138,7 @@ export class SceneView {
   private lastDestroyedSeq = 0;
   private fxPaused = false;
   private readonly flameFactory: FlameFactory;
+  private readonly collapseFx: CollapseFx | null;
   private readonly bars = new Map<number, Bar>();
   private readonly rings = new Map<number, THREE.Mesh>();
   private readonly barGeometry: THREE.PlaneGeometry;
@@ -199,7 +201,9 @@ export class SceneView {
     this.nodes = new NodeFactory(this.assets, this.mat, trees);
     this.terrain = new TerrainView(this.assets, this.mat, trees, bushes);
     this.arrows = new ArrowPool(this.assets, this.mat);
-    this.flameFactory = new FlameFactory(this.assets);
+    this.flameFactory = new FlameFactory(this.assets, quality === "high");
+    this.collapseFx = quality === "high" ? new CollapseFx(this.assets) : null;
+    if (this.collapseFx) this.scene.add(this.collapseFx.group);
     this.dustGeometry = this.track(new THREE.SphereGeometry(0.5, 6, 5));
 
     this.barGeometry = this.track(new THREE.PlaneGeometry(1, 0.14));
@@ -220,7 +224,6 @@ export class SceneView {
 
     this.resize();
     this.applyRig();
-    (globalThis as Record<string, unknown>)["__dbg"] = { scene: this.scene, renderer: this.renderer, THREE };
   }
 
   private track<T extends { dispose(): void }>(resource: T): T {
@@ -248,6 +251,7 @@ export class SceneView {
     this.bodies = [];
     for (const c of this.collapses) this.finishCollapse(c);
     this.collapses = [];
+    this.collapseFx?.clear();
     this.lastDestroyedSeq = 0;
     for (const bar of this.bars.values()) this.entityRoot.remove(bar.group);
     this.bars.clear();
@@ -260,6 +264,7 @@ export class SceneView {
 
   private removeEntry(id: number, entry: Entry): void {
     this.entityRoot.remove(entry.root);
+    if (entry.type === "building" && entry.flames) this.flameFactory.release(entry.flames);
     this.entries.delete(id);
   }
 
@@ -602,13 +607,19 @@ export class SceneView {
     const duration = entry.complete ? COLLAPSE_MIN_S + COLLAPSE_PER_CELL_S * footprint : COLLAPSE_MIN_S;
     const dust = new THREE.MeshBasicMaterial({ color: 0xb9ad98, transparent: true, opacity: 0.6, depthWrite: false });
     const puffs: THREE.Mesh[] = [];
-    for (let i = 0; i < DUST_PUFFS; i++) {
+    // En calidad alta el polvo y los escombros los gestiona CollapseFx, que sobrevive al derrumbe.
+    for (let i = 0; i < (this.collapseFx ? 0 : DUST_PUFFS); i++) {
       const puff = new THREE.Mesh(this.dustGeometry, dust);
       puff.visible = false;
       this.entityRoot.add(puff);
       puffs.push(puff);
     }
-    if (entry.flames) entry.flames.group.visible = false;
+    if (entry.flames) {
+      entry.flames.group.visible = false;
+      this.flameFactory.release(entry.flames);
+      entry.flames = null;
+    }
+    this.collapseFx?.spawn(entry.root.position.x, entry.root.position.z, footprint, entry.phase + entry.root.id, duration);
     entry.proxy.visible = false;
     this.collapses.push({ rig: entry.rig, baseX: entry.root.position.x, elapsed: 0, duration, tilt: (entry.phase % 2 === 0 ? 1 : -1) * 0.12, footprint, puffs, dust });
   }
@@ -776,6 +787,8 @@ export class SceneView {
     this.animateUnits(dt);
     this.animateBodies();
     this.animateCollapses(this.fxPaused ? 0 : dt);
+    this.collapseFx?.update(this.fxPaused ? 0 : dt);
+    PARTICLE_SCALE.value = window.innerHeight / (this.viewHeight / this.rig.zoom);
     this.animateFlames();
     this.arrows.update(this.animTime);
     this.terrain.update(this.animTime);
@@ -812,6 +825,7 @@ export class SceneView {
     this.reset();
     this.terrain.dispose();
     this.lighting.dispose();
+    this.collapseFx?.dispose();
     this.assets.dispose();
     for (const d of this.disposables) d.dispose();
     this.renderer.dispose();

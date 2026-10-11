@@ -3,7 +3,7 @@ import { BALANCE } from "../content/balance";
 import { addBuilding, addTerrain, addUnit, createEmptyState, createInitialState } from "./state";
 import type { Command, EntityId, GameState, PlayerId } from "./types";
 
-export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa" | "sonidos";
+export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa" | "sonidos" | "realismo";
 
 export interface Fixture {
   state: GameState;
@@ -184,10 +184,49 @@ function createSoundScene(final?: FinalOption): Fixture {
   return { state, commands, groups: [] };
 }
 
+/**
+ * Banco de pruebas de P5 para juzgar a ojo el realismo gráfico: edificios con distinta cantidad de fuego,
+ * derrumbes (casa, cuartel y torre) y un grupo de unidades junto a la cámara inicial; el agua queda al borde inferior.
+ */
+function createRealismScene(): Fixture {
+  const state = createInitialState(1);
+  const commands: Command[] = [];
+  const burning = (kind: "house" | "barracks" | "tower", x: number, z: number, ratio: number): void => {
+    const b = addBuilding(state, 0, kind, x, z);
+    b.hp = Math.max(1, Math.round(BALANCE.buildings[kind].hp * ratio));
+  };
+  burning("house", 20, 24, 0.85);
+  burning("house", 24, 24, 0.6);
+  burning("house", 28, 24, 0.4);
+  burning("house", 32, 24, 0.2);
+  burning("barracks", 20, 30, 0.45);
+  burning("tower", 30, 31, 0.3);
+
+  const doomedHouse = addBuilding(state, 0, "house", 24, 38);
+  doomedHouse.hp = 40;
+  const doomedBarracks = addBuilding(state, 0, "barracks", 30, 38);
+  doomedBarracks.hp = 60;
+  const doomedTower = addBuilding(state, 0, "tower", 38, 38);
+  doomedTower.hp = 50;
+  const strike = (target: { id: EntityId }, x: number, z: number): void => {
+    const u = addUnit(state, 1, "soldier", x, z);
+    u.hp = 5000;
+    commands.push(command({ player: 1, type: "Attack", entityIds: [u.id], target: { entityId: target.id } }));
+  };
+  strike(doomedHouse, 24.5, 41.5);
+  strike(doomedBarracks, 30.5, 42.5);
+  strike(doomedTower, 38.5, 41.5);
+
+  for (let i = 0; i < 4; i++) addUnit(state, 0, i % 2 === 0 ? "soldier" : "archer", 16 + i * 0.9, 34);
+  for (let i = 0; i < 3; i++) addUnit(state, 0, "villager", 16 + i * 0.9, 36);
+  return { state, commands, groups: [] };
+}
+
 /** Escenarios de P0-B (§6): corredor de 3 celdas, cruce de grupos y carga de 100 unidades. */
 export function createFixture(name: FixtureName, options: { final?: FinalOption } = {}): Fixture {
   seq = 0;
   if (name === "objetivo") return createTargetScene();
+  if (name === "realismo") return createRealismScene();
   if (name === "sonidos") return createSoundScene(options.final);
   if (name === "defensa") {
     // Banco de pruebas manual de P3 (sin IA) junto a la cámara inicial: torre que dispara, unidades tras un cuartel y un edificio que cae.

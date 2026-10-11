@@ -66,7 +66,9 @@ Parámetros de URL útiles:
 | Parámetro | Efecto |
 |---|---|
 | `?ai=0` | Desactiva la IA |
-| `?graphics=low` | Modo gráfico reducido: sin antialias, sombras ni agua animada, con menos decoración y flechas simples |
+| `?graphics=low` | Modo gráfico reducido (aspecto de P4): sin antialias, sombras, agua animada ni partículas, con menos decoración y flechas simples |
+| `?shadows=0` | Desactiva solo las sombras proyectadas del modo gráfico alto |
+| `?fixture=realismo&ai=0` | Escena para juzgar el realismo de P5: edificios en llamas, derrumbes de casa, cuartel y torre, unidades y agua al sur |
 | `?fixture=corridor20`, `crossing`, `crowd100`, `skirmish` | Escenas de prueba de navegación y combate, sin IA |
 | `?fixture=objetivo` | Escena de carga con IA: 100 unidades, 20 edificios y combate |
 | `?audio=0` | Desactiva todo el audio |
