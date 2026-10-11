@@ -3,10 +3,13 @@ import type { NavGrid } from "../navigation/grid";
 import { walkTo } from "./movement";
 import { buildingRect, distanceToRect, findApproachCell, inRange, nodeRect, ringCells, type CellRect } from "./spatial";
 import { addUnit, capacityOf, initialSiteHp, populationOf } from "./state";
-import type { Building, BuildingDestroyedEvent, GameState, Job, MainBuildingFinal, PlayerId, Unit } from "./types";
+import type { Building, BuildingDestroyedEvent, DeathEvent, GameState, Job, MainBuildingFinal, PlayerId, SpawnEvent, Unit, WorkEvent } from "./types";
 
 /** Intentos de aproximación antes de abandonar un trabajo (multitudes que no llegan al borde). */
 const MAX_APPROACH_ATTEMPTS = 3;
+
+/** Un golpe de martillo audible cada medio segundo de trabajo efectivo. */
+const BUILD_SOUND_TICKS = 10;
 
 export type Activity = "idle" | "moving" | "blocked" | "gathering" | "delivering" | "building" | "attacking";
 
@@ -56,7 +59,7 @@ function retarget(state: GameState, grid: NavGrid, unit: Unit, job: Extract<Job,
   job.retries = 0;
 }
 
-function stepGather(state: GameState, grid: NavGrid, unit: Unit, job: Extract<Job, { type: "gather" }>): void {
+function stepGather(state: GameState, grid: NavGrid, unit: Unit, job: Extract<Job, { type: "gather" }>, works: WorkEvent[]): void {
   const node = state.resourceNodes.find((n) => n.id === job.nodeId);
   const alive = node !== undefined && node.remaining > 0;
 
@@ -95,6 +98,7 @@ function stepGather(state: GameState, grid: NavGrid, unit: Unit, job: Extract<Jo
     if (job.timer > 0) return;
     job.timer = BALANCE.economy.harvestIntervalTicks;
     node.remaining -= 1;
+    works.push({ tick: state.tick + 1, unitId: unit.id, owner: unit.owner, kind: node.kind, pos: { x: unit.pos.x, z: unit.pos.z } });
     unit.carry = { kind: node.kind, amount: (unit.carry?.amount ?? 0) + 1 };
     if (node.remaining === 0) {
       // El nodo agotado desaparece: deja de ser objetivo económico y obstáculo de navegación.
@@ -143,7 +147,7 @@ function stepGather(state: GameState, grid: NavGrid, unit: Unit, job: Extract<Jo
   }
 }
 
-function stepBuild(state: GameState, grid: NavGrid, unit: Unit, job: Extract<Job, { type: "build" }>): void {
+function stepBuild(state: GameState, grid: NavGrid, unit: Unit, job: Extract<Job, { type: "build" }>, works: WorkEvent[]): void {
   const site = state.buildings.find((b) => b.id === job.siteId);
   if (!site || site.complete) {
     unit.job = null;
@@ -170,14 +174,18 @@ function stepBuild(state: GameState, grid: NavGrid, unit: Unit, job: Extract<Job
   const gain = (done: number): number => Math.floor((pool * done) / def.buildTicks);
   site.buildDone += 1;
   site.hp += gain(site.buildDone) - gain(site.buildDone - 1);
+  if (site.buildDone % BUILD_SOUND_TICKS === 0) {
+    works.push({ tick: state.tick + 1, unitId: unit.id, owner: unit.owner, kind: "build", pos: { x: unit.pos.x, z: unit.pos.z } });
+  }
   if (site.buildDone >= def.buildTicks) {
     site.complete = true;
     unit.job = null;
   }
 }
 
-/** Recolección, entrega y construcción. Las unidades se procesan por orden de lista (ID creciente). */
-export function updateJobs(state: GameState, grid: NavGrid): void {
+/** Recolección, entrega y construcción. Las unidades se procesan por orden de lista (ID creciente). Devuelve los golpes de trabajo. */
+export function updateJobs(state: GameState, grid: NavGrid): WorkEvent[] {
+  const works: WorkEvent[] = [];
   for (const unit of state.units) {
     const job = unit.job;
     if (!job || job.type === "attack" || unit.task === "moving") continue;
@@ -185,9 +193,10 @@ export function updateJobs(state: GameState, grid: NavGrid): void {
       unit.job = null; // Bloqueada: cancela el trabajo y conserva la carga.
       continue;
     }
-    if (job.type === "gather") stepGather(state, grid, unit, job);
-    else stepBuild(state, grid, unit, job);
+    if (job.type === "gather") stepGather(state, grid, unit, job, works);
+    else stepBuild(state, grid, unit, job, works);
   }
+  return works;
 }
 
 function findExitCell(state: GameState, grid: NavGrid, building: Building): { x: number; z: number } | null {
@@ -203,8 +212,9 @@ function findExitCell(state: GameState, grid: NavGrid, building: Building): { x:
   );
 }
 
-/** Solo avanza el primer elemento de cada cola; sin salida libre queda listo y bloquea a los siguientes. */
-export function updateProduction(state: GameState, grid: NavGrid): void {
+/** Solo avanza el primer elemento de cada cola; sin salida libre queda listo y bloquea a los siguientes. Devuelve las unidades nacidas. */
+export function updateProduction(state: GameState, grid: NavGrid): SpawnEvent[] {
+  const spawns: SpawnEvent[] = [];
   for (const building of state.buildings) {
     if (!building.complete || building.queue.length === 0) continue;
     // Con población por encima de la capacidad (casa destruida) la producción pagada se detiene.
@@ -215,8 +225,10 @@ export function updateProduction(state: GameState, grid: NavGrid): void {
     const cell = findExitCell(state, grid, building);
     if (!cell) continue;
     building.queue.shift();
-    addUnit(state, building.owner, item.kind, cell.x + 0.5, cell.z + 0.5);
+    const unit = addUnit(state, building.owner, item.kind, cell.x + 0.5, cell.z + 0.5);
+    spawns.push({ tick: state.tick + 1, buildingId: building.id, unitId: unit.id, owner: unit.owner, kind: unit.kind, pos: { x: unit.pos.x, z: unit.pos.z } });
   }
+  return spawns;
 }
 
 /** Instant\u00e1nea de los edificios principales con la vida vigente; `destroyed` se deriva de la misma vida que retira la entidad. */
@@ -243,14 +255,21 @@ export interface DeadResult {
   lostCenters: PlayerId[];
   /** Edificios retirados en este tick, para el colapso visual. */
   destroyed: BuildingDestroyedEvent[];
+  /** Unidades retiradas en este tick, para el audio. */
+  deaths: DeathEvent[];
 }
 
 /** Retira entidades con vida agotada: la carga muere con la unidad y las colas se pierden sin reembolso. Acumula las bajas. */
 export function removeDead(state: GameState): DeadResult {
   const lostCenters: PlayerId[] = [];
   const destroyed: BuildingDestroyedEvent[] = [];
+  const deaths: DeathEvent[] = [];
   if (state.units.some((u) => u.hp <= 0)) {
-    for (const u of state.units) if (u.hp <= 0) state.losses.units[u.owner] += 1;
+    for (const u of state.units) {
+      if (u.hp > 0) continue;
+      state.losses.units[u.owner] += 1;
+      deaths.push({ tick: state.tick + 1, id: u.id, owner: u.owner, kind: u.kind, pos: { x: u.pos.x, z: u.pos.z } });
+    }
     state.units = state.units.filter((u) => u.hp > 0);
   }
   if (state.buildings.some((b) => b.hp <= 0)) {
@@ -263,7 +282,7 @@ export function removeDead(state: GameState): DeadResult {
     state.buildings = state.buildings.filter((b) => b.hp > 0);
     state.obstacleVersion += 1;
   }
-  return { lostCenters, destroyed };
+  return { lostCenters, destroyed, deaths };
 }
 
 export function refreshCapacity(state: GameState): void {

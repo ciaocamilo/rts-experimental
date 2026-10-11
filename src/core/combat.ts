@@ -320,6 +320,7 @@ export function updateCombat(state: GameState, grid: NavGrid): StrikeEvent[] {
           attackerOwner: attacker.owner,
           attackerKind: "tower",
           targetId: target.id,
+          targetOwner: target.owner,
           from,
           to: { x: aim.pos.x - ((aim.pos.z - from.z) / length) * spread, z: aim.pos.z + ((aim.pos.x - from.x) / length) * spread },
         });
@@ -336,6 +337,7 @@ export function updateCombat(state: GameState, grid: NavGrid): StrikeEvent[] {
       attackerOwner: attacker.owner,
       attackerKind: attacker.kind,
       targetId: target.id,
+      targetOwner: target.owner,
       from: { x: attacker.pos.x, z: attacker.pos.z },
       to: { ...aimPoint(attacker, target) },
     });
