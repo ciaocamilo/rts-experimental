@@ -6,9 +6,13 @@ export type Quality = "high" | "low";
 /** Registro de procedencia (P2 §2.2): no se incorpora ningún archivo externo, todo se genera por código. */
 export const ASSET_PROVENANCE: readonly { id: string; author: string; origin: string; license: string; attribution: string; modifications: string }[] = [
   "grass",
+  "grass-tuft",
+  "contact-shade",
   "tone-patches",
   "water",
   "water-ripple",
+  "water-normal",
+  "water-noise",
   "bark",
   "leaf",
   "stone",
@@ -51,15 +55,15 @@ function makeTexture(el: HTMLCanvasElement, repeat: boolean): THREE.CanvasTextur
   return t;
 }
 
-function grassTexture(rng: () => number): HTMLCanvasElement {
-  const size = 512;
+function grassTexture(rng: () => number, size: number): HTMLCanvasElement {
+  const k = size / 512;
   const { el, ctx } = canvas(size);
   ctx.fillStyle = "#4b7d3a";
   ctx.fillRect(0, 0, size, size);
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 90 * k; i++) {
     const x = rng() * size;
     const y = rng() * size;
-    const r = 25 + rng() * 55;
+    const r = (25 + rng() * 55) * k;
     const light = rng() < 0.5;
     wrapped(size, x, y, r, (dx, dy) => {
       const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
@@ -71,14 +75,14 @@ function grassTexture(rng: () => number): HTMLCanvasElement {
   }
   const palette = ["#3c6b2f", "#548a3f", "#66a047", "#2f5a28", "#7aa94f", "#5f8f3a"];
   ctx.lineCap = "round";
-  for (let i = 0; i < 4200; i++) {
+  for (let i = 0; i < 4200 * k * k; i++) {
     const x = rng() * size;
     const y = rng() * size;
-    const len = 4 + rng() * 7;
+    const len = (4 + rng() * 7) * k;
     const ang = -Math.PI / 2 + (rng() - 0.5) * 0.9;
     ctx.strokeStyle = palette[Math.floor(rng() * palette.length)]!;
     ctx.globalAlpha = 0.55;
-    ctx.lineWidth = 1 + rng() * 1.2;
+    ctx.lineWidth = (1 + rng() * 1.2) * Math.sqrt(k);
     wrapped(size, x, y, len, (dx, dy) => {
       ctx.beginPath();
       ctx.moveTo(x + dx, y + dy);
@@ -87,6 +91,41 @@ function grassTexture(rng: () => number): HTMLCanvasElement {
     });
   }
   ctx.globalAlpha = 1;
+  return el;
+}
+
+/** Disco oscuro con borde suave: sombra de contacto bajo árboles y edificios. */
+function contactTexture(): HTMLCanvasElement {
+  const size = 64;
+  const { el, ctx } = canvas(size);
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, "rgba(0,0,0,0.42)");
+  g.addColorStop(0.55, "rgba(0,0,0,0.26)");
+  g.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  return el;
+}
+
+/** Mechón de hierba: hojas finas sobre fondo transparente, para planos cruzados instanciados. */
+function tuftTexture(rng: () => number): HTMLCanvasElement {
+  const w = 64;
+  const h = 64;
+  const { el, ctx } = canvas(w, h);
+  const palette = ["#3f7a2c", "#58934a", "#6aa84f", "#4a8434", "#86b85a"];
+  for (let i = 0; i < 16; i++) {
+    const x = 8 + rng() * (w - 16);
+    const top = 4 + rng() * 30;
+    const lean = (rng() - 0.5) * 18;
+    const half = 1.4 + rng() * 1.6;
+    ctx.fillStyle = palette[Math.floor(rng() * palette.length)]!;
+    ctx.beginPath();
+    ctx.moveTo(x - half, h);
+    ctx.quadraticCurveTo(x - half * 0.6 + lean * 0.4, h * 0.55, x + lean, top);
+    ctx.quadraticCurveTo(x + half * 0.6 + lean * 0.4, h * 0.55, x + half, h);
+    ctx.closePath();
+    ctx.fill();
+  }
   return el;
 }
 
@@ -181,6 +220,74 @@ function rippleTexture(rng: () => number): HTMLCanvasElement {
       ctx.stroke();
     });
   }
+  return el;
+}
+
+/** Mosaico de normales del agua (R = x, G = arriba, B = z): suma de ondas de frecuencia entera, así que casa al repetirse. */
+function waterNormalTexture(rng: () => number): HTMLCanvasElement {
+  const size = 256;
+  const { el, ctx } = canvas(size);
+  const waves = Array.from({ length: 14 }, (_, k) => {
+    const f = k < 6 ? 1 + Math.floor(rng() * 4) : 4 + Math.floor(rng() * 14);
+    const a = rng() * Math.PI * 2;
+    return { fx: Math.round(Math.cos(a) * f) || 1, fy: Math.round(Math.sin(a) * f) || 1, amp: 1 / (1 + f * 0.35), phase: rng() * Math.PI * 2 };
+  });
+  const grad = new Float32Array(size * size * 2);
+  let top = 1e-6;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      let gx = 0;
+      let gy = 0;
+      for (const w of waves) {
+        const c = w.amp * Math.cos((2 * Math.PI * (w.fx * x + w.fy * y)) / size + w.phase) * ((2 * Math.PI) / size);
+        gx += c * w.fx;
+        gy += c * w.fy;
+      }
+      grad[(y * size + x) * 2] = gx;
+      grad[(y * size + x) * 2 + 1] = gy;
+      top = Math.max(top, Math.hypot(gx, gy));
+    }
+  }
+  const k = 0.7 / top;
+  const image = ctx.createImageData(size, size);
+  for (let i = 0; i < size * size; i++) {
+    const nx = -grad[i * 2]! * k;
+    const nz = -grad[i * 2 + 1]! * k;
+    const len = Math.hypot(nx, 1, nz);
+    image.data[i * 4] = Math.round(((nx / len) * 0.5 + 0.5) * 255);
+    image.data[i * 4 + 1] = Math.round(((1 / len) * 0.5 + 0.5) * 255);
+    image.data[i * 4 + 2] = Math.round(((nz / len) * 0.5 + 0.5) * 255);
+    image.data[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(image, 0, 0);
+  return el;
+}
+
+/** Ruido del agua: R = ruido suave para la espuma, G = red de cáusticas, B = variación de baja frecuencia. */
+function waterNoiseTexture(rng: () => number): HTMLCanvasElement {
+  const size = 256;
+  const { el, ctx } = canvas(size);
+  const sines = (count: number, maxF: number): { fx: number; fy: number; ph: number }[] =>
+    Array.from({ length: count }, () => ({ fx: 1 + Math.floor(rng() * maxF), fy: (rng() < 0.5 ? -1 : 1) * (1 + Math.floor(rng() * maxF)), ph: rng() * Math.PI * 2 }));
+  const soft = sines(6, 6);
+  const ridge = sines(3, 4);
+  const low = sines(3, 2);
+  const sum = (list: { fx: number; fy: number; ph: number }[], x: number, y: number): number => {
+    let v = 0;
+    for (const s of list) v += Math.sin((2 * Math.PI * (s.fx * x + s.fy * y)) / size + s.ph);
+    return v / list.length;
+  };
+  const image = ctx.createImageData(size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      image.data[i] = Math.round((0.5 + 0.5 * sum(soft, x, y) * 1.4) * 255);
+      image.data[i + 1] = Math.round(Math.pow(1 - Math.abs(sum(ridge, x, y)), 4) * 255);
+      image.data[i + 2] = Math.round((0.5 + 0.5 * sum(low, x, y)) * 255);
+      image.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(image, 0, 0);
   return el;
 }
 
@@ -299,9 +406,13 @@ export class AssetLibrary {
   private readonly disposables: { dispose(): void }[] = [];
   readonly textures: {
     grass: THREE.CanvasTexture;
+    tuft: THREE.CanvasTexture;
+    contact: THREE.CanvasTexture;
     tone: THREE.CanvasTexture;
     water: THREE.CanvasTexture;
     waterRipple: THREE.CanvasTexture;
+    waterNormal: THREE.CanvasTexture;
+    waterNoise: THREE.CanvasTexture;
     bark: THREE.CanvasTexture;
     barkLight: THREE.CanvasTexture;
     leaf: THREE.CanvasTexture;
@@ -317,10 +428,14 @@ export class AssetLibrary {
     const t = (el: HTMLCanvasElement, repeat = true): THREE.CanvasTexture => this.track(makeTexture(el, repeat));
     const waterRng = mulberry32(20261011);
     this.textures = {
-      grass: t(grassTexture(rng)),
+      grass: t(grassTexture(rng, quality === "high" ? 1024 : 512)),
+      tuft: t(tuftTexture(mulberry32(20261014)), false),
+      contact: t(contactTexture(), false),
       tone: t(tonePatches(rng), false),
       water: t(waterTexture(waterRng)),
       waterRipple: t(rippleTexture(waterRng)),
+      waterNormal: this.data(waterNormalTexture(mulberry32(20261012))),
+      waterNoise: this.data(waterNoiseTexture(mulberry32(20261013))),
       bark: t(barkTexture(rng, "#5b3d27")),
       barkLight: t(barkTexture(rng, "#cfc9bb")),
       leaf: t(leafTexture(rng)),
@@ -332,6 +447,14 @@ export class AssetLibrary {
     };
   }
 
+  /** Textura de datos (normales, ruido): sin conversión de color y con repetición. */
+  private data(el: HTMLCanvasElement): THREE.CanvasTexture {
+    const tex = this.track(new THREE.CanvasTexture(el));
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.anisotropy = 4;
+    return tex;
+  }
+
   track<T extends { dispose(): void }>(resource: T): T {
     this.disposables.push(resource);
     return resource;
@@ -339,6 +462,13 @@ export class AssetLibrary {
 
   lambert(params: THREE.MeshLambertMaterialParameters): THREE.MeshLambertMaterial {
     return this.track(new THREE.MeshLambertMaterial(params));
+  }
+
+  /** Material PBR en calidad alta; en baja conserva el sombreado Lambert de P4. */
+  surface(params: THREE.MeshStandardMaterialParameters): THREE.MeshLambertMaterial | THREE.MeshStandardMaterial {
+    if (this.quality === "high") return this.track(new THREE.MeshStandardMaterial(params));
+    const { color, map, side } = params;
+    return this.lambert({ ...(color !== undefined ? { color } : {}), ...(map ? { map } : {}), ...(side !== undefined ? { side } : {}) });
   }
 
   basic(params: THREE.MeshBasicMaterialParameters): THREE.MeshBasicMaterial {

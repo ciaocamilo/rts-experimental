@@ -7,6 +7,7 @@ import { applyConstruction, type BuildingRig, buildBuilding, GeometryCache } fro
 import { ArrowPool } from "./effects";
 import { type FlameRig, FlameFactory, updateFlames } from "./fire";
 import { barState, flameCount } from "./health";
+import { Lighting } from "./lighting";
 import { buildBushGeometries, buildTreeGeometries, Materials, VISUAL } from "./models";
 import { NodeFactory, type NodeRig, setNodeSpent } from "./nodes";
 import { computePose, deathPose, deathState, type WorkKind } from "./pose";
@@ -126,6 +127,7 @@ export class SceneView {
   private readonly buildingProxyMaterial: THREE.MeshBasicMaterial;
   private readonly nodes: NodeFactory;
   private readonly terrain: TerrainView;
+  private readonly lighting: Lighting;
   private readonly arrows: ArrowPool;
   private readonly entityRoot = new THREE.Group();
   private readonly entries = new Map<number, Entry>();
@@ -165,9 +167,10 @@ export class SceneView {
   private lastRender: number | null = null;
   private frozen = false;
   private lastStrikeId = 0;
+  private waterFallback = false;
   private readonly invalidBars = new Set<number>();
 
-  constructor(canvas: HTMLCanvasElement, mapWidth: number, mapDepth: number, private readonly rig: CameraRig, quality: Quality = "high") {
+  constructor(canvas: HTMLCanvasElement, mapWidth: number, mapDepth: number, private readonly rig: CameraRig, quality: Quality = "high", shadows = true) {
     this.canvas = canvas;
     this.mapWidth = mapWidth;
     this.mapDepth = mapDepth;
@@ -177,11 +180,14 @@ export class SceneView {
     this.scene.background = new THREE.Color(0x203420);
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 700);
 
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-    this.scene.add(new THREE.HemisphereLight(0xdfeeff, 0x3a5a2a, 0.45));
-    const sun = new THREE.DirectionalLight(0xfff1d6, 1.15);
-    sun.position.set(-25, 80, 60);
-    this.scene.add(sun);
+    this.lighting = new Lighting(this.renderer, this.scene, quality, shadows, mapWidth, mapDepth);
+    // Si el shader del agua no compila, se vuelve al material de P4 y se avisa en el HUD.
+    this.renderer.debug.onShaderError = (): void => {
+      if (this.waterFallback) return;
+      this.waterFallback = true;
+      this.terrain.useFallbackWater();
+      this.warnings.push("Shader de agua no disponible: se usa el material básico.");
+    };
 
     this.assets = new AssetLibrary(quality);
     this.mat = new Materials(this.assets);
@@ -214,6 +220,7 @@ export class SceneView {
 
     this.resize();
     this.applyRig();
+    (globalThis as Record<string, unknown>)["__dbg"] = { scene: this.scene, renderer: this.renderer, THREE };
   }
 
   private track<T extends { dispose(): void }>(resource: T): T {
@@ -313,6 +320,7 @@ export class SceneView {
     }
 
     this.consumeStrikes(ctx.strikes);
+    this.lighting.mark(this.entityRoot);
   }
 
   private syncTerrain(state: GameState): void {
@@ -764,6 +772,7 @@ export class SceneView {
     if (!this.frozen) this.animTime += dt;
 
     this.applyRig();
+    this.lighting.update(this.rig.x, this.rig.z, this.viewHeight / (2 * this.rig.zoom), this.camera.right / this.camera.top, this.animTime);
     this.animateUnits(dt);
     this.animateBodies();
     this.animateCollapses(this.fxPaused ? 0 : dt);
@@ -802,6 +811,7 @@ export class SceneView {
   dispose(): void {
     this.reset();
     this.terrain.dispose();
+    this.lighting.dispose();
     this.assets.dispose();
     for (const d of this.disposables) d.dispose();
     this.renderer.dispose();

@@ -78,9 +78,9 @@ function start(): void {
   };
 
   const rig = new CameraRig(MAP_WIDTH, MAP_DEPTH, { x: 16, z: MAP_DEPTH / 2 });
-  // `?graphics=low` desactiva sombras, antialiasing, decoración fina y animación del agua.
+  // `?graphics=low` desactiva sombras, antialiasing, decoración fina y animación del agua; `?shadows=0` solo las sombras.
   const quality = params.get("graphics") === "low" ? "low" : "high";
-  const view = new SceneView(el<HTMLCanvasElement>("view"), MAP_WIDTH, MAP_DEPTH, rig, quality);
+  const view = new SceneView(el<HTMLCanvasElement>("view"), MAP_WIDTH, MAP_DEPTH, rig, quality, params.get("shadows") !== "0");
   const hud = el("hud");
   const overlay = el("overlay");
   const pauseButton = el<HTMLButtonElement>("btn-pause");

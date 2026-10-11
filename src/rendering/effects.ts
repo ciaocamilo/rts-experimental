@@ -21,7 +21,7 @@ export class ArrowPool {
   private readonly next = new THREE.Vector3();
 
   constructor(assets: AssetLibrary, mat: Materials, size = 24) {
-    const color = (m: THREE.MeshLambertMaterial): number => m.color.getHex();
+    const color = (m: THREE.Material & { color: THREE.Color }): number => m.color.getHex();
     const parts =
       assets.quality === "high"
         ? [

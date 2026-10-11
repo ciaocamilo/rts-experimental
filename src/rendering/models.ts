@@ -1,8 +1,12 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { AssetLibrary } from "./assets";
+import { applyWind } from "./wind";
 
 export const OWNER_COLORS = [0x3b82f6, 0xef4444] as const;
+
+/** Material de superficie: PBR en calidad alta y Lambert en baja. */
+export type SurfaceMaterial = THREE.MeshLambertMaterial | THREE.MeshStandardMaterial;
 
 /** Catálogo visual: alturas de ancla para barras y marcas, independientes de la lógica. */
 export const VISUAL = {
@@ -13,21 +17,21 @@ export const VISUAL = {
 
 /** Materiales compartidos: una sola instancia por aspecto, nunca por entidad. */
 export class Materials {
-  readonly stone;
+  readonly stone: SurfaceMaterial;
   readonly moss;
-  readonly plaster;
-  readonly planks;
+  readonly plaster: SurfaceMaterial;
+  readonly planks: SurfaceMaterial;
   readonly bark;
   readonly barkLight;
-  readonly roofTile;
-  readonly roofSlate;
+  readonly roofTile: SurfaceMaterial;
+  readonly roofSlate: SurfaceMaterial;
   readonly dark;
   readonly glass;
   readonly straw;
   readonly skin;
   readonly trousers;
-  readonly steel;
-  readonly steelDark;
+  readonly steel: SurfaceMaterial;
+  readonly steelDark: SurfaceMaterial;
   readonly leather;
   readonly shaft;
   readonly feather;
@@ -51,21 +55,23 @@ export class Materials {
     const t = a.textures;
     const l = (color: number, map?: THREE.Texture, extra: THREE.MeshLambertMaterialParameters = {}): THREE.MeshLambertMaterial =>
       a.lambert({ color, ...(map ? { map } : {}), ...extra });
-    this.stone = l(0xffffff, t.stone);
+    const s = (color: number, map: THREE.Texture | undefined, extra: THREE.MeshStandardMaterialParameters = {}): SurfaceMaterial =>
+      a.surface({ color, ...(map ? { map } : {}), ...extra });
+    this.stone = s(0xffffff, t.stone, { roughness: 0.95, metalness: 0, bumpMap: t.stone, bumpScale: 1.6 });
     this.moss = l(0xffffff, t.grass);
-    this.plaster = l(0xffffff, t.plaster);
-    this.planks = l(0xffffff, t.planks);
+    this.plaster = s(0xffffff, t.plaster, { roughness: 0.9, metalness: 0, bumpMap: t.plaster, bumpScale: 0.8 });
+    this.planks = s(0xffffff, t.planks, { roughness: 0.82, metalness: 0, bumpMap: t.planks, bumpScale: 1.2 });
     this.bark = l(0xffffff, t.bark);
     this.barkLight = l(0xffffff, t.barkLight);
-    this.roofTile = l(0xffffff, t.roofTile, { side: THREE.DoubleSide });
-    this.roofSlate = l(0xffffff, t.roofSlate, { side: THREE.DoubleSide });
+    this.roofTile = s(0xffffff, t.roofTile, { roughness: 0.68, metalness: 0, side: THREE.DoubleSide });
+    this.roofSlate = s(0xffffff, t.roofSlate, { roughness: 0.55, metalness: 0.05, side: THREE.DoubleSide });
     this.dark = l(0x2a1d14);
     this.glass = l(0x20303f);
     this.straw = l(0xd6b85a);
     this.skin = l(0xe0b08c);
     this.trousers = l(0x5a4632);
-    this.steel = l(0xa7b0ba);
-    this.steelDark = l(0x5c646d);
+    this.steel = s(0xa7b0ba, undefined, { metalness: 0.8, roughness: 0.35 });
+    this.steelDark = s(0x5c646d, undefined, { metalness: 0.8, roughness: 0.45 });
     this.leather = l(0x6b4a2b);
     this.shaft = l(0xb89a6a);
     this.feather = l(0xf2f2f2);
@@ -78,6 +84,13 @@ export class Materials {
     this.leafOak = l(0x4f8a2f, t.leaf);
     this.leafBirch = l(0x8fb04a, t.leaf);
     this.leafBerry = l(0x2a5f33, t.leaf);
+    if (a.quality === "high") {
+      // Oclusión ambiental horneada en el color de vértice de las copas y balanceo por viento.
+      for (const m of [this.leafPine, this.leafOak, this.leafBirch]) {
+        m.vertexColors = true;
+        applyWind(m, 0.032, "tree");
+      }
+    }
     this.leafBush = [l(0x5f8f3a, t.leaf), l(0x7a9a4a, t.leaf)];
     this.dryBush = l(0x6b5a3a);
     this.team = [l(OWNER_COLORS[0]), l(OWNER_COLORS[1])];
@@ -158,18 +171,43 @@ export function buildTreeGeometries(a: AssetLibrary): readonly [TreeGeometry, Tr
     placed(new THREE.SphereGeometry(r, 8, 6), x, y, z, sx, sy, sz);
   const pine: TreeGeometry = {
     trunk: placed(new THREE.CylinderGeometry(0.08, 0.12, 0.75, 6), 0, 0.375, 0),
-    crown: merged([cone(0.58, 0.85, 0.95), cone(0.45, 0.75, 1.4), cone(0.3, 0.65, 1.82)]),
+    crown: merged([cone(0.62, 0.8, 0.9), cone(0.5, 0.75, 1.25), cone(0.38, 0.7, 1.6), cone(0.26, 0.6, 1.95)]),
   };
   const oak: TreeGeometry = {
     trunk: placed(new THREE.CylinderGeometry(0.1, 0.16, 0.85, 6), 0, 0.425, 0),
-    crown: merged([sphere(0.5, 0, 1.2, 0, 1, 0.85, 1), sphere(0.34, 0.28, 1.0, 0.1), sphere(0.32, -0.25, 1.05, -0.12), sphere(0.3, 0.05, 1.55, -0.05)]),
+    crown: merged([
+      sphere(0.5, 0, 1.2, 0, 1, 0.85, 1),
+      sphere(0.34, 0.28, 1.0, 0.1),
+      sphere(0.32, -0.25, 1.05, -0.12),
+      sphere(0.3, 0.05, 1.55, -0.05),
+      sphere(0.26, -0.12, 1.28, 0.3),
+      sphere(0.24, 0.3, 1.38, -0.2),
+    ]),
   };
   const birch: TreeGeometry = {
     trunk: placed(new THREE.CylinderGeometry(0.055, 0.09, 1.3, 6), 0, 0.65, 0),
-    crown: merged([sphere(0.36, 0, 1.6, 0, 1, 1.5, 1), sphere(0.24, 0.16, 1.25, 0.1)]),
+    crown: merged([sphere(0.36, 0, 1.6, 0, 1, 1.5, 1), sphere(0.24, 0.16, 1.25, 0.1), sphere(0.2, -0.14, 1.9, 0.08), sphere(0.2, -0.16, 1.4, -0.1)]),
   };
-  for (const t of [pine, oak, birch]) a.track(t.trunk), a.track(t.crown);
+  for (const t of [pine, oak, birch]) {
+    bakeCrownShade(t.crown);
+    a.track(t.trunk);
+    a.track(t.crown);
+  }
   return [pine, oak, birch];
+}
+
+/** Oscurece la parte baja de la copa (oclusión ambiental barata) con color de vértice. */
+function bakeCrownShade(g: THREE.BufferGeometry): void {
+  const pos = g.getAttribute("position");
+  g.computeBoundingBox();
+  const { min, max } = g.boundingBox!;
+  const span = Math.max(0.001, max.y - min.y);
+  const colors = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const t = (pos.getY(i) - min.y) / span;
+    colors.fill(0.58 + 0.42 * Math.pow(t, 0.8), i * 3, i * 3 + 3);
+  }
+  g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 }
 
 export interface BushGeometry {
