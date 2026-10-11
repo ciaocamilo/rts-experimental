@@ -406,7 +406,18 @@ La calidad del sonido y de la imagen no es verificable de forma automática; la 
 
 | Historia | Estado al preparar este SDD |
 |---|---|
-| P5-H01 a P5-H15 | Especificadas; pendientes de implementación y verificación |
+| P5-H01 a P5-H15 | Implementadas y verificadas con pruebas, compilación y navegador (60 FPS en alto, bajo y `objetivo`); pendiente la aceptación estética del autor (oído y vista) |
+
+### Desviaciones registradas durante la implementación
+
+- Se descartó el golpe seco al final del vuelo de la flecha; queda solo el viento con barrido estéreo.
+- La cola de la espada se mide por RMS (de 0,15 a 0,3 s, entre −50 y −12 dB respecto a los primeros 50 ms), no con Goertzel.
+- El golpe final del derrumbe cae hacia 0,85 s (pequeño) o 1,4 s (grande).
+- El Fresnel del agua es estilizado (f0 mayor que 0,02) para que se perciba desde la cámara ortográfica.
+- `PCFSoftShadowMap` no existe en three 0.186; se usa `PCFShadowMap`.
+- Los derrumbes en calidad alta usan `CollapseFx` (polvo y escombros que sobreviven al derrumbe); las bocanadas antiguas solo se conservan en calidad baja.
+- Presupuesto de partículas de fuego (400) con tres niveles: completo, reducido (humo y brillo) y sin partículas.
+- `contracts/worker-v2/fixtures.json` conserva `game_version: p3.0.0` (fijado por el generador; el esquema no cambia).
 
 ## 8. Riesgos y respuestas
 
