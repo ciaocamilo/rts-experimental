@@ -12,6 +12,9 @@ export interface PanKeys {
 /** Distancia al borde de la vista (px) a partir de la cual el cursor desplaza la cámara. */
 export const EDGE_MARGIN_PX = 24;
 
+/** Multiplicador de velocidad del desplazamiento por borde respecto al teclado. */
+export const EDGE_SPEED_FACTOR = 1.5;
+
 /** Direcciones de desplazamiento para un cursor en (x, y) dentro de una vista de width por height. */
 export function edgePan(x: number, y: number, width: number, height: number, margin: number = EDGE_MARGIN_PX): PanKeys {
   if (x < 0 || y < 0 || x > width || y > height) return { up: false, down: false, left: false, right: false };
@@ -30,11 +33,11 @@ export class CameraRig {
   }
 
   /** La vista mira hacia -x,-z: «arriba» en pantalla es (-1,-1) y «derecha» es (1,-1). */
-  pan(dtSec: number, keys: PanKeys): void {
+  pan(dtSec: number, keys: PanKeys, speedFactor = 1): void {
     const forward = (keys.up ? 1 : 0) - (keys.down ? 1 : 0);
     const right = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
     if (forward === 0 && right === 0) return;
-    const k = (PAN_SPEED / this.zoom) * dtSec * Math.SQRT1_2;
+    const k = ((PAN_SPEED * speedFactor) / this.zoom) * dtSec * Math.SQRT1_2;
     const len = Math.hypot(forward, right);
     this.x += ((-forward + right) * k) / len;
     this.z += ((-forward - right) * k) / len;

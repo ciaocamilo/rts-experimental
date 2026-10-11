@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addUnit, createEmptyState, createInitialState } from "../../src/core/state";
-import { CameraRig, EDGE_MARGIN_PX, edgePan, ZOOM_MAX, ZOOM_MIN } from "../../src/input/camera-rig";
+import { CameraRig, EDGE_MARGIN_PX, EDGE_SPEED_FACTOR, edgePan, ZOOM_MAX, ZOOM_MIN } from "../../src/input/camera-rig";
 import { boxSelect, clearSelection, clickSelect, emptySelection, pruneSelection } from "../../src/input/selection";
 
 describe("cámara (RF-02)", () => {
@@ -72,6 +72,15 @@ describe("cámara con el ratón (P2-H12)", () => {
     for (let i = 0; i < 2000; i++) diagonal.pan(0.1, edgePan(1199, 1, 1200, 600));
     expect(diagonal.x).toBeLessThanOrEqual(128);
     expect(diagonal.z).toBeGreaterThanOrEqual(0);
+  });
+
+  it("el desplazamiento por borde es 50 % más rápido que el del teclado", () => {
+    const keyboard = new CameraRig(128, 64, { x: 64, z: 32 });
+    keyboard.pan(0.1, edgePan(600, 0, 1200, 600));
+    const edge = new CameraRig(128, 64, { x: 64, z: 32 });
+    edge.pan(0.1, edgePan(600, 0, 1200, 600), EDGE_SPEED_FACTOR);
+    expect(EDGE_SPEED_FACTOR).toBe(1.5);
+    expect(Math.hypot(edge.x - 64, edge.z - 32)).toBeCloseTo(1.5 * Math.hypot(keyboard.x - 64, keyboard.z - 32), 9);
   });
 });
 

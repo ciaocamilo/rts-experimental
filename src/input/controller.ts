@@ -5,7 +5,7 @@ import { previewPlacement } from "../core/placement";
 import type { Command } from "../core/types";
 import type { SceneView } from "../rendering/scene-view";
 import { REJECT_TEXT } from "../ui/messages";
-import { type CameraRig, edgePan, type PanKeys } from "./camera-rig";
+import { type CameraRig, EDGE_SPEED_FACTOR, edgePan, type PanKeys } from "./camera-rig";
 import { boxSelect, clearSelection, clickSelect, type Selection } from "./selection";
 
 const HUMAN = 0 as const;
@@ -65,7 +65,8 @@ export class InputController {
     const e = this.edge;
     const k = this.keys;
     const mouse = this.drag?.active ? null : e;
-    this.rig.pan(dtSec, { up: k.up || !!mouse?.up, down: k.down || !!mouse?.down, left: k.left || !!mouse?.left, right: k.right || !!mouse?.right });
+    const edgeActive = !!(mouse && (mouse.up || mouse.down || mouse.left || mouse.right));
+    this.rig.pan(dtSec, { up: k.up || !!mouse?.up, down: k.down || !!mouse?.down, left: k.left || !!mouse?.left, right: k.right || !!mouse?.right }, edgeActive ? EDGE_SPEED_FACTOR : 1);
     if (!this.placement) return;
     if (!this.ownVillagers().length) {
       this.cancelPlacement();

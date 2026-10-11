@@ -193,7 +193,7 @@ Como jugador, quiero personajes de aspecto más orgánico sin perder la lectura 
 
 Como jugador, quiero desplazar el escenario llevando el cursor al borde de la pantalla, sin soltar el ratón.
 
-- **CA01:** con el cursor del ratón a 24 px o menos de un borde de la vista, la cámara se desplaza hacia ese lado a la misma velocidad que con teclado (RF-02); en una esquina se combinan los dos ejes y la diagonal no es más rápida. Se mantiene mientras el cursor permanezca en el borde.
+- **CA01:** con el cursor del ratón a 24 px o menos de un borde de la vista, la cámara se desplaza hacia ese lado a 1,5 veces la velocidad del teclado (RF-02); en una esquina se combinan los dos ejes y la diagonal no es más rápida. Se mantiene mientras el cursor permanezca en el borde.
 - **CA02:** la cámara no abandona el mapa (RF-02) y el teclado sigue funcionando; si ambos coinciden en un eje, el efecto no se suma.
 - **CA03:** no se desplaza cuando el cursor está sobre un control de la interfaz (panel inferior, botones, ayuda), fuera de la ventana o con la ventana sin foco; al salir de la ventana o perder el foco el desplazamiento se detiene.
 - **CA04:** no se desplaza durante un arrastre de selección; solo actúa con ratón, no con puntero táctil o lápiz.
