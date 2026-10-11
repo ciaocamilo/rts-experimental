@@ -89,7 +89,7 @@ describe("informe de diagnóstico (RF-12)", () => {
     for (let i = 0; i < 40; i++) h.session.stepOnce();
     const report = buildReport({ session: h.session, perf, fixture: null, env: ENV, ai: null, errors: [] });
     expect(report.schema).toBe(REPORT_SCHEMA);
-    expect(report.versions).toMatchObject({ game: expect.any(String), map: expect.any(String), balance: expect.any(String), schema: 4 });
+    expect(report.versions).toMatchObject({ game: expect.any(String), map: expect.any(String), balance: expect.any(String), schema: 5 });
     expect(report.seed).toBe(1);
     expect(report.match.tick).toBe(40);
     expect(report.perf.ticks).toBe(40);

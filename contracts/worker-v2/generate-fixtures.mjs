@@ -14,7 +14,7 @@ const base = {
     protocol_version: 2,
     session_id: SESSION,
     worker_generation: 1,
-    expected: { pyodide: "0.27.7", python: "3.12", policy: "policy-0.2" },
+    expected: { pyodide: "0.27.7", python: "3.12", policy: "policy-0.3" },
     config: { max_commands: 4 },
   },
   ready: {
@@ -22,7 +22,7 @@ const base = {
     protocol_version: 2,
     session_id: SESSION,
     worker_generation: 1,
-    versions: { pyodide: "0.27.7", python: "3.12.7", policy: "policy-0.2" },
+    versions: { pyodide: "0.27.7", python: "3.12.7", policy: "policy-0.3" },
     timings_ms: { pyodide_load: 1400.5, policy_load: 12.25, total: 1420 },
   },
   observe: {
@@ -34,32 +34,43 @@ const base = {
     observation_tick: 140,
     player_id: 1,
     seed: 1,
-    game_version: "0.0.1",
-    map_version: "map-0.2 (128x64)",
-    balance_version: "balance-0.1",
+    game_version: "p3.0.0",
+    map_version: "map-0.3 (128x64, piedra)",
+    balance_version: "balance-0.2",
     players: [
-      { id: 0, food: 200, wood: 200, pop: 3, pop_capacity: 10 },
-      { id: 1, food: 200, wood: 200, pop: 3, pop_capacity: 10 },
+      { id: 0, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
+      { id: 1, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
     ],
     units: [
-      { id: 2, owner: 0, kind: "villager", x: 13.5, z: 31, hp: 40, task: "idle", activity: "idle", dest: null, blocked_reason: null, carry: null, target_id: null },
-      { id: 5, owner: 1, kind: "villager", x: 50.5, z: 31, hp: 40, task: "idle", activity: "gathering", dest: null, blocked_reason: null, carry: { kind: "food", amount: 4 }, target_id: 8 },
-      { id: 6, owner: 1, kind: "villager", x: 49, z: 32.5, hp: 40, task: "moving", activity: "moving", dest: { x: 48.5, z: 32.5 }, blocked_reason: null, carry: null, target_id: null },
-      { id: 7, owner: 1, kind: "villager", x: 50.5, z: 33, hp: 40, task: "blocked", activity: "blocked", dest: { x: 48.5, z: 32.5 }, blocked_reason: "STUCK", carry: null, target_id: null },
+      { id: 2, owner: 0, kind: "villager", x: 13.5, z: 31, hp: 40, task: "idle", activity: "idle", dest: null, blocked_reason: null, carry: null, target_id: null, defending: false },
+      { id: 5, owner: 1, kind: "villager", x: 50.5, z: 31, hp: 40, task: "idle", activity: "gathering", dest: null, blocked_reason: null, carry: { kind: "food", amount: 4 }, target_id: 8, defending: false },
+      { id: 6, owner: 1, kind: "villager", x: 49, z: 32.5, hp: 40, task: "moving", activity: "moving", dest: { x: 48.5, z: 32.5 }, blocked_reason: null, carry: null, target_id: null, defending: false },
+      { id: 7, owner: 1, kind: "villager", x: 50.5, z: 33, hp: 40, task: "blocked", activity: "blocked", dest: { x: 48.5, z: 32.5 }, blocked_reason: "STUCK", carry: null, target_id: null, defending: false },
     ],
     buildings: [
       { id: 1, owner: 0, kind: "townCenter", cell_x: 8, cell_z: 30, hp: 1500, complete: true, build_done: 0, queue: [] },
       { id: 4, owner: 1, kind: "townCenter", cell_x: 116, cell_z: 30, hp: 1500, complete: true, build_done: 0, queue: [{ id: 9, kind: "villager", remaining: 120 }] },
     ],
-    resource_nodes: [{ id: 8, kind: "food", cell_x: 15, cell_z: 22, remaining: 500 }],
+    resource_nodes: [
+      { id: 8, kind: "food", cell_x: 15, cell_z: 22, remaining: 500 },
+      { id: 10, kind: "stone", cell_x: 15, cell_z: 46, remaining: 500 },
+    ],
     map: { width: 128, depth: 64, terrain: [{ x: 62, z: 8, w: 4, h: 18 }, { x: 62, z: 38, w: 4, h: 18 }] },
     rules: {
       max_population: 50,
       queue_limit: 5,
       house_housing: 5,
-      unit_cost: { villager: { food: 50, wood: 0 }, soldier: { food: 60, wood: 20 }, archer: { food: 40, wood: 50 } },
-      building_cost: { house: { food: 0, wood: 50 }, barracks: { food: 0, wood: 150 } },
-      footprint: { townCenter: 4, house: 2, barracks: 3 },
+      unit_cost: {
+        villager: { food: 50, wood: 0, stone: 0 },
+        soldier: { food: 60, wood: 20, stone: 0 },
+        archer: { food: 40, wood: 50, stone: 0 },
+      },
+      building_cost: {
+        house: { food: 0, wood: 50, stone: 0 },
+        barracks: { food: 0, wood: 150, stone: 0 },
+        tower: { food: 0, wood: 0, stone: 300 },
+      },
+      footprint: { townCenter: 4, house: 2, barracks: 3, tower: 2 },
     },
     previous_results: [
       { command_id: "6:0", accepted: true, code: null },
@@ -74,7 +85,7 @@ const base = {
     request_id: 7,
     observation_tick: 140,
     player_id: 1,
-    policy_version: "policy-0.2",
+    policy_version: "policy-0.3",
     commands: [{ command_id: "7:0", type: "Move", entity_ids: [5, 6], payload: { x: 48.5, z: 32.5 } }],
     reason_codes: ["GATHER"],
     metrics: { policy_ms: 1.5, convert_ms: 0.25 },
@@ -130,6 +141,14 @@ add("decision con ResumeBuild, Build, Train y CancelBuild", true, withCommands([
 add("decision con CancelTraining", true, withCommands([
   { command_id: "7:0", type: "CancelTraining", entity_ids: [4], payload: { queue_item_id: 3 } },
 ]));
+add("decision con Gather de piedra y Build de torre", true, withCommands([
+  { command_id: "7:0", type: "Gather", entity_ids: [5], payload: { target_id: 10 } },
+  { command_id: "7:1", type: "Build", entity_ids: [5], payload: { building_kind: "tower", cell_x: 40, cell_z: 20 } },
+]));
+add("observe con unidad defendiéndose y carga de piedra", true, mutate("observe", (o) => {
+  o.units[1].carry = { kind: "stone", amount: 8 };
+  o.units[2].defending = true;
+}));
 add("error mínimo", true, { type: "ERROR", protocol_version: 2, code: "LOAD_ERROR", message: "" });
 add("error con identificadores", true, base.error);
 
@@ -160,6 +179,9 @@ add("observe con cola de más de 5", false, mutate("observe", (o) => {
   o.buildings[1].queue = Array.from({ length: 6 }, (_, i) => ({ id: 20 + i, kind: "villager", remaining: 10 }));
 }), "INVALID_MESSAGE");
 add("observe con coste de unidad faltante", false, mutate("observe", (o) => delete o.rules.unit_cost.archer), "INVALID_MESSAGE");
+add("observe sin piedra en el jugador", false, mutate("observe", (o) => delete o.players[0].stone), "INVALID_MESSAGE");
+add("observe con unidad sin defending", false, mutate("observe", (o) => delete o.units[0].defending), "INVALID_MESSAGE");
+add("observe sin coste de torre", false, mutate("observe", (o) => delete o.rules.building_cost.tower), "INVALID_MESSAGE");
 add("observe con booleano como entero", false, mutate("observe", (o) => (o.request_id = true)), "INVALID_MESSAGE");
 add("observe con entero fraccionario", false, mutate("observe", (o) => (o.request_id = 1.5)), "INVALID_MESSAGE");
 add("observe con un solo jugador", false, mutate("observe", (o) => o.players.pop()), "INVALID_MESSAGE");

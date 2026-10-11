@@ -12,12 +12,13 @@ export interface PanelActions {
 
 const HUMAN = 0;
 const UNIT_NAME: Record<UnitKind, string> = { villager: "aldeano", soldier: "soldado", archer: "arquero" };
-const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel" };
+const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel", tower: "torre" };
 
-function costText(cost: { food: number; wood: number }): string {
+function costText(cost: { food: number; wood: number; stone: number }): string {
   const parts: string[] = [];
   if (cost.food > 0) parts.push(`${cost.food} alimento`);
   if (cost.wood > 0) parts.push(`${cost.wood} madera`);
+  if (cost.stone > 0) parts.push(`${cost.stone} piedra`);
   return parts.join(" + ") || "gratis";
 }
 
@@ -76,7 +77,7 @@ export class CommandPanel {
 
     if (hasVillager) {
       const row = this.row("Construir:");
-      for (const kind of ["house", "barracks"] as const) {
+      for (const kind of ["house", "barracks", "tower"] as const) {
         const def = BALANCE.buildings[kind];
         const b = this.button(`${BUILDING_NAME[kind]} · ${costText(def.cost)}`, `build:${kind}`, paused);
         if (placing === kind) b.classList.add("active");
@@ -95,9 +96,11 @@ export class CommandPanel {
       return;
     }
     if (def.trains.length === 0) {
-      title.append(this.text(def.housing > 0 ? `aloja ${def.housing} unidades` : "sin producción"));
+      const armed = def.weapon ? BALANCE.units[def.weapon] : null;
+      title.append(this.text(def.housing > 0 ? `aloja ${def.housing} unidades` : armed ? `dispara flechas (alcance ${armed.range})` : "sin producción"));
       return;
     }
+    if (def.weapon) title.append(this.text(`dispara ${def.arrows ?? 1} flechas (alcance ${BALANCE.units[def.weapon].range})`));
     const train = this.row("Entrenar:");
     for (const kind of def.trains) {
       const u = BALANCE.units[kind];

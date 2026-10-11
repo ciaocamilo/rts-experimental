@@ -6,7 +6,11 @@ import { type BushSpec, planScenery, ROCK_HEIGHT, type SceneryPlan, type TreeSpe
 import type { BushGeometry } from "./models";
 import { buildWaterGeometry, cornerRadius, waterSeed, type WaterLayer } from "./water";
 
-const GROUND_MARGIN = 26;
+/**
+ * La cámara puede centrarse en el borde del mapa con el zoom mínimo (vista de ~113 unidades de alto y, en pantallas anchas,
+ * ~270 de ancho); el suelo se extiende más que cualquier vista posible para que nunca asome el fondo (P3-R07).
+ */
+const GROUND_MARGIN = 190;
 
 /** Orilla húmeda y agua: anillos desde el borde hacia el centro, con opacidad creciente y más profundidad. */
 const SHORE_LAYERS: readonly WaterLayer[] = [

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GameSession } from "../../src/app/session";
 import { BALANCE, MAX_ACTIVE_TICKS } from "../../src/content/balance";
 import { hashState } from "../../src/core/hash";
+import { matchResult } from "../../src/core/result";
 import { stepSimulation } from "../../src/core/simulation";
 import { addBuilding, addTerrain, addUnit, createEmptyState, populationOf } from "../../src/core/state";
 import type { Command, CommandResult, EntityId, GameState, PlayerId, Unit, UnitTask } from "../../src/core/types";
@@ -296,7 +297,15 @@ describe("T-09 resultado y pausa (RF-11)", () => {
     center.hp = BALANCE.units.soldier.damage;
     send(state, attack([s], center.id));
     expect(state.matchStatus).toBe("ended");
-    expect(state.outcome).toEqual({ winner: 0, reason: "TOWN_CENTER_DESTROYED" });
+    expect(state.outcome).toMatchObject({ winner: 0, reason: "TOWN_CENTER_DESTROYED" });
+    // P3-R08: la instantánea terminal conserva el edificio retirado con su vida real (0 de 1500), no un valor inventado.
+    const rival = state.outcome!.mainBuildings.find((b) => b.owner === 1)!;
+    expect(rival).toMatchObject({ destroyed: true, hp: 0, maxHp: BALANCE.buildings.townCenter.hp });
+    expect(state.outcome!.mainBuildings.find((b) => b.owner === 0)).toMatchObject({ destroyed: false, hp: BALANCE.buildings.townCenter.hp });
+    expect(state.outcome!.endTick).toBe(state.tick);
+    expect(state.outcome!.casualties.buildings).toEqual([0, 1]);
+    expect(matchResult(state, 0)).toBe("victoria");
+    expect(matchResult(state, 1)).toBe("derrota");
 
     const frozen = hashState(state);
     const outcome = state.outcome;
@@ -312,7 +321,8 @@ describe("T-09 resultado y pausa (RF-11)", () => {
     const center = centerOf(state, 0);
     center.hp = BALANCE.units.soldier.damage;
     send(state, attack([e], center.id, 1));
-    expect(state.outcome).toEqual({ winner: 1, reason: "TOWN_CENTER_DESTROYED" });
+    expect(state.outcome).toMatchObject({ winner: 1, reason: "TOWN_CENTER_DESTROYED" });
+    expect(matchResult(state, 0)).toBe("derrota");
   });
 
   it("ambos centros destruidos en el mismo tick es empate", () => {
@@ -322,7 +332,9 @@ describe("T-09 resultado y pausa (RF-11)", () => {
     centerOf(state, 0).hp = BALANCE.units.soldier.damage;
     centerOf(state, 1).hp = BALANCE.units.soldier.damage;
     send(state, attack([s], centerOf(state, 1).id), attack([e], centerOf(state, 0).id, 1));
-    expect(state.outcome).toEqual({ winner: null, reason: "TOWN_CENTER_DESTROYED" });
+    expect(state.outcome).toMatchObject({ winner: null, reason: "TOWN_CENTER_DESTROYED" });
+    expect(state.outcome!.mainBuildings.every((b) => b.destroyed && b.hp === 0)).toBe(true);
+    expect(matchResult(state, 0)).toBe("empate");
   });
 
   it("a los 24.000 ticks sin destrucción es empate; la destrucción tiene prioridad en ese tick", () => {
@@ -332,14 +344,15 @@ describe("T-09 resultado y pausa (RF-11)", () => {
     expect(quiet.matchStatus).toBe("playing");
     stepSimulation(quiet);
     expect(quiet.tick).toBe(MAX_ACTIVE_TICKS);
-    expect(quiet.outcome).toEqual({ winner: null, reason: "TIME_LIMIT" });
+    expect(quiet.outcome).toMatchObject({ winner: null, reason: "TIME_LIMIT", endTick: MAX_ACTIVE_TICKS });
+    expect(quiet.outcome!.mainBuildings.every((b) => !b.destroyed && b.hp === BALANCE.buildings.townCenter.hp)).toBe(true);
 
     const decisive = world();
     decisive.tick = MAX_ACTIVE_TICKS - 1;
     const s = nearEnemyCenter(decisive);
     centerOf(decisive, 1).hp = BALANCE.units.soldier.damage;
     send(decisive, attack([s], centerOf(decisive, 1).id));
-    expect(decisive.outcome).toEqual({ winner: 0, reason: "TOWN_CENTER_DESTROYED" });
+    expect(decisive.outcome).toMatchObject({ winner: 0, reason: "TOWN_CENTER_DESTROYED" });
   });
 
   it("los estados sin centros (fixtures de movimiento) no terminan la partida", () => {

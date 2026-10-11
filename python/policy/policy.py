@@ -1,14 +1,19 @@
-"""Política estratégica policy-0.2 (P1-C).
+"""Política estratégica policy-0.3 (P3).
 
 Función pura y sin estado: la misma observación produce los mismos comandos. No usa reloj ni azar.
-Prioridades, de mayor a menor: defender, reasignar aldeanos, casa, aldeanos, cuartel, militares, ataque.
+Prioridades, de mayor a menor: defender, reasignar aldeanos, casa, aldeanos, cuartel, torre, militares, ataque.
 Cada comando que se emite descuenta de una estimación local de recursos y población, de modo que
 varios comandos del mismo lote no gastan dos veces lo mismo. Como máximo se emiten 4 comandos.
+
+Novedades de P3: recoge piedra y construye torres; solo ordena recolectar nodos a los que las unidades
+pueden llegar (así no repite órdenes que el núcleo rechazará con UNREACHABLE); y no saca de su defensa
+automática a los militares que ya están peleando (`defending`).
 """
 
 import math
+from collections import deque
 
-VERSION = "policy-0.2"
+VERSION = "policy-0.3"
 
 MAX_COMMANDS = 4
 MAX_ENTITIES = 100
@@ -16,6 +21,9 @@ MAX_ENTITIES = 100
 TARGET_VILLAGERS = 12
 FOOD_SHARE_PERCENT = 60
 MIN_VILLAGERS_FOR_BARRACKS = 6
+MIN_VILLAGERS_FOR_TOWER = 8
+STONE_WORKERS = 2
+MAX_TOWERS = 2
 HOUSE_FREE_SLOTS = 2
 VILLAGER_QUEUE_MAX = 1
 MILITARY_QUEUE_MAX = 1
@@ -30,6 +38,7 @@ DECISION_TICKS = 20
 
 _MILITARY = ("soldier", "archer")
 _IDLE_ACTIVITIES = ("idle", "blocked")
+_NEIGHBORS = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
 
 
 def _footprint_rect(building, rules):
@@ -47,7 +56,7 @@ def _dist(a, b):
 
 
 class _Plan:
-    """Lote de comandos con presupuesto local de comida, madera y población."""
+    """Lote de comandos con presupuesto local de comida, madera, piedra y población."""
 
     def __init__(self, observation):
         self.obs = observation
@@ -56,17 +65,19 @@ class _Plan:
         me = next(p for p in observation["players"] if p["id"] == self.player_id)
         self.food = me["food"]
         self.wood = me["wood"]
+        self.stone = me["stone"]
         self.pop = me["pop"]
         self.capacity = me["pop_capacity"]
         self.tick = observation["observation_tick"]
         self.commands = []
         self.reasons = []
         self.placed = []
+        self._reach = None
 
     def full(self):
         return len(self.commands) >= MAX_COMMANDS
 
-    def emit(self, command, reason, food=0, wood=0, pop=0):
+    def emit(self, command, reason, food=0, wood=0, stone=0, pop=0):
         if self.full():
             return False
         self.commands.append(command)
@@ -74,8 +85,47 @@ class _Plan:
             self.reasons.append(reason)
         self.food -= food
         self.wood -= wood
+        self.stone -= stone
         self.pop += pop
         return True
+
+    def reachable(self, origin):
+        """Celdas libres conectadas con el perímetro del edificio `origin` (8 vecinos, sin cortar esquinas)."""
+        if self._reach is not None:
+            return self._reach
+        solid = _blocked_cells(self)
+        width = self.obs["map"]["width"]
+        depth = self.obs["map"]["depth"]
+        x, z, w, h = _footprint_rect(origin, self.rules)
+        seen = set()
+        queue = deque()
+        for cx in range(x - 1, x + w + 1):
+            for cz in range(z - 1, z + h + 1):
+                cell = (cx, cz)
+                if 0 <= cx < width and 0 <= cz < depth and cell not in solid and cell not in seen:
+                    seen.add(cell)
+                    queue.append(cell)
+        while queue:
+            cx, cz = queue.popleft()
+            for dx, dz in _NEIGHBORS:
+                nx, nz = cx + dx, cz + dz
+                cell = (nx, nz)
+                if cell in seen or not (0 <= nx < width and 0 <= nz < depth) or cell in solid:
+                    continue
+                if dx != 0 and dz != 0 and ((cx + dx, cz) in solid or (cx, cz + dz) in solid):
+                    continue
+                seen.add(cell)
+                queue.append(cell)
+        self._reach = seen
+        return seen
+
+
+def _node_accessible(reach, node):
+    """Un nodo es accesible si alguna celda libre contigua es alcanzable desde la base."""
+    for dx, dz in _NEIGHBORS:
+        if (node["cell_x"] + dx, node["cell_z"] + dz) in reach:
+            return True
+    return False
 
 
 def _blocked_cells(plan, solid_only=False):
@@ -111,13 +161,17 @@ def _unit_cells(plan):
     return cells
 
 
-def _choose_cell(plan, base, kind):
-    """Esquina de la huella en un anillo alrededor del centro; evita el lado del enemigo."""
+def _choose_cell(plan, base, kind, forward=False):
+    """Esquina de la huella en un anillo alrededor del centro; evita el lado del enemigo (o lo prefiere si `forward`)."""
     size = plan.rules["footprint"][kind]
     map_width = plan.obs["map"]["width"]
     map_depth = plan.obs["map"]["depth"]
     base_x, base_z = _center(base, plan.rules)
     toward_enemy = 1 if map_width / 2 > base_x else -1
+    enemy_centers = [b for b in plan.obs["buildings"] if b["owner"] != plan.player_id and b["kind"] == "townCenter"]
+    if enemy_centers:
+        enemy = min(enemy_centers, key=lambda b: b["id"])
+        toward_enemy = 1 if _center(enemy, plan.rules)[0] > base_x else -1
     solid = _blocked_cells(plan)
     busy = _unit_cells(plan)
     candidates = []
@@ -136,6 +190,8 @@ def _choose_cell(plan, base, kind):
             if any((x, z) in busy for x in range(cx, cx + size) for z in range(cz, cz + size)):
                 continue
             penalty = max(0.0, toward_enemy * (center[0] - base_x))
+            if forward:
+                penalty = max(0.0, -toward_enemy * (center[0] - base_x))
             candidates.append((distance + penalty, cx, cz))
     if not candidates:
         return None
@@ -179,6 +235,8 @@ def _defend(plan, tc_center, military, enemy_units):
 
 
 def _attack(plan, military, enemy_units, enemy_buildings):
+    # Quien ya se defiende solo (defending) termina su pelea antes de unirse a una expedición.
+    military = [m for m in military if not m["defending"]]
     if len(military) < EXPEDITION_SIZE:
         return
     group = (sum(m["x"] for m in military) / len(military), sum(m["z"] for m in military) / len(military))
@@ -202,10 +260,10 @@ def _attack(plan, military, enemy_units, enemy_buildings):
         plan.emit({"type": "Attack", "entity_ids": ids, "payload": {"target_id": target["id"]}}, "ATTACK")
 
 
-def _assign_gatherers(plan, villagers, idle, nodes, tc_center, builders_busy):
+def _assign_gatherers(plan, villagers, idle, nodes, tc_center, builders_busy, origin, stone_wanted):
     node_by_id = {n["id"]: n for n in nodes}
     counts = {}
-    per_kind = {"food": 0, "wood": 0}
+    per_kind = {"food": 0, "wood": 0, "stone": 0}
     for v in villagers:
         node = node_by_id.get(v["target_id"]) if v["target_id"] is not None else None
         if node is not None and v["activity"] not in _IDLE_ACTIVITIES:
@@ -213,20 +271,30 @@ def _assign_gatherers(plan, villagers, idle, nodes, tc_center, builders_busy):
             per_kind[node["kind"]] += 1
 
     workers = len(villagers) - builders_busy
-    want_food = (workers * FOOD_SHARE_PERCENT + 50) // 100
-    want = {"food": want_food, "wood": workers - want_food}
-    groups = {"food": [], "wood": []}
+    stone_want = min(STONE_WORKERS, workers) if stone_wanted else 0
+    rest = workers - stone_want
+    want_food = (rest * FOOD_SHARE_PERCENT + 50) // 100
+    want = {"food": want_food, "wood": rest - want_food, "stone": stone_want}
+
+    # Solo se ordena recolectar nodos a los que se puede llegar: el núcleo rechazaría el resto con UNREACHABLE.
+    usable = [n for n in nodes if n["remaining"] > 0]
+    if idle:
+        reach = plan.reachable(origin)
+        usable = [n for n in usable if _node_accessible(reach, n)]
+    kinds = ("food", "wood", "stone")
+    groups = {k: [] for k in kinds}
     for v in idle:
-        kind = "food" if want["food"] - per_kind["food"] >= want["wood"] - per_kind["wood"] else "wood"
-        if not any(n["kind"] == kind and n["remaining"] > 0 for n in nodes):
-            kind = "wood" if kind == "food" else "food"
+        candidates = [k for k in kinds if any(n["kind"] == k for n in usable) and (k != "stone" or want["stone"] - per_kind["stone"] > 0)]
+        if not candidates:
+            break
+        kind = max(candidates, key=lambda k: (want[k] - per_kind[k], -kinds.index(k)))
         groups[kind].append(v["id"])
         per_kind[kind] += 1
 
-    for kind in ("food", "wood"):
+    for kind in kinds:
         if not groups[kind]:
             continue
-        node = _pick_node([n for n in nodes if n["kind"] == kind], counts, tc_center)
+        node = _pick_node([n for n in usable if n["kind"] == kind], counts, tc_center)
         if node is None:
             continue
         plan.emit(
@@ -267,6 +335,7 @@ def decide(observation):
 
     houses = [b for b in my_buildings if b["kind"] == "house"]
     barracks = [b for b in my_buildings if b["kind"] == "barracks"]
+    towers = [b for b in my_buildings if b["kind"] == "tower"]
     cost = rules["building_cost"]
 
     # Decisión previa de obras para reservar constructores antes de reasignar a los inactivos.
@@ -285,10 +354,20 @@ def decide(observation):
         and wood_left >= cost["barracks"]["wood"]
     )
 
+    tower_stone = cost["tower"]["stone"]
+    want_tower = (
+        len(towers) < MAX_TOWERS
+        and not any(not t["complete"] for t in towers)
+        and len(villagers) >= MIN_VILLAGERS_FOR_TOWER
+        and plan.stone >= tower_stone
+    )
+    # Se junta piedra solo mientras falta para la próxima torre.
+    stone_wanted = len(towers) < MAX_TOWERS and len(villagers) >= MIN_VILLAGERS_FOR_TOWER and plan.stone < tower_stone
+
     unattended = [b for b in sites if not any(v["target_id"] == b["id"] for v in villagers)]
     reserved = []
     pool = _builder_order(villagers, working)
-    for _ in range(len(unattended) + int(want_house) + int(want_barracks)):
+    for _ in range(len(unattended) + int(want_house) + int(want_barracks) + int(want_tower)):
         if pool:
             reserved.append(pool.pop(0))
     reserved_ids = {v["id"] for v in reserved}
@@ -300,6 +379,8 @@ def decide(observation):
         nodes,
         tc_center,
         len(working | reserved_ids),
+        town_center,
+        stone_wanted,
     )
 
     # Obras abandonadas: otro aldeano las retoma.
@@ -344,6 +425,19 @@ def decide(observation):
             ):
                 builders.pop(0)
                 size = rules["footprint"]["barracks"]
+                plan.placed.append((cell[0], cell[1], size, size))
+
+    if want_tower and builders and plan.stone >= tower_stone:
+        cell = _choose_cell(plan, town_center, "tower", forward=True)
+        if cell is not None:
+            payload = {"building_kind": "tower", "cell_x": cell[0], "cell_z": cell[1]}
+            if plan.emit(
+                {"type": "Build", "entity_ids": [builders[0]["id"]], "payload": payload},
+                "BUILD_TOWER",
+                stone=tower_stone,
+            ):
+                builders.pop(0)
+                size = rules["footprint"]["tower"]
                 plan.placed.append((cell[0], cell[1], size, size))
 
     ready_barracks = [b for b in barracks if b["complete"]]

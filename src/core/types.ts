@@ -12,6 +12,7 @@ export interface PlayerState {
   id: PlayerId;
   food: number;
   wood: number;
+  stone: number;
   popCapacity: number;
 }
 
@@ -28,10 +29,35 @@ export type IdleReason = "TARGET_DEAD" | "UNREACHABLE";
 
 /** Trabajo de una unidad; la ruta hacia su destino usa los campos de movimiento de la unidad. */
 export type Job =
-  | { type: "gather"; nodeId: EntityId; stage: "approach" | "harvest" | "return"; timer: number; retries: number }
+  | { type: "gather"; nodeId: EntityId; kind: ResourceKind; stage: "approach" | "harvest" | "return"; timer: number; retries: number }
   | { type: "build"; siteId: EntityId; stage: "approach" | "work"; retries: number }
-  /** `anchor` es el punto de adquisición de un ataque automático; null si la orden fue explícita. */
-  | { type: "attack"; targetId: EntityId; anchor: Vec2 | null; retries: number };
+  /**
+   * `anchor` es el punto de adquisición de un ataque automático o defensivo; null si la orden fue explícita.
+   * `defense` marca el objetivo temporal de contraataque (P3-R01), distinguible de una orden manual.
+   * `resume` es el destino de un movimiento interrumpido por la defensa, que se reanuda al terminar.
+   * `back` es el ataque a un edificio que la defensa interrumpió y que se retoma al terminar.
+   */
+  | {
+      type: "attack";
+      targetId: EntityId;
+      anchor: Vec2 | null;
+      retries: number;
+      defense: boolean;
+      resume: Vec2 | null;
+      back: { targetId: EntityId; anchor: Vec2 | null } | null;
+    };
+
+/** Último agresor hostil que dañó a una unidad militar (se consume al reaccionar). */
+export interface Threat {
+  attackerId: EntityId;
+  tick: number;
+}
+
+/** Objetivo que no pudo alcanzarse: no se vuelve a adquirir automáticamente hasta `until`. */
+export interface AvoidedTarget {
+  targetId: EntityId;
+  until: number;
+}
 
 export interface Unit {
   id: EntityId;
@@ -53,6 +79,8 @@ export interface Unit {
   /** Ticks hasta poder atacar de nuevo. */
   cooldown: number;
   idleReason: IdleReason | null;
+  threat: Threat | null;
+  avoid: AvoidedTarget | null;
 }
 
 export interface TerrainRect {
@@ -85,6 +113,8 @@ export interface Building {
   buildDone: number;
   /** Cola FIFO; solo el primer elemento avanza. */
   queue: QueueItem[];
+  /** Ticks hasta poder disparar de nuevo (solo edificios con arma). */
+  cooldown: number;
 }
 
 export interface ResourceNode {
@@ -96,10 +126,32 @@ export interface ResourceNode {
 
 export type MatchStatus = "playing" | "ended";
 
+/** Instantánea del edificio principal de un bando, tomada en el tick terminal antes de retirar entidades. */
+export interface MainBuildingFinal {
+  id: EntityId;
+  owner: PlayerId;
+  kind: BuildingKind;
+  hp: number;
+  maxHp: number;
+  destroyed: boolean;
+  complete: boolean;
+  /** Trabajo de construcción acumulado entre 0 y 1; no es una razón de vida. */
+  buildProgress: number;
+}
+
+/** Bajas acumuladas por bando (índice = propietario de lo perdido). */
+export interface Losses {
+  units: [number, number];
+  buildings: [number, number];
+}
+
 /** `winner: null` es empate. */
 export interface MatchOutcome {
   winner: PlayerId | null;
   reason: "TOWN_CENTER_DESTROYED" | "TIME_LIMIT";
+  endTick: number;
+  mainBuildings: MainBuildingFinal[];
+  casualties: Losses;
 }
 
 export interface GameState {
@@ -122,6 +174,8 @@ export interface GameState {
   resourceNodes: ResourceNode[];
   nextEntityId: EntityId;
   lastCommandSeq: number;
+  /** Bajas acumuladas de la partida. */
+  losses: Losses;
 }
 
 export type CommandType =
@@ -175,6 +229,18 @@ export interface StepResult {
   results: CommandResult[];
   /** Ataques válidos de este tick; solo los consume el renderizador y no forman parte del estado. */
   strikes: StrikeEvent[];
+  /** Edificios que dejaron el estado lógico en este tick; solo los consume la vista (colapso visual). */
+  destroyed: BuildingDestroyedEvent[];
+}
+
+/** Instantánea de un edificio retirado por vida cero. */
+export interface BuildingDestroyedEvent {
+  tick: number;
+  id: EntityId;
+  owner: PlayerId;
+  kind: BuildingKind;
+  cell: Vec2;
+  complete: boolean;
 }
 
 /** Un ataque efectivo, con las posiciones capturadas en el momento del daño. */
@@ -182,7 +248,8 @@ export interface StrikeEvent {
   tick: number;
   attackerId: EntityId;
   attackerOwner: PlayerId;
-  attackerKind: UnitKind;
+  /** `"tower"` para disparos de torre: usan el mismo arma (flecha) que el arquero. */
+  attackerKind: UnitKind | "tower";
   targetId: EntityId;
   from: Vec2;
   to: Vec2;

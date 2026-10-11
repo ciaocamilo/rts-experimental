@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import type { ResourceKind } from "../content/balance";
 import type { AssetLibrary } from "./assets";
 import { mergeParts } from "./merge";
 import type { Materials, TreeGeometry, TreeVariant } from "./models";
@@ -14,7 +15,7 @@ export interface NodeRig {
   crownMaterial: THREE.Material | null;
   fadedMaterial: THREE.Material | null;
   proxy: THREE.Mesh;
-  kind: "food" | "wood";
+  kind: ResourceKind;
 }
 
 /** Árboles y arbustos con bayas de los nodos económicos; la geometría se comparte entre todos. */
@@ -27,6 +28,8 @@ export class NodeFactory {
   private readonly dry: THREE.BufferGeometry;
   private readonly treeProxy: THREE.BufferGeometry;
   private readonly bushProxy: THREE.BufferGeometry;
+  private readonly rocks: THREE.BufferGeometry;
+  private readonly rockProxy: THREE.BufferGeometry;
   private readonly proxyMaterial: THREE.MeshBasicMaterial;
 
   constructor(
@@ -59,14 +62,31 @@ export class NodeFactory {
     this.treeProxy = assets.track(new THREE.CylinderGeometry(0.45, 0.45, 1.8, 8).translate(0, 0.9, 0));
     this.bushProxy = assets.track(new THREE.CylinderGeometry(0.5, 0.5, 0.7, 8).translate(0, 0.35, 0));
     this.proxyMaterial = assets.basic({ visible: false });
+    const rock = (r: number, x: number, y: number, z: number, sy: number): { geometry: THREE.BufferGeometry; position: [number, number, number] } => ({
+      geometry: new THREE.IcosahedronGeometry(r, 0).scale(1, sy, 1),
+      position: [x, y, z],
+    });
+    const rockParts = [rock(0.34, 0, 0.24, 0, 0.85), rock(0.24, 0.3, 0.14, 0.1, 0.8), rock(0.2, -0.28, 0.12, -0.12, 0.9), rock(0.16, 0.05, 0.1, 0.32, 0.8)];
+    this.rocks = assets.track(mergeParts(rockParts));
+    rockParts.forEach((p) => p.geometry.dispose());
+    this.rockProxy = assets.track(new THREE.CylinderGeometry(0.5, 0.5, 0.7, 8).translate(0, 0.35, 0));
   }
 
-  create(kind: "food" | "wood", id: number): NodeRig {
+  create(kind: ResourceKind, id: number): NodeRig {
     const rng = mulberry32(id * 2654435761);
     const root = new THREE.Group();
     const scale = 0.92 + rng() * 0.22;
     root.rotation.y = rng() * Math.PI * 2;
     root.scale.setScalar(scale);
+
+    if (kind === "stone") {
+      const cluster = new THREE.Mesh(this.rocks, this.mat.stone);
+      const gravel = new THREE.Mesh(this.dry, this.mat.stone);
+      gravel.visible = false;
+      const proxy = new THREE.Mesh(this.rockProxy, this.proxyMaterial);
+      root.add(cluster, gravel, proxy);
+      return { root, full: [cluster], spent: gravel, crown: null, crownMaterial: null, fadedMaterial: null, proxy, kind };
+    }
 
     if (kind === "wood") {
       const variant = (id % 3) as TreeVariant;

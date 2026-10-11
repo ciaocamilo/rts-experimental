@@ -10,7 +10,7 @@ import { boxSelect, clearSelection, clickSelect, type Selection } from "./select
 
 const HUMAN = 0 as const;
 const DRAG_THRESHOLD_PX = 5;
-const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel" };
+const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel", tower: "torre" };
 
 const KEY_MAP: Record<string, keyof PanKeys> = {
   KeyW: "up",

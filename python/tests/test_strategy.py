@@ -14,11 +14,12 @@ def _base():
     return case["message"]
 
 
-def unit(uid, kind="villager", owner=1, x=50.0, z=33.0, activity="idle", target=None, carry=None, hp=40):
+def unit(uid, kind="villager", owner=1, x=50.0, z=33.0, activity="idle", target=None, carry=None, hp=40, defending=False):
     task = "moving" if activity == "moving" else "blocked" if activity == "blocked" else "idle"
     return {
         "id": uid, "owner": owner, "kind": kind, "x": x, "z": z, "hp": hp, "task": task, "activity": activity,
         "dest": None, "blocked_reason": "STUCK" if task == "blocked" else None, "carry": carry, "target_id": target,
+        "defending": defending,
     }
 
 
@@ -29,8 +30,8 @@ def building(bid, kind, owner, cell_x, cell_z, complete=True, queue=None):
     }
 
 
-def scene(units=None, extra_buildings=None, food=0, wood=0, pop=None, capacity=10, tick=200, tc_queue=None):
-    """Observación del jugador 1 (base en x=52) con nodos de comida (ids 100-107) y madera (200-207)."""
+def scene(units=None, extra_buildings=None, food=0, wood=0, stone=0, pop=None, capacity=10, tick=200, tc_queue=None, stone_nodes=True):
+    """Observación del jugador 1 (base en x=52) con nodos de comida (100-107), madera (200-207) y piedra (300-303)."""
     message = _base()
     units = units if units is not None else []
     message["observation_tick"] = tick
@@ -43,11 +44,12 @@ def scene(units=None, extra_buildings=None, food=0, wood=0, pop=None, capacity=1
     message["resource_nodes"] = [
         *({"id": 100 + i, "kind": "food", "cell_x": 48, "cell_z": 22 + i, "remaining": 500} for i in range(8)),
         *({"id": 200 + i, "kind": "wood", "cell_x": 48, "cell_z": 35 + i, "remaining": 500} for i in range(8)),
+        *({"id": 300 + i, "kind": "stone", "cell_x": 56, "cell_z": 44 + i, "remaining": 500} for i in range(4 if stone_nodes else 0)),
     ]
     mine = [u for u in units if u["owner"] == 1]
     message["players"] = [
-        {"id": 0, "food": 200, "wood": 200, "pop": 3, "pop_capacity": 10},
-        {"id": 1, "food": food, "wood": wood, "pop": len(mine) if pop is None else pop, "pop_capacity": capacity},
+        {"id": 0, "food": 200, "wood": 200, "stone": 0, "pop": 3, "pop_capacity": 10},
+        {"id": 1, "food": food, "wood": wood, "stone": stone, "pop": len(mine) if pop is None else pop, "pop_capacity": capacity},
     ]
     message["previous_results"] = []
     return message
@@ -288,6 +290,84 @@ class MilitaryTest(unittest.TestCase):
         base = [unit(10 + i, activity="gathering", target=100) for i in range(12)]
         scout = unit(300, kind="villager", owner=0, x=47.0, z=31.0)
         self.assertEqual(policy.decide(scene(units=base + soldiers(3) + [scout]))[0], [])
+
+
+class StoneAndTowerTest(unittest.TestCase):
+    def workers(self, count=8):
+        return [unit(10 + i, activity="gathering", target=100) for i in range(count)]
+
+    def test_version_is_policy_0_3(self):
+        self.assertEqual(policy.VERSION, "policy-0.3")
+
+    def test_sends_two_idle_villagers_to_stone_when_a_tower_is_missing(self):
+        units = [unit(10 + i, activity="gathering", target=100) for i in range(4)]
+        units += [unit(20 + i, activity="gathering", target=200) for i in range(2)] + [unit(30), unit(31)]
+        commands, reasons = policy.decide(scene(units=units))
+        self.assertEqual(reasons, ["GATHER"])
+        stone = [c for c in commands if 300 <= c["payload"]["target_id"] < 400]
+        self.assertEqual(len(stone), 1)
+        self.assertEqual(sorted(stone[0]["entity_ids"]), [30, 31])
+
+    def test_no_stone_gathering_before_the_economy_is_ready(self):
+        units = self.workers(3) + [unit(30)]
+        commands, _ = policy.decide(scene(units=units))
+        self.assertTrue(all(c["payload"]["target_id"] < 300 for c in commands))
+
+    def test_no_stone_gathering_once_the_tower_is_affordable(self):
+        units = self.workers(6) + [unit(30), unit(31)]
+        commands, _ = policy.decide(scene(units=units, stone=300))
+        self.assertTrue(all(c["type"] != "Gather" or c["payload"]["target_id"] < 300 for c in commands))
+
+    def test_builds_a_tower_with_exactly_the_stone_cost(self):
+        units = self.workers(7) + [unit(30)]
+        message = scene(units=units, stone=300)
+        commands, reasons = policy.decide(message)
+        self.assertIn("BUILD_TOWER", reasons)
+        build = next(c for c in commands if c["type"] == "Build")
+        self.assertEqual((build["entity_ids"], build["payload"]["building_kind"]), ([30], "tower"))
+        self.assertEqual(message["rules"]["building_cost"]["tower"]["stone"], 300)
+
+    def test_does_not_build_a_tower_without_enough_stone(self):
+        units = self.workers(7) + [unit(30)]
+        commands, _ = policy.decide(scene(units=units, stone=299))
+        self.assertNotIn("tower", [c["payload"].get("building_kind") for c in commands])
+
+    def test_tower_goes_towards_the_enemy_side_of_the_base(self):
+        units = self.workers(7) + [unit(30)]
+        message = scene(units=units, stone=300)
+        build = next(c for c in policy.decide(message)[0] if c["type"] == "Build")
+        # Base del jugador 1 en x=52 (lado derecho): el enemigo queda a la izquierda.
+        self.assertLessEqual(build["payload"]["cell_x"] + 1, 53)
+
+    def test_no_second_tower_while_one_is_under_construction_and_a_limit_applies(self):
+        units = self.workers(7) + [unit(30, activity="building", target=70)]
+        site = building(70, "tower", 1, 46, 30, complete=False)
+        commands, _ = policy.decide(scene(units=units, extra_buildings=[site], stone=300))
+        self.assertNotIn("tower", [c["payload"].get("building_kind") for c in commands])
+        done = [building(70 + i, "tower", 1, 46, 26 + 4 * i) for i in range(2)]
+        commands, _ = policy.decide(scene(units=self.workers(7) + [unit(30)], extra_buildings=done, stone=300))
+        self.assertNotIn("tower", [c["payload"].get("building_kind") for c in commands])
+
+    def test_unreachable_nodes_are_not_targeted(self):
+        message = scene(units=[unit(30)] + self.workers(7), stone_nodes=False)
+        message["resource_nodes"] = [n for n in message["resource_nodes"] if n["kind"] != "wood"]
+        walled = {"id": 400, "kind": "wood", "cell_x": 20, "cell_z": 10, "remaining": 500}
+        open_node = {"id": 401, "kind": "wood", "cell_x": 40, "cell_z": 40, "remaining": 500}
+        message["resource_nodes"] += [walled, open_node]
+        ring = [(19, 9, 3, 1), (19, 11, 3, 1), (19, 10, 1, 1), (21, 10, 1, 1)]
+        message["map"]["terrain"] = message["map"]["terrain"] + [{"x": x, "z": z, "w": w, "h": h} for x, z, w, h in ring]
+        commands, _ = policy.decide(message)
+        wood = [c["payload"]["target_id"] for c in commands if c["type"] == "Gather" and c["payload"]["target_id"] >= 400]
+        self.assertEqual(wood, [401])
+
+    def test_military_that_defends_itself_is_not_pulled_into_the_expedition(self):
+        base = [unit(10 + i, activity="gathering", target=100) for i in range(12)]
+        army = soldiers(8)
+        for u in army[:3]:
+            u.update(activity="attacking", target_id=999, defending=True)
+        self.assertEqual(policy.decide(scene(units=base + army))[0], [])
+        army[0].update(defending=False)
+        self.assertEqual(policy.decide(scene(units=base + army))[0], [])
 
 
 class BatchTest(unittest.TestCase):

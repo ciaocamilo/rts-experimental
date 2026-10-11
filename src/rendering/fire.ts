@@ -14,9 +14,10 @@ export const FLAME_SLOTS: Record<BuildingKind, readonly Slot[]> = {
   townCenter: [[-0.6, 2.7, 0], [0.7, 2.25, 0.8], [0.3, 2.35, -0.7], [1.3, 2.15, 1.0], [-1.1, 2.1, 1.1]],
   house: [[0, 1.7, 0], [-0.5, 1.5, 0.3], [0.5, 1.5, 0.35], [-0.2, 1.4, -0.45], [0.2, 1.3, 0.55]],
   barracks: [[0.3, 2.1, 0], [-0.8, 1.88, 0.5], [0.9, 1.85, -0.5], [-0.2, 1.72, -0.8], [0.5, 1.6, 0.95]],
+  tower: [[0.5, 3.4, 0], [-0.4, 3.45, 0.3], [0, 3.4, -0.5], [0.3, 3.3, 0.6], [-0.65, 3.25, -0.2]],
 };
 
-const SIZE: Record<BuildingKind, number> = { townCenter: 1.5, house: 0.95, barracks: 1.2 };
+const SIZE: Record<BuildingKind, number> = { townCenter: 1.5, house: 0.95, barracks: 1.2, tower: 1.0 };
 
 export interface FlameRig {
   group: THREE.Group;

@@ -45,12 +45,21 @@ export function ringCells(r: CellRect): Cell[] {
   return out;
 }
 
-/** Celda libre del anillo, en la misma región que la unidad, más cercana a ella (desempate z, x por orden de recorrido). */
-export function findApproachCell(grid: NavGrid, unit: Unit, r: CellRect): Cell | null {
+/** Una unidad quieta bloquea una celda de interacci\u00f3n si su cuerpo solapa el centro de la celda. */
+const CELL_CLEARANCE = 0.55;
+
+/**
+ * Celda libre del anillo, en la misma regi\u00f3n que la unidad, m\u00e1s cercana a ella (desempate z, x por orden de recorrido).
+ * Con `others`, prefiere las celdas que ninguna otra unidad quieta ocupa; si todas est\u00e1n ocupadas, usa la m\u00e1s cercana
+ * (la ocupaci\u00f3n es temporal y no hace inaccesible el objetivo).
+ */
+export function findApproachCell(grid: NavGrid, unit: Unit, r: CellRect, others: readonly Unit[] = []): Cell | null {
   const comp = unitComponent(grid, unit);
   if (comp < 0) return null;
   let best: Cell | null = null;
   let bestD = Infinity;
+  let bestFree: Cell | null = null;
+  let bestFreeD = Infinity;
   for (const c of ringCells(r)) {
     if (grid.isBlocked(c.x, c.z) || grid.componentAt(c.x, c.z) !== comp) continue;
     const d = (c.x + 0.5 - unit.pos.x) ** 2 + (c.z + 0.5 - unit.pos.z) ** 2;
@@ -58,8 +67,12 @@ export function findApproachCell(grid: NavGrid, unit: Unit, r: CellRect): Cell |
       bestD = d;
       best = c;
     }
+    if (d < bestFreeD && !others.some((o) => o !== unit && o.task !== "moving" && Math.hypot(o.pos.x - (c.x + 0.5), o.pos.z - (c.z + 0.5)) < CELL_CLEARANCE)) {
+      bestFreeD = d;
+      bestFree = c;
+    }
   }
-  return best;
+  return bestFree ?? best;
 }
 
 /** ¿Un círculo de radio r en (x,z) solapa el rectángulo? */

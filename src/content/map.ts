@@ -65,6 +65,14 @@ const WOOD_CELLS: readonly CellPos[] = [
   { x: 17, z: 39 },
 ];
 
+// P3: yacimiento de piedra propio, un bloque de 2 × 2 celdas al sur del bosque; deja libres los accesos al centro y a las bases.
+const STONE_CELLS: readonly CellPos[] = [
+  { x: 15, z: 46 },
+  { x: 16, z: 46 },
+  { x: 15, z: 47 },
+  { x: 16, z: 47 },
+];
+
 function build(): MapLayout {
   const tc0: CellPos = { x: 8, z: 30 };
   const tc1: CellPos = { x: MAP_WIDTH - tc0.x - TC, z: tc0.z };
@@ -84,6 +92,10 @@ function build(): MapLayout {
   for (const cell of WOOD_CELLS) {
     nodes.push({ owner: 0, kind: "wood", cell });
     nodes.push({ owner: 1, kind: "wood", cell: { x: MAP_WIDTH - 1 - cell.x, z: cell.z } });
+  }
+  for (const cell of STONE_CELLS) {
+    nodes.push({ owner: 0, kind: "stone", cell });
+    nodes.push({ owner: 1, kind: "stone", cell: { x: MAP_WIDTH - 1 - cell.x, z: cell.z } });
   }
 
   return { width: MAP_WIDTH, depth: MAP_DEPTH, terrain: TERRAIN, townCenters: [tc0, tc1], villagerSpawns: [spawns0, spawns1], nodes };
@@ -118,8 +130,8 @@ export function validateMapLayout(layout: MapLayout): void {
   if (tc0.z !== tc1.z || tc0.x + TC + tc1.x !== layout.width) {
     throw new Error("Mapa inválido: centros no simétricos");
   }
-  const expected: Record<ResourceKind, number> = { food: BALANCE.nodesPerKindPerPlayer, wood: BALANCE.woodNodesPerPlayer };
-  for (const kind of ["food", "wood"] as const) {
+  const expected: Record<ResourceKind, number> = { food: BALANCE.nodesPerKindPerPlayer, wood: BALANCE.woodNodesPerPlayer, stone: BALANCE.stoneNodesPerPlayer };
+  for (const kind of ["food", "wood", "stone"] as const) {
     for (const owner of [0, 1] as const) {
       const count = layout.nodes.filter((n) => n.owner === owner && n.kind === kind).length;
       if (count !== expected[kind]) {

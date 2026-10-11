@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { AssetLibrary } from "./assets";
 import { mergeParts, type Part } from "./merge";
-import { type Materials, VISUAL } from "./models";
+import { type Materials, OWNER_COLORS, VISUAL } from "./models";
 import type { Pose, Role } from "./pose";
 
 export interface UnitRig {
@@ -15,6 +15,7 @@ export interface UnitRig {
   armR: THREE.Group;
   bundleWood: THREE.Object3D;
   bundleFood: THREE.Object3D;
+  bundleStone: THREE.Object3D;
   tools: { axe: THREE.Object3D | null; hammer: THREE.Object3D | null };
   nocked: THREE.Object3D | null;
   shadow: THREE.Object3D | null;
@@ -34,12 +35,32 @@ export class UnitFactory {
   private readonly markGeometry: readonly [THREE.BufferGeometry, THREE.BufferGeometry];
   private readonly shadowGeometry: THREE.BufferGeometry;
   private readonly proxyGeometry: THREE.BufferGeometry;
+  /**
+   * Segunda pasada de cada cuerpo: solo se dibuja donde la unidad queda detrás de un edificio (profundidad mayor y
+   * plantilla marcada por los edificios), con el color del bando. Nunca por detrás de árboles ni de otras unidades.
+   */
+  private readonly occluded: readonly [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial];
 
   constructor(
     private readonly assets: AssetLibrary,
     private readonly mat: Materials,
   ) {
     this.material = assets.lambert({ vertexColors: true });
+    const silhouette = (owner: 0 | 1): THREE.MeshBasicMaterial =>
+      assets.basic({
+        color: new THREE.Color(OWNER_COLORS[owner]).lerp(new THREE.Color(0xffffff), 0.25),
+        transparent: true,
+        opacity: 0.7,
+        depthFunc: THREE.GreaterDepth,
+        depthWrite: false,
+        stencilWrite: true,
+        stencilFunc: THREE.EqualStencilFunc,
+        stencilRef: 1,
+        stencilFail: THREE.KeepStencilOp,
+        stencilZFail: THREE.KeepStencilOp,
+        stencilZPass: THREE.KeepStencilOp,
+      });
+    this.occluded = [silhouette(0), silhouette(1)];
     this.proxyMaterial = assets.basic({ visible: false });
     this.markGeometry = [
       assets.track(new THREE.CylinderGeometry(0.2, 0.2, 0.02, 14)),
@@ -54,6 +75,9 @@ export class UnitFactory {
     if (!g) {
       const list = parts();
       g = this.assets.track(mergeParts(list));
+      const count = g.getAttribute("position").count;
+      g.addGroup(0, count, 0);
+      g.addGroup(0, count, 1);
       list.forEach((p) => p.geometry.dispose());
       this.cache.set(key, g);
     }
@@ -207,6 +231,20 @@ export class UnitFactory {
     );
     bundleWood.visible = false;
     bundleFood.visible = false;
+    const bundleStone = this.mesh(
+      this.geometry("bundle:stone", () => [
+        { geometry: new THREE.IcosahedronGeometry(0.09, 0), position: [-0.06, 0.22, -0.18], color: m.steelDark.color.getHex() },
+        { geometry: new THREE.IcosahedronGeometry(0.07, 0), position: [0.07, 0.25, -0.17], color: m.steel.color.getHex() },
+      ]),
+      torso,
+    );
+    bundleStone.visible = false;
+
+    // Cada cuerpo se dibuja con su pasada de contorno; la silueta solo aparece tras los edificios.
+    const silhouette = this.occluded[owner];
+    bob.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.material === this.material) object.material = [this.material, silhouette];
+    });
 
     const mark = this.mesh(this.markGeometry[owner], facing, m.mark[owner]);
     mark.position.y = 0.03;
@@ -217,7 +255,7 @@ export class UnitFactory {
     }
     const proxy = this.mesh(this.proxyGeometry, root, this.proxyMaterial);
 
-    return { root, facing, bob, torso, legL, legR, armL, armR, bundleWood, bundleFood, tools: { axe, hammer }, nocked, shadow, mark, proxy, role };
+    return { root, facing, bob, torso, legL, legR, armL, armR, bundleWood, bundleFood, bundleStone, tools: { axe, hammer }, nocked, shadow, mark, proxy, role };
   }
 }
 
@@ -229,6 +267,7 @@ export function applyDeath(rig: UnitRig, pose: Pose, fall: number): void {
   rig.mark.visible = false;
   rig.bundleWood.visible = false;
   rig.bundleFood.visible = false;
+  rig.bundleStone.visible = false;
   if (rig.tools.axe) rig.tools.axe.visible = false;
   if (rig.tools.hammer) rig.tools.hammer.visible = false;
 }

@@ -2,14 +2,20 @@ import { FixedStepper } from "../core/fixed-step";
 import type { Fixture } from "../core/fixtures";
 import { createInitialState } from "../core/state";
 import { stepSimulation } from "../core/simulation";
-import type { Command, CommandResult, GameState, StrikeEvent } from "../core/types";
+import type { BuildingDestroyedEvent, Command, CommandResult, GameState, StrikeEvent } from "../core/types";
 
 /** Se conservan solo los ataques recientes: la vista los consume en el mismo cuadro. */
 const STRIKE_LOG_LIMIT = 256;
+const DESTROYED_LOG_LIMIT = 32;
 
 export interface StrikeRecord extends StrikeEvent {
   /** Identificador único y creciente dentro de la sesión. */
   id: number;
+}
+
+export interface DestroyedRecord extends BuildingDestroyedEvent {
+  /** Identificador único y creciente; la vista lo usa para no repetir un colapso. */
+  seq: number;
 }
 
 export interface AppliedCommand {
@@ -29,7 +35,10 @@ export class GameSession {
   tickObserver: ((ms: number) => void) | null = null;
   readonly commandLog: AppliedCommand[] = [];
   readonly strikeLog: StrikeRecord[] = [];
+  /** Edificios retirados del estado; solo sirven al colapso visual y no forman parte de la lógica. */
+  readonly destroyedLog: DestroyedRecord[] = [];
   private strikeSeq = 0;
+  private destroyedSeq = 0;
 
   private readonly stepper = new FixedStepper();
   private pending: Command[] = [];
@@ -79,10 +88,12 @@ export class GameSession {
     const commands = this.pending;
     this.pending = [];
     const started = this.tickObserver ? performance.now() : 0;
-    const { tick, results, strikes } = stepSimulation(this.state, commands);
+    const { tick, results, strikes, destroyed } = stepSimulation(this.state, commands);
     this.tickObserver?.(performance.now() - started);
     for (const strike of strikes) this.strikeLog.push({ ...strike, id: ++this.strikeSeq });
     if (this.strikeLog.length > STRIKE_LOG_LIMIT) this.strikeLog.splice(0, this.strikeLog.length - STRIKE_LOG_LIMIT);
+    for (const event of destroyed) this.destroyedLog.push({ ...event, seq: ++this.destroyedSeq });
+    if (this.destroyedLog.length > DESTROYED_LOG_LIMIT) this.destroyedLog.splice(0, this.destroyedLog.length - DESTROYED_LOG_LIMIT);
     for (const command of commands) {
       const result = results.find((r) => r.commandId === command.id);
       if (result) this.commandLog.push({ appliedTick: tick, command, result });

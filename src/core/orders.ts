@@ -1,4 +1,4 @@
-import { BALANCE, type BuildingKind, type UnitKind } from "../content/balance";
+import { BALANCE, type BuildingKind, type Cost, type UnitKind } from "../content/balance";
 import type { NavGrid } from "../navigation/grid";
 import { canEngage, findTarget, isMilitary } from "./combat";
 import { clearTask } from "./movement";
@@ -29,10 +29,11 @@ function isUnitKind(kind: unknown): kind is UnitKind {
   return typeof kind === "string" && Object.hasOwn(BALANCE.units, kind);
 }
 
-function refund(state: GameState, owner: 0 | 1, cost: { food: number; wood: number }, ratio: number): void {
+function refund(state: GameState, owner: 0 | 1, cost: Cost, ratio: number): void {
   const p = state.players[owner];
   p.food += Math.floor(cost.food * ratio);
   p.wood += Math.floor(cost.wood * ratio);
+  p.stone += Math.floor(cost.stone * ratio);
 }
 
 /** Gather: aldeanos hacia un nodo con recursos; la carga de otro tipo se entrega antes. */
@@ -50,7 +51,7 @@ export function issueGather(state: GameState, grid: NavGrid, command: Command): 
   for (const unit of reachable) {
     const mustDeliver = unit.carry !== null && (unit.carry.kind !== node.kind || unit.carry.amount >= BALANCE.economy.carryCapacity);
     clearTask(unit);
-    unit.job = { type: "gather", nodeId: node.id, stage: mustDeliver ? "return" : "approach", timer: 0, retries: 0 };
+    unit.job = { type: "gather", nodeId: node.id, kind: node.kind, stage: mustDeliver ? "return" : "approach", timer: 0, retries: 0 };
   }
   return { assigned: reachable.length, total: villagers.length };
 }
@@ -75,6 +76,7 @@ export function issueBuild(state: GameState, grid: NavGrid, command: Command): O
   const player = state.players[command.player];
   player.food -= cost.food;
   player.wood -= cost.wood;
+  player.stone -= cost.stone;
 
   const site = addBuilding(state, command.player, kind, target.x, target.z, false);
   clearTask(builder);
@@ -141,10 +143,11 @@ export function issueTrain(state: GameState, command: Command): OrderOutcome {
   if (populationOf(state, building.owner) + 1 > owner.popCapacity) return fail("POPULATION_LIMIT");
 
   const def = BALANCE.units[kind];
-  if (owner.food < def.cost.food || owner.wood < def.cost.wood) return fail("INSUFFICIENT_RESOURCES");
+  if (owner.food < def.cost.food || owner.wood < def.cost.wood || owner.stone < def.cost.stone) return fail("INSUFFICIENT_RESOURCES");
 
   owner.food -= def.cost.food;
   owner.wood -= def.cost.wood;
+  owner.stone -= def.cost.stone;
   building.queue.push({ id: state.nextEntityId++, kind, remaining: def.trainTicks });
   return {};
 }
@@ -163,8 +166,10 @@ export function issueAttack(state: GameState, grid: NavGrid, command: Command): 
 
   for (const unit of able) {
     clearTask(unit);
-    unit.job = { type: "attack", targetId: target.id, anchor: null, retries: 0 };
+    unit.job = { type: "attack", targetId: target.id, anchor: null, retries: 0, defense: false, resume: null, back: null };
     unit.idleReason = null;
+    unit.threat = null;
+    unit.avoid = null;
   }
   return { assigned: able.length, total: soldiers.length };
 }

@@ -1,5 +1,5 @@
 import { resolveMatch, updateCombat } from "./combat";
-import { refreshCapacity, removeDead, updateJobs, updateProduction } from "./economy";
+import { refreshCapacity, removeDead, snapshotMainBuildings, updateJobs, updateProduction } from "./economy";
 import { invalidateBlockedPaths, issueMove, issueStop, moveUnits, processPathQueue } from "./movement";
 import { currentGrid, getGrid } from "./obstacles";
 import { issueAttack, issueBuild, issueCancelBuild, issueCancelTraining, issueGather, issueResumeBuild, issueTrain, type OrderOutcome } from "./orders";
@@ -57,6 +57,7 @@ export function stepSimulation(state: GameState, commands: readonly Command[] = 
       tick: state.tick,
       results: commands.map((c) => reject(c, "MATCH_ENDED")),
       strikes: [],
+      destroyed: [],
     };
   }
 
@@ -79,10 +80,12 @@ export function stepSimulation(state: GameState, commands: readonly Command[] = 
   updateJobs(state, grid);
   updateProduction(state, grid);
   const strikes = updateCombat(state, grid);
-  const lostCenters = removeDead(state);
+  // La instantánea de los edificios principales se toma antes de retirar entidades, con la vida que causa el fin de partida.
+  const mainBuildings = snapshotMainBuildings(state);
+  const { lostCenters, destroyed } = removeDead(state);
   refreshCapacity(state);
 
   state.tick += 1;
-  resolveMatch(state, lostCenters);
-  return { tick: state.tick, results, strikes };
+  resolveMatch(state, lostCenters, mainBuildings);
+  return { tick: state.tick, results, strikes, destroyed };
 }
