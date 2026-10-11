@@ -292,3 +292,152 @@ export function makeLoop(buf: Float32Array, overlap: number): Float32Array {
 
 /** Convierte semitonos respecto a la nota 69 (la 440 Hz) en frecuencia. */
 export const midiToHz = (midi: number): number => 440 * Math.pow(2, (midi - 69) / 12);
+
+/** Banco de resonadores exponenciales: un seno por parcial con su amplitud y constante de decaimiento. */
+export function modalBank(freqs: readonly number[], amps: readonly number[], taus: readonly number[], seconds: number, sr: number): Float32Array {
+  const out = makeBuffer(seconds, sr);
+  for (let k = 0; k < freqs.length; k++) {
+    const w = (2 * Math.PI * freqs[k]!) / sr;
+    const decay = Math.exp(-1 / (sr * taus[k]!));
+    let env = amps[k]!;
+    for (let i = 0; i < out.length && env > 1e-5; i++) {
+      out[i]! += env * Math.sin(w * i);
+      env *= decay;
+    }
+  }
+  return out;
+}
+
+/** Saturación suave: `tanh` normalizada, para dar mordiente a los impactos. */
+export function softClip(buf: Float32Array, drive = 1.5): Float32Array {
+  const norm = Math.tanh(drive);
+  for (let i = 0; i < buf.length; i++) buf[i] = Math.tanh(buf[i]! * drive) / norm;
+  return buf;
+}
+
+/**
+ * Fuente glotal de Rosenberg (derivada del flujo) con tono variable, `jitter` y `shimmer` por periodo.
+ * `f0At(t)` da el tono en Hz.
+ */
+export function glottalSource(rng: Rng, f0At: (t: number) => number, seconds: number, sr: number, jitter = 0.015, shimmer = 0.04): Float32Array {
+  const n = samples(seconds, sr);
+  const flow = new Float32Array(n);
+  const open = 0.4;
+  const close = 0.16;
+  let phase = 0;
+  let jit = 1;
+  let amp = 1;
+  for (let i = 0; i < n; i++) {
+    phase += (f0At(i / sr) * jit) / sr;
+    if (phase >= 1) {
+      phase -= 1;
+      jit = 1 + rng.range(-jitter, jitter);
+      amp = 1 + rng.range(-shimmer, shimmer);
+    }
+    let g = 0;
+    if (phase < open) g = 0.5 * (1 - Math.cos((Math.PI * phase) / open));
+    else if (phase < open + close) g = Math.cos((Math.PI * (phase - open)) / (2 * close));
+    flow[i] = g * amp;
+  }
+  const out = new Float32Array(n);
+  for (let i = 1; i < n; i++) out[i] = (flow[i]! - flow[i - 1]!) * 12;
+  return out;
+}
+
+/** Formantes con transición temporal: suma de pasa-banda cuyas frecuencias siguen `formantsAt(t)`. */
+export function formantFilter(input: Float32Array, sr: number, formantsAt: (t: number) => readonly number[], gains: readonly number[], q = 7): Float32Array {
+  const out = new Float32Array(input.length);
+  for (let k = 0; k < gains.length; k++) {
+    const band = filterSweep("bandpass", input, sr, (t) => formantsAt(t)[k]!, q);
+    for (let i = 0; i < out.length; i++) out[i]! += band[i]! * gains[k]!;
+  }
+  return out;
+}
+
+/** Respuesta al impulso estéreo de una sala: reflexiones tempranas y cola exponencial más oscura con el tiempo. */
+export function impulseResponse(seconds: number, sr: number, rng: Rng): [Float32Array, Float32Array] {
+  const n = samples(seconds, sr);
+  const channels: Float32Array[] = [];
+  for (let c = 0; c < 2; c++) {
+    const bright = filter("lowpass", whiteNoise(rng, n), sr, 5000);
+    const dark = filter("lowpass", whiteNoise(rng, n), sr, 1400);
+    const out = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const t = i / sr;
+      const fadeIn = Math.min(1, t / 0.012);
+      out[i] = (bright[i]! * Math.exp(-t / (seconds * 0.16)) * 0.6 + dark[i]! * Math.exp(-t / (seconds * 0.3))) * fadeIn;
+    }
+    for (let k = 0; k < 8; k++) {
+      const at = Math.round(rng.range(0.004, 0.06) * sr);
+      if (at < n) out[at]! += rng.range(0.4, 1) * (rng.next() < 0.5 ? -1 : 1);
+    }
+    channels.push(out);
+  }
+  const peak = Math.max(peakOf(channels[0]!), peakOf(channels[1]!), 1e-9);
+  // Normaliza por energía: así el nivel húmedo es independiente de la duración.
+  let energy = 0;
+  for (const c of channels) for (let i = 0; i < c.length; i++) energy += c[i]! * c[i]!;
+  const g = peak > 0 ? 1 / Math.sqrt(energy / 2 + 1e-12) : 1;
+  return [scale(channels[0]!, g), scale(channels[1]!, g)];
+}
+
+/** Reverberación de red de retardos con realimentación (8 líneas, matriz de Hadamard y absorción de agudos). Devuelve [izq, der]. */
+export function fdnReverb(inL: Float32Array, inR: Float32Array, sr: number, mix = 0.2, rt60 = 1.8, tail = 0): [Float32Array, Float32Array] {
+  const lines = 8;
+  const base = [1117, 1283, 1409, 1567, 1721, 1877, 2039, 2203];
+  const k = sr / 44100;
+  const delays = base.map((d) => Math.round(d * k));
+  const buffers = delays.map((d) => new Float32Array(d));
+  const idx = new Array<number>(lines).fill(0);
+  const lp = new Array<number>(lines).fill(0);
+  const gains = delays.map((d) => Math.pow(10, (-3 * d) / (sr * rt60)));
+  const length = Math.max(inL.length, inR.length) + Math.round(tail * sr);
+  const outL = new Float32Array(length);
+  const outR = new Float32Array(length);
+  const damp = 0.3;
+  const out = new Array<number>(lines).fill(0);
+  const mixed = new Array<number>(lines).fill(0);
+  for (let i = 0; i < length; i++) {
+    const xl = i < inL.length ? inL[i]! : 0;
+    const xr = i < inR.length ? inR[i]! : 0;
+    for (let j = 0; j < lines; j++) out[j] = buffers[j]![idx[j]!]!;
+    // Transformada de Hadamard de 8 elementos (ortogonal, conserva energía).
+    for (let j = 0; j < lines; j++) mixed[j] = out[j]!;
+    for (let h = 1; h < lines; h *= 2) {
+      for (let a = 0; a < lines; a += h * 2) {
+        for (let b = a; b < a + h; b++) {
+          const u = mixed[b]!;
+          const v = mixed[b + h]!;
+          mixed[b] = u + v;
+          mixed[b + h] = u - v;
+        }
+      }
+    }
+    const norm = 1 / Math.sqrt(lines);
+    let wl = 0;
+    let wr = 0;
+    for (let j = 0; j < lines; j++) {
+      lp[j] = lp[j]! * damp + mixed[j]! * norm * (1 - damp);
+      const input = j % 2 === 0 ? xl : xr;
+      buffers[j]![idx[j]!] = lp[j]! * gains[j]! + input * 0.35;
+      idx[j] = (idx[j]! + 1) % delays[j]!;
+      if (j % 2 === 0) wl += out[j]!;
+      else wr += out[j]!;
+    }
+    outL[i] = xl * (1 - mix) + wl * mix * 0.9;
+    outR[i] = xr * (1 - mix) + wr * mix * 0.9;
+  }
+  return [outL, outR];
+}
+
+export interface Humanized {
+  at: number;
+  gain: number;
+  /** Desafinación en cents. */
+  cents: number;
+}
+
+/** Variación determinista de una nota: tiempo, velocidad y afinación acotados. */
+export function humanize(rng: Rng, at: number, gain: number, maxTime = 0.012, maxVelocity = 0.08, maxCents = 4): Humanized {
+  return { at: Math.max(0, at + rng.range(-maxTime, maxTime)), gain: gain * (1 + rng.range(-maxVelocity, maxVelocity)), cents: rng.range(-maxCents, maxCents) };
+}

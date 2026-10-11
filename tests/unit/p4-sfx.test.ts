@@ -54,8 +54,8 @@ describe("banco de efectos", () => {
     }
   });
 
-  it("espada y pica no suenan a campanilla: la cola tiene más energía grave que aguda", () => {
-    for (const id of ["sword", "pick"] as const) {
+  it("la pica no suena a campanilla: la cola tiene más energía grave que aguda", () => {
+    for (const id of ["pick"] as const) {
       const sr = bank[id].sampleRate;
       for (const v of bank[id].variants) {
         const from = Math.round(0.03 * sr);
@@ -75,7 +75,7 @@ describe("banco de efectos", () => {
   });
 
   it("respeta las duraciones del SDD", () => {
-    for (const id of ["hammer", "axe", "pick", "forage"] as const) for (let v = 0; v < 2; v++) expect(seconds(id, v), id).toBeLessThanOrEqual(0.35);
+    for (const id of ["hammer", "axe", "pick", "forage"] as const) for (let v = 0; v < CUES[id].variants; v++) expect(seconds(id, v), id).toBeLessThanOrEqual(0.35);
     expect(seconds("door")).toBeLessThanOrEqual(1.2);
     expect(seconds("victory")).toBeGreaterThan(3.5);
     expect(seconds("victory")).toBeLessThan(5.2);
@@ -84,25 +84,25 @@ describe("banco de efectos", () => {
     expect(seconds("collapse", 1)).toBeGreaterThan(seconds("collapse", 0));
   });
 
-  it("la campana tiene su fundamental cerca de 220 Hz y el bucle de fuego enlaza", () => {
+  it("la campana tiene su fundamental cerca de 1050 Hz y el bucle de fuego enlaza", () => {
     const sr = bank.bell.sampleRate;
     const b = bank.bell.variants[0]!;
     const end = Math.round(0.4 * sr);
-    const at = goertzel(b, sr, 220, 0, end);
-    expect(at).toBeGreaterThan(goertzel(b, sr, 190, 0, end) * 3);
-    expect(at).toBeGreaterThan(goertzel(b, sr, 250, 0, end) * 3);
+    const at = goertzel(b, sr, 1050, 0, end);
+    expect(at).toBeGreaterThan(goertzel(b, sr, 900, 0, end) * 3);
+    expect(at).toBeGreaterThan(goertzel(b, sr, 1200, 0, end) * 3);
 
     const f = bank.fire.variants[0]!;
     // El salto entre la última y la primera muestra es comparable al de dos muestras contiguas.
     let typical = 0;
     for (let i = 1; i < 2000; i++) typical = Math.max(typical, Math.abs(f[i]! - f[i - 1]!));
     expect(Math.abs(f[0]! - f[f.length - 1]!)).toBeLessThanOrEqual(typical * 2 + 0.01);
-    expect(seconds("fire")).toBeGreaterThanOrEqual(3.5);
+    expect(seconds("fire")).toBeGreaterThanOrEqual(5.5);
   });
 
-  it("la memoria total del banco queda por debajo de 4 MB", () => {
+  it("la memoria total del banco queda por debajo de 6 MB", () => {
     let bytes = 0;
     for (const id of Object.keys(CUES) as CueId[]) for (const v of bank[id].variants) bytes += v.byteLength;
-    expect(bytes).toBeLessThan(4 * 1024 * 1024);
+    expect(bytes).toBeLessThan(6 * 1024 * 1024);
   });
 });

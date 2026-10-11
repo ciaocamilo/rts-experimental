@@ -26,23 +26,27 @@ export interface CueSpec {
   readonly gain: number;
   /** Variantes de timbre disponibles. */
   readonly variants: number;
+  /** Envío a la reverberación de espacio (0 a 1). */
+  readonly wet: number;
 }
 
 export const CUES: Readonly<Record<CueId, CueSpec>> = {
-  bell: { priority: 5, cap: 1, minGap: 8, gain: 1, variants: 1 },
-  victory: { priority: 6, cap: 1, minGap: 0, gain: 1, variants: 1 },
-  defeat: { priority: 6, cap: 1, minGap: 0, gain: 1, variants: 1 },
-  death: { priority: 4, cap: 4, minGap: 0.12, gain: 0.45, variants: 4 },
-  collapse: { priority: 4, cap: 3, minGap: 0.15, gain: 0.9, variants: 2 },
-  door: { priority: 3, cap: 3, minGap: 0.2, gain: 0.7, variants: 1 },
-  sword: { priority: 2, cap: 8, minGap: 0.05, gain: 0.8, variants: 3 },
-  arrow: { priority: 2, cap: 8, minGap: 0.05, gain: 0.8, variants: 3 },
-  blow: { priority: 2, cap: 4, minGap: 0.08, gain: 0.6, variants: 2 },
-  hammer: { priority: 1, cap: 6, minGap: 0.08, gain: 0.6, variants: 2 },
-  axe: { priority: 1, cap: 1, minGap: 0.3, gain: 0.6, variants: 2 },
-  pick: { priority: 1, cap: 1, minGap: 0.3, gain: 0.6, variants: 2 },
-  forage: { priority: 1, cap: 1, minGap: 0.3, gain: 0.4, variants: 2 },
-  fire: { priority: 0, cap: 3, minGap: 0, gain: 0.25, variants: 1 },
+  bell: { priority: 5, cap: 1, minGap: 8, gain: 1, variants: 1, wet: 0.35 },
+  victory: { priority: 6, cap: 1, minGap: 0, gain: 1, variants: 1, wet: 0.3 },
+  defeat: { priority: 6, cap: 1, minGap: 0, gain: 1, variants: 1, wet: 0.3 },
+  // Cuatro variantes: las pares son pequeñas y las impares grandes (ver `collapseVariant`).
+  collapse: { priority: 4, cap: 3, minGap: 0.15, gain: 1, variants: 4, wet: 0.45 },
+  // Tres variantes de aldeano (0 a 2) y tres de militar (3 a 5).
+  death: { priority: 4, cap: 4, minGap: 0.09, gain: 0.9, variants: 6, wet: 0.25 },
+  door: { priority: 3, cap: 3, minGap: 0.2, gain: 0.5, variants: 1, wet: 0.2 },
+  sword: { priority: 2, cap: 8, minGap: 0.05, gain: 0.8, variants: 5, wet: 0.15 },
+  arrow: { priority: 2, cap: 8, minGap: 0.05, gain: 0.9, variants: 5, wet: 0.2 },
+  blow: { priority: 2, cap: 4, minGap: 0.08, gain: 0.6, variants: 3, wet: 0.1 },
+  hammer: { priority: 1, cap: 6, minGap: 0.08, gain: 0.5, variants: 4, wet: 0.05 },
+  axe: { priority: 1, cap: 1, minGap: 0.3, gain: 0.5, variants: 4, wet: 0.05 },
+  pick: { priority: 1, cap: 1, minGap: 0.3, gain: 0.5, variants: 4, wet: 0.05 },
+  forage: { priority: 1, cap: 1, minGap: 0.3, gain: 0.35, variants: 2, wet: 0.05 },
+  fire: { priority: 0, cap: 3, minGap: 0, gain: 0.2, variants: 1, wet: 0.1 },
 };
 
 /** Únicos cues que no suenan para ambos bandos: la puerta y la campana. */

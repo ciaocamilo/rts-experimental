@@ -16,6 +16,15 @@ export interface CueRequest {
   rate: number;
   /** Segundos de espera en el reloj de audio. */
   delay: number;
+  /** Corte del paso bajo por distancia en Hz; 0 o ausente = sin filtro. */
+  lowpass?: number;
+  /** Envío a la reverberación de espacio (0 a 1). */
+  wet?: number;
+  /** Panorama final del barrido (flecha en vuelo) y segundos que tarda en llegar. */
+  panTo?: number;
+  panDuration?: number;
+  /** Baja brevemente la música (campana, derrumbe grande). */
+  duck?: boolean;
 }
 
 type Seq<T> = T & { seq: number };
@@ -49,12 +58,20 @@ export const MAX_FIRE_LOOPS = 3;
 export const onScreen = (p: { x: number; y: number }): boolean => Math.abs(p.x) <= VISIBLE_LIMIT && Math.abs(p.y) <= VISIBLE_LIMIT;
 export const panOf = (p: { x: number }): number => Math.max(-0.7, Math.min(0.7, p.x * 0.7));
 export const attenuationOf = (p: { x: number; y: number }): number => 1 - 0.3 * Math.min(1, Math.hypot(p.x, p.y) / Math.SQRT2);
+/** Corte del paso bajo por distancia: de 18 kHz en el centro de la pantalla a 5 kHz en el borde. */
+export const lowpassOf = (p: { x: number; y: number }): number => 18000 - 13000 * Math.min(1, Math.hypot(p.x, p.y) / Math.SQRT2);
+/** Vuelo visual de una flecha (`ArrowPool`): distancia / 18 acotada a 0,15–0,6 s. */
+export const flightSeconds = (distance: number): number => Math.min(0.6, Math.max(0.15, distance / 18));
+/** Derrumbe: la paridad indica el tamaño (0 pequeño, 1 grande) y el resto el timbre. */
+export const collapseVariant = (big: boolean, timbre: number): number => (big ? 1 : 0) + 2 * timbre;
 
 /** Los cues del bando 0 únicamente; el resto suena para ambos bandos. */
 export const audibleFor = (cue: CueId, owner: 0 | 1): boolean => !PLAYER_ONLY_CUES.includes(cue) || owner === 0;
 
 const FIXED_RATE: readonly CueId[] = ["bell", "victory", "defeat"];
 const NON_SPATIAL: readonly CueId[] = ["bell", "victory", "defeat"];
+/** El grito pierde la mitad de la atenuación por distancia para que se sienta. */
+const HALF_ATTENUATION: readonly CueId[] = ["death"];
 const WORK_CUE = { build: "hammer", wood: "axe", stone: "pick", food: "forage" } as const;
 
 /** Traduce los eventos de la simulación en solicitudes de sonido; sin Web Audio. */
@@ -62,6 +79,7 @@ export class CueTranslator {
   private rng: Rng;
   private cursors = { strike: 0, death: 0, spawn: 0, work: 0, destroyed: 0 };
   private endTick: number | null = null;
+  private lastVariant = new Map<string, number>();
 
   constructor(private readonly seed = 1) {
     this.rng = createRng(seed);
@@ -72,6 +90,16 @@ export class CueTranslator {
     this.cursors = { strike: 0, death: 0, spawn: 0, work: 0, destroyed: 0 };
     this.endTick = null;
     this.rng = createRng(this.seed);
+    this.lastVariant.clear();
+  }
+
+  /** Elige una variante de `count` a partir de `offset` sin repetir la anterior del mismo grupo. */
+  private choose(group: string, count: number, offset = 0): number {
+    const last = this.lastVariant.get(group);
+    let pick = this.rng.int(count);
+    if (count > 1 && pick === last) pick = (pick + 1 + this.rng.int(count - 1)) % count;
+    this.lastVariant.set(group, pick);
+    return offset + pick;
   }
 
   /** Consume siempre todos los eventos nuevos, aunque el audio no pueda sonar después. */
@@ -79,21 +107,29 @@ export class CueTranslator {
     const out: CueRequest[] = [];
     const { project } = frame;
 
-    const emit = (cue: CueId, p: { x: number; z: number } | null, variant: number, delay = 0): void => {
+    const emit = (cue: CueId, p: { x: number; z: number } | null, variant: number, delay = 0, to?: { x: number; z: number }): void => {
       const spec = CUES[cue];
       let pan = 0;
       let gain = spec.gain;
+      let lowpass = 0;
+      let sweep: { panTo: number; panDuration: number } | null = null;
       if (p && !NON_SPATIAL.includes(cue)) {
         const ndc = project(p.x, p.z);
         pan = panOf(ndc);
-        gain *= attenuationOf(ndc);
+        const att = attenuationOf(ndc);
+        gain *= HALF_ATTENUATION.includes(cue) ? 1 - (1 - att) / 2 : att;
+        lowpass = lowpassOf(ndc);
+        if (to) sweep = { panTo: panOf(project(to.x, to.z)), panDuration: flightSeconds(Math.hypot(to.x - p.x, to.z - p.z)) };
       }
       let rate = 1;
       if (!FIXED_RATE.includes(cue)) {
         rate = 1 + this.rng.range(-0.06, 0.06);
         gain *= Math.pow(10, this.rng.range(-1, 1) / 20);
       }
-      out.push({ cue, variant, pan, gain, rate, delay });
+      const request: CueRequest = { cue, variant, pan, gain, rate, delay, lowpass, wet: spec.wet };
+      if (sweep) Object.assign(request, sweep);
+      if (cue === "bell" || (cue === "collapse" && variant % 2 === 1)) request.duck = true;
+      out.push(request);
     };
     const visible = (p: { x: number; z: number }): boolean => onScreen(project(p.x, p.z));
 
@@ -110,20 +146,20 @@ export class CueTranslator {
           salvo = { index: 0, base: this.rng.int(CUES.arrow.variants), visible: visible(s.from) };
           salvos.set(key, salvo);
         }
-        if (salvo.visible) emit("arrow", s.from, (salvo.base + salvo.index) % CUES.arrow.variants, salvo.index * SALVO_GAP);
+        if (salvo.visible) emit("arrow", s.from, (salvo.base + salvo.index) % CUES.arrow.variants, salvo.index * SALVO_GAP, s.to);
         salvo.index += 1;
         continue;
       }
       if (!visible(s.from)) continue;
       const cue: CueId = s.attackerKind === "soldier" ? "sword" : s.attackerKind === "archer" ? "arrow" : "blow";
-      emit(cue, s.from, this.rng.int(CUES[cue].variants));
+      emit(cue, s.from, this.choose(cue, CUES[cue].variants), 0, cue === "arrow" ? s.to : undefined);
     }
     if (frame.strikes.length > 0) this.cursors.strike = Math.max(this.cursors.strike, frame.strikes[frame.strikes.length - 1]!.id);
     if (bell) emit("bell", null, 0);
 
     for (const d of frame.deaths) {
       if (d.seq <= this.cursors.death) continue;
-      if (visible(d.pos)) emit("death", d.pos, (d.kind === "villager" ? 0 : 2) + this.rng.int(2));
+      if (visible(d.pos)) emit("death", d.pos, this.choose(d.kind === "villager" ? "death:v" : "death:m", 3, d.kind === "villager" ? 0 : 3));
     }
     this.cursors.death = lastSeq(frame.deaths, this.cursors.death);
 
@@ -143,7 +179,7 @@ export class CueTranslator {
       if (cue !== "hammer" && gathered.has(cue)) continue;
       if (!visible(w.pos)) continue;
       gathered.add(cue);
-      emit(cue, w.pos, this.rng.int(CUES[cue].variants));
+      emit(cue, w.pos, this.choose(cue, CUES[cue].variants));
     }
     this.cursors.work = lastSeq(frame.works, this.cursors.work);
 
@@ -152,7 +188,7 @@ export class CueTranslator {
       const footprint = BALANCE.buildings[e.kind].footprint;
       const at = buildingCenter(e.cell, footprint);
       const big = e.complete && (e.kind === "barracks" || e.kind === "townCenter");
-      if (visible(at)) emit("collapse", at, big ? 1 : 0);
+      if (visible(at)) emit("collapse", at, collapseVariant(big, this.choose(big ? "collapse:big" : "collapse:small", 2)));
     }
     this.cursors.destroyed = lastSeq(frame.destroyed, this.cursors.destroyed);
 
