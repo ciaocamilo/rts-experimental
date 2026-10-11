@@ -56,6 +56,7 @@ export function stepSimulation(state: GameState, commands: readonly Command[] = 
     return {
       tick: state.tick,
       results: commands.map((c) => reject(c, "MATCH_ENDED")),
+      strikes: [],
     };
   }
 
@@ -77,11 +78,11 @@ export function stepSimulation(state: GameState, commands: readonly Command[] = 
   moveUnits(state, grid);
   updateJobs(state, grid);
   updateProduction(state, grid);
-  updateCombat(state, grid);
+  const strikes = updateCombat(state, grid);
   const lostCenters = removeDead(state);
   refreshCapacity(state);
 
   state.tick += 1;
   resolveMatch(state, lostCenters);
-  return { tick: state.tick, results };
+  return { tick: state.tick, results, strikes };
 }

@@ -2,7 +2,7 @@ import { BALANCE, MAX_ACTIVE_TICKS } from "../content/balance";
 import type { Cell, NavGrid } from "../navigation/grid";
 import { clearTask, unitComponent, walkTo } from "./movement";
 import { buildingRect, distanceToRect, findApproachCell, type CellRect } from "./spatial";
-import type { Building, EntityId, GameState, IdleReason, PlayerId, Unit, Vec2 } from "./types";
+import type { Building, EntityId, GameState, IdleReason, PlayerId, StrikeEvent, Unit, Vec2 } from "./types";
 
 export type Target = Unit | Building;
 
@@ -117,9 +117,11 @@ function chase(state: GameState, grid: NavGrid, unit: Unit, target: Target): Idl
 /**
  * Adquisición, persecución y ataques del tick. Los disparos válidos se reúnen primero y el daño se
  * aplica al final, de modo que todos los atacantes habilitados al inicio del tick golpean aunque mueran.
+ * Devuelve los ataques efectuados para que la vista los represente; no alteran el estado.
  */
-export function updateCombat(state: GameState, grid: NavGrid): void {
+export function updateCombat(state: GameState, grid: NavGrid): StrikeEvent[] {
   const strikes: { attacker: Unit; target: Target }[] = [];
+  const events: StrikeEvent[] = [];
 
   for (const unit of state.units) {
     if (unit.cooldown > 0) unit.cooldown -= 1;
@@ -163,9 +165,19 @@ export function updateCombat(state: GameState, grid: NavGrid): void {
 
   for (const { attacker, target } of strikes) {
     const def = BALANCE.units[attacker.kind];
+    events.push({
+      tick: state.tick + 1,
+      attackerId: attacker.id,
+      attackerOwner: attacker.owner,
+      attackerKind: attacker.kind,
+      targetId: target.id,
+      from: { x: attacker.pos.x, z: attacker.pos.z },
+      to: { ...aimPoint(attacker, target) },
+    });
     target.hp = Math.max(0, target.hp - def.damage);
     attacker.cooldown = def.attackIntervalTicks;
   }
+  return events;
 }
 
 /** Fija el resultado: la destrucción de centros tiene prioridad sobre el límite de tiempo. */

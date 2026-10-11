@@ -60,6 +60,8 @@ export interface TerrainRect {
   z: number;
   w: number;
   h: number;
+  /** Solo cosmético: el agua bloquea igual que la roca. Ausente = roca. */
+  kind?: "water";
 }
 
 export interface QueueItem {
@@ -107,7 +109,8 @@ export interface GameState {
   matchStatus: MatchStatus;
   /** Se fija una sola vez, junto con `matchStatus: "ended"`. */
   outcome: MatchOutcome | null;
-  mapSize: number;
+  mapWidth: number;
+  mapDepth: number;
   terrain: TerrainRect[];
   /** Debe incrementarse al cambiar cualquier obstáculo estático (terreno, edificios, nodos). */
   obstacleVersion: number;
@@ -170,4 +173,17 @@ export type CommandResult =
 export interface StepResult {
   tick: number;
   results: CommandResult[];
+  /** Ataques válidos de este tick; solo los consume el renderizador y no forman parte del estado. */
+  strikes: StrikeEvent[];
+}
+
+/** Un ataque efectivo, con las posiciones capturadas en el momento del daño. */
+export interface StrikeEvent {
+  tick: number;
+  attackerId: EntityId;
+  attackerOwner: PlayerId;
+  attackerKind: UnitKind;
+  targetId: EntityId;
+  from: Vec2;
+  to: Vec2;
 }

@@ -52,7 +52,7 @@ export function issueMove(state: GameState, grid: NavGrid, command: Command): Mo
   if (!target || !("x" in target) || !Number.isFinite(target.x) || !Number.isFinite(target.z)) {
     return { code: "INVALID_TARGET" };
   }
-  if (target.x < 0 || target.z < 0 || target.x > state.mapSize || target.z > state.mapSize) {
+  if (target.x < 0 || target.z < 0 || target.x > state.mapWidth || target.z > state.mapDepth) {
     return { code: "INVALID_TARGET" };
   }
 
@@ -61,8 +61,8 @@ export function issueMove(state: GameState, grid: NavGrid, command: Command): Mo
   if (units.length === 0) return { code: "INCOMPATIBLE_ENTITY" };
 
   const free: { x: number; z: number; d: number }[] = [];
-  for (let cz = 0; cz < grid.size; cz++) {
-    for (let cx = 0; cx < grid.size; cx++) {
+  for (let cz = 0; cz < grid.depth; cz++) {
+    for (let cx = 0; cx < grid.width; cx++) {
       if (grid.isBlocked(cx, cz)) continue;
       free.push({ x: cx, z: cz, d: (cx + 0.5 - target.x) ** 2 + (cz + 0.5 - target.z) ** 2 });
     }
@@ -70,8 +70,8 @@ export function issueMove(state: GameState, grid: NavGrid, command: Command): Mo
   free.sort((a, b) => a.d - b.d || a.z - b.z || a.x - b.x);
   if (free.length === 0) return { code: "UNREACHABLE" };
 
-  const tx = Math.min(grid.size - 1, Math.floor(target.x));
-  const tz = Math.min(grid.size - 1, Math.floor(target.z));
+  const tx = Math.min(grid.width - 1, Math.floor(target.x));
+  const tz = Math.min(grid.depth - 1, Math.floor(target.z));
   const comp = grid.isBlocked(tx, tz) ? grid.componentAt(free[0]!.x, free[0]!.z) : grid.componentAt(tx, tz);
 
   const reachable = units.filter((u) => unitComponent(grid, u) === comp);

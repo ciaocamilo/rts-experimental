@@ -35,7 +35,7 @@ const base = {
     player_id: 1,
     seed: 1,
     game_version: "0.0.1",
-    map_version: "map-0.1",
+    map_version: "map-0.2 (128x64)",
     balance_version: "balance-0.1",
     players: [
       { id: 0, food: 200, wood: 200, pop: 3, pop_capacity: 10 },
@@ -49,10 +49,10 @@ const base = {
     ],
     buildings: [
       { id: 1, owner: 0, kind: "townCenter", cell_x: 8, cell_z: 30, hp: 1500, complete: true, build_done: 0, queue: [] },
-      { id: 4, owner: 1, kind: "townCenter", cell_x: 52, cell_z: 30, hp: 1500, complete: true, build_done: 0, queue: [{ id: 9, kind: "villager", remaining: 120 }] },
+      { id: 4, owner: 1, kind: "townCenter", cell_x: 116, cell_z: 30, hp: 1500, complete: true, build_done: 0, queue: [{ id: 9, kind: "villager", remaining: 120 }] },
     ],
     resource_nodes: [{ id: 8, kind: "food", cell_x: 15, cell_z: 22, remaining: 500 }],
-    map: { size: 64, terrain: [{ x: 30, z: 8, w: 4, h: 18 }, { x: 30, z: 38, w: 4, h: 18 }] },
+    map: { width: 128, depth: 64, terrain: [{ x: 62, z: 8, w: 4, h: 18 }, { x: 62, z: 38, w: 4, h: 18 }] },
     rules: {
       max_population: 50,
       queue_limit: 5,

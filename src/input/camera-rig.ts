@@ -1,5 +1,5 @@
 export const ZOOM_MIN = 0.6;
-export const ZOOM_MAX = 3;
+export const ZOOM_MAX = 9; // TEMP-INSPECT
 const PAN_SPEED = 30; // celdas/s con zoom 1
 
 export interface PanKeys {
@@ -15,9 +15,9 @@ export class CameraRig {
   z: number;
   zoom = 1;
 
-  constructor(readonly mapSize: number) {
-    this.x = mapSize / 2;
-    this.z = mapSize / 2;
+  constructor(readonly mapWidth: number, readonly mapDepth: number = mapWidth, start?: { x: number; z: number }) {
+    this.x = start?.x ?? mapWidth / 2;
+    this.z = start?.z ?? mapDepth / 2;
   }
 
   /** La vista mira hacia -x,-z: «arriba» en pantalla es (-1,-1) y «derecha» es (1,-1). */
@@ -37,7 +37,7 @@ export class CameraRig {
   }
 
   clamp(): void {
-    this.x = Math.min(this.mapSize, Math.max(0, this.x));
-    this.z = Math.min(this.mapSize, Math.max(0, this.z));
+    this.x = Math.min(this.mapWidth, Math.max(0, this.x));
+    this.z = Math.min(this.mapDepth, Math.max(0, this.z));
   }
 }

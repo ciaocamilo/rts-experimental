@@ -1,5 +1,5 @@
 import { BALANCE, type BuildingKind, type ResourceKind, type UnitKind } from "../content/balance";
-import { MAP_LAYOUT, MAP_SIZE } from "../content/map";
+import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH } from "../content/map";
 import { STATE_SCHEMA_VERSION } from "../content/versions";
 import type { Building, GameState, PlayerId, PlayerState, ResourceNode, Unit } from "./types";
 
@@ -25,7 +25,7 @@ export function makeUnit(id: number, owner: PlayerId, kind: UnitKind, x: number,
 }
 
 /** Estado vacío (sin entidades ni terreno) para fixtures y pruebas. */
-export function createEmptyState(seed: number, mapSize: number = MAP_SIZE): GameState {
+export function createEmptyState(seed: number, mapWidth: number = MAP_WIDTH, mapDepth: number = mapWidth === MAP_WIDTH ? MAP_DEPTH : mapWidth): GameState {
   const players = ([0, 1] as const).map(
     (id): PlayerState => ({
       id,
@@ -41,7 +41,8 @@ export function createEmptyState(seed: number, mapSize: number = MAP_SIZE): Game
     tick: 0,
     matchStatus: "playing",
     outcome: null,
-    mapSize,
+    mapWidth,
+    mapDepth,
     terrain: [],
     obstacleVersion: 0,
     pathQueue: [],
@@ -55,7 +56,7 @@ export function createEmptyState(seed: number, mapSize: number = MAP_SIZE): Game
 }
 
 export function createInitialState(seed: number): GameState {
-  const state = createEmptyState(seed, MAP_LAYOUT.size);
+  const state = createEmptyState(seed, MAP_LAYOUT.width, MAP_LAYOUT.depth);
   state.terrain = MAP_LAYOUT.terrain.map((t) => ({ ...t }));
 
   for (const owner of [0, 1] as const satisfies readonly PlayerId[]) {

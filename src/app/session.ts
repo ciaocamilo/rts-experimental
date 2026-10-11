@@ -2,7 +2,15 @@ import { FixedStepper } from "../core/fixed-step";
 import type { Fixture } from "../core/fixtures";
 import { createInitialState } from "../core/state";
 import { stepSimulation } from "../core/simulation";
-import type { Command, CommandResult, GameState } from "../core/types";
+import type { Command, CommandResult, GameState, StrikeEvent } from "../core/types";
+
+/** Se conservan solo los ataques recientes: la vista los consume en el mismo cuadro. */
+const STRIKE_LOG_LIMIT = 256;
+
+export interface StrikeRecord extends StrikeEvent {
+  /** Identificador único y creciente dentro de la sesión. */
+  id: number;
+}
 
 export interface AppliedCommand {
   /** Número de tick resultante del paso en que se procesó el comando. */
@@ -20,6 +28,8 @@ export class GameSession {
   /** Recibe el coste real de cada tick (RNF-02); no influye en la lógica. */
   tickObserver: ((ms: number) => void) | null = null;
   readonly commandLog: AppliedCommand[] = [];
+  readonly strikeLog: StrikeRecord[] = [];
+  private strikeSeq = 0;
 
   private readonly stepper = new FixedStepper();
   private pending: Command[] = [];
@@ -69,8 +79,10 @@ export class GameSession {
     const commands = this.pending;
     this.pending = [];
     const started = this.tickObserver ? performance.now() : 0;
-    const { tick, results } = stepSimulation(this.state, commands);
+    const { tick, results, strikes } = stepSimulation(this.state, commands);
     this.tickObserver?.(performance.now() - started);
+    for (const strike of strikes) this.strikeLog.push({ ...strike, id: ++this.strikeSeq });
+    if (this.strikeLog.length > STRIKE_LOG_LIMIT) this.strikeLog.splice(0, this.strikeLog.length - STRIKE_LOG_LIMIT);
     for (const command of commands) {
       const result = results.find((r) => r.commandId === command.id);
       if (result) this.commandLog.push({ appliedTick: tick, command, result });

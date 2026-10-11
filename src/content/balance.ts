@@ -54,6 +54,8 @@ export interface Balance {
   readonly start: { readonly food: number; readonly wood: number; readonly villagers: number; readonly popCapacity: number };
   readonly maxPopulation: number;
   readonly nodesPerKindPerPlayer: number;
+  /** P2: el doble de nodos de madera por jugador; la cantidad por nodo no cambia. */
+  readonly woodNodesPerPlayer: number;
   readonly nodeAmount: number;
   readonly economy: EconomyDef;
   readonly combat: CombatDef;
@@ -67,6 +69,7 @@ export const BALANCE: Balance = {
   start: { food: 200, wood: 200, villagers: 3, popCapacity: 10 },
   maxPopulation: 50,
   nodesPerKindPerPlayer: 8,
+  woodNodesPerPlayer: 16,
   nodeAmount: 500,
   economy: { harvestIntervalTicks: 20, carryCapacity: 10, queueLimit: 5, cancelRefundRatio: 0.75, siteInitialHpRatio: 0.1 },
   combat: { acquireRange: 6, leashRange: 8 },
@@ -94,6 +97,7 @@ export function validateBalance(balance: Balance): void {
   check("start.popCapacity", balance.start.popCapacity);
   check("maxPopulation", balance.maxPopulation, 1);
   check("nodesPerKindPerPlayer", balance.nodesPerKindPerPlayer);
+  check("woodNodesPerPlayer", balance.woodNodesPerPlayer);
   check("nodeAmount", balance.nodeAmount, 1);
   check("economy.harvestIntervalTicks", balance.economy.harvestIntervalTicks, 1);
   check("economy.carryCapacity", balance.economy.carryCapacity, 1);

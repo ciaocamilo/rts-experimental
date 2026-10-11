@@ -1,16 +1,20 @@
 import { BALANCE, type ResourceKind } from "./balance";
 
-export const MAP_SIZE = 64;
+// P2: 128 × 64 = 8192 celdas, el doble de la superficie de P1 (64 × 64) duplicando el eje que une las bases.
+export const MAP_WIDTH = 128;
+export const MAP_DEPTH = 64;
 
 export interface TerrainRectSpec {
   readonly x: number;
   readonly z: number;
   readonly w: number;
   readonly h: number;
+  readonly kind?: "water";
 }
 
 export interface MapLayout {
-  readonly size: number;
+  readonly width: number;
+  readonly depth: number;
   readonly terrain: readonly TerrainRectSpec[];
   readonly townCenters: readonly [CellPos, CellPos];
   readonly villagerSpawns: readonly [readonly Pos[], readonly Pos[]];
@@ -35,42 +39,63 @@ export interface NodeSpec {
 
 const TC = BALANCE.buildings.townCenter.footprint;
 
-// Dos bloques centrales (x 30..33) dejan un paso central de 12 celdas y corredores de 8 en los bordes.
-const TERRAIN: readonly TerrainRectSpec[] = [
-  { x: 30, z: 8, w: 4, h: 18 },
-  { x: 30, z: 38, w: 4, h: 18 },
+// Mitad izquierda del mapa; la derecha se obtiene por simetría especular respecto a x = MAP_WIDTH / 2.
+const HALF_TERRAIN: readonly TerrainRectSpec[] = [
+  { x: 32, z: 10, w: 3, h: 12 },
+  { x: 32, z: 42, w: 3, h: 12 },
+  { x: 38, z: 0, w: 10, h: 6, kind: "water" },
+  { x: 38, z: 58, w: 10, h: 6, kind: "water" },
 ];
 
-// Simetría especular respecto al eje vertical del mapa: una celda 1×1 en x pasa a MAP_SIZE-1-x.
+// Dos bloques centrales (x 62..65) dejan un paso central de 12 celdas y corredores de 8 en los bordes.
+const CENTER_TERRAIN: readonly TerrainRectSpec[] = [
+  { x: 62, z: 8, w: 4, h: 18 },
+  { x: 62, z: 38, w: 4, h: 18 },
+];
+
+const mirrorRect = (t: TerrainRectSpec): TerrainRectSpec => ({ ...t, x: MAP_WIDTH - t.x - t.w });
+
+const TERRAIN: readonly TerrainRectSpec[] = [...HALF_TERRAIN, ...HALF_TERRAIN.map(mirrorRect), ...CENTER_TERRAIN];
+
+// Bosque propio del jugador 0: la hilera de P1 más una segunda capa irregular hacia el centro.
+const WOOD_CELLS: readonly CellPos[] = [
+  ...Array.from({ length: 8 }, (_, i) => ({ x: 15, z: 35 + i })),
+  ...Array.from({ length: 6 }, (_, i) => ({ x: 16, z: 36 + i })),
+  { x: 17, z: 38 },
+  { x: 17, z: 39 },
+];
+
 function build(): MapLayout {
   const tc0: CellPos = { x: 8, z: 30 };
-  const tc1: CellPos = { x: MAP_SIZE - tc0.x - TC, z: tc0.z };
+  const tc1: CellPos = { x: MAP_WIDTH - tc0.x - TC, z: tc0.z };
 
   const spawns0: Pos[] = [
     { x: 13.5, z: 31 },
     { x: 13.5, z: 32 },
     { x: 13.5, z: 33 },
   ];
-  const spawns1: Pos[] = spawns0.map((p) => ({ x: MAP_SIZE - p.x, z: p.z }));
+  const spawns1: Pos[] = spawns0.map((p) => ({ x: MAP_WIDTH - p.x, z: p.z }));
 
   const nodes: NodeSpec[] = [];
   for (let i = 0; i < BALANCE.nodesPerKindPerPlayer; i++) {
     nodes.push({ owner: 0, kind: "food", cell: { x: 15, z: 22 + i } });
-    nodes.push({ owner: 0, kind: "wood", cell: { x: 15, z: 35 + i } });
-    nodes.push({ owner: 1, kind: "food", cell: { x: MAP_SIZE - 1 - 15, z: 22 + i } });
-    nodes.push({ owner: 1, kind: "wood", cell: { x: MAP_SIZE - 1 - 15, z: 35 + i } });
+    nodes.push({ owner: 1, kind: "food", cell: { x: MAP_WIDTH - 1 - 15, z: 22 + i } });
+  }
+  for (const cell of WOOD_CELLS) {
+    nodes.push({ owner: 0, kind: "wood", cell });
+    nodes.push({ owner: 1, kind: "wood", cell: { x: MAP_WIDTH - 1 - cell.x, z: cell.z } });
   }
 
-  return { size: MAP_SIZE, terrain: TERRAIN, townCenters: [tc0, tc1], villagerSpawns: [spawns0, spawns1], nodes };
+  return { width: MAP_WIDTH, depth: MAP_DEPTH, terrain: TERRAIN, townCenters: [tc0, tc1], villagerSpawns: [spawns0, spawns1], nodes };
 }
 
 export const MAP_LAYOUT: MapLayout = build();
 
-// La alcanzabilidad (§4.1) requiere navegación y se valida en P0-B.
+// La alcanzabilidad (§4.1) requiere navegación y se valida en core/map-check.
 export function validateMapLayout(layout: MapLayout): void {
   const occupied = new Set<string>();
   const claim = (x: number, z: number, w: number, what: string): void => {
-    if (x < 0 || z < 0 || x + w > layout.size || z + w > layout.size) {
+    if (x < 0 || z < 0 || x + w > layout.width || z + w > layout.depth) {
       throw new Error(`Mapa inválido: ${what} fuera de límites`);
     }
     for (let i = 0; i < w; i++) {
@@ -85,25 +110,26 @@ export function validateMapLayout(layout: MapLayout): void {
   for (const n of layout.nodes) claim(n.cell.x, n.cell.z, 1, `nodo ${n.kind}`);
   for (const t of layout.terrain) {
     for (let i = 0; i < t.w; i++) for (let j = 0; j < t.h; j++) claim(t.x + i, t.z + j, 1, "terreno");
-    const mirrored = layout.terrain.some((m) => m.x === layout.size - t.x - t.w && m.z === t.z && m.w === t.w && m.h === t.h);
+    const mirrored = layout.terrain.some((m) => m.x === layout.width - t.x - t.w && m.z === t.z && m.w === t.w && m.h === t.h && m.kind === t.kind);
     if (!mirrored) throw new Error("Mapa inválido: terreno no simétrico");
   }
 
   const [tc0, tc1] = layout.townCenters;
-  if (tc0.z !== tc1.z || tc0.x + TC + tc1.x !== layout.size) {
+  if (tc0.z !== tc1.z || tc0.x + TC + tc1.x !== layout.width) {
     throw new Error("Mapa inválido: centros no simétricos");
   }
+  const expected: Record<ResourceKind, number> = { food: BALANCE.nodesPerKindPerPlayer, wood: BALANCE.woodNodesPerPlayer };
   for (const kind of ["food", "wood"] as const) {
     for (const owner of [0, 1] as const) {
       const count = layout.nodes.filter((n) => n.owner === owner && n.kind === kind).length;
-      if (count !== BALANCE.nodesPerKindPerPlayer) {
+      if (count !== expected[kind]) {
         throw new Error(`Mapa inválido: ${count} nodos ${kind} para jugador ${owner}`);
       }
     }
   }
   for (const n of layout.nodes.filter((n) => n.owner === 0)) {
     const mirror = layout.nodes.find(
-      (m) => m.owner === 1 && m.kind === n.kind && m.cell.x === layout.size - 1 - n.cell.x && m.cell.z === n.cell.z,
+      (m) => m.owner === 1 && m.kind === n.kind && m.cell.x === layout.width - 1 - n.cell.x && m.cell.z === n.cell.z,
     );
     if (!mirror) throw new Error(`Mapa inválido: nodo ${n.kind} sin simétrico`);
   }

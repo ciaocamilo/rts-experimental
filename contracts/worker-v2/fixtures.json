@@ -52,7 +52,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -153,7 +153,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -177,16 +177,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -254,7 +255,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -276,7 +277,8 @@
     "buildings": [],
     "resource_nodes": [],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": []
     },
     "rules": {
@@ -566,7 +568,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -667,7 +669,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -691,16 +693,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -844,7 +847,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -945,7 +948,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -969,16 +972,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -1047,7 +1051,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -1148,7 +1152,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -1172,16 +1176,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -1251,7 +1256,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -1353,7 +1358,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -1377,16 +1382,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -1455,7 +1461,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -1556,7 +1562,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -1641,7 +1647,7 @@
     "player_id": 2,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -1742,7 +1748,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -1766,16 +1772,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -1844,7 +1851,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -1945,7 +1952,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -1969,16 +1976,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -2047,7 +2055,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -2148,7 +2156,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -2172,16 +2180,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -2250,7 +2259,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -2351,7 +2360,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -2375,16 +2384,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -2453,7 +2463,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -2554,7 +2564,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -2578,16 +2588,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -2656,7 +2667,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -2757,7 +2768,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -2781,16 +2792,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -2859,7 +2871,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -2960,7 +2972,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -2984,16 +2996,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -3062,7 +3075,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -3163,7 +3176,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -3187,16 +3200,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -3231,7 +3245,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -3332,7 +3346,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -3356,16 +3370,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -3434,7 +3449,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -3534,7 +3549,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -3558,16 +3573,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -3636,7 +3652,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -3737,7 +3753,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -3786,16 +3802,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -3864,7 +3881,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -3965,7 +3982,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -3989,16 +4006,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -4063,7 +4081,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -4164,7 +4182,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -4188,16 +4206,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -4266,7 +4285,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -4367,7 +4386,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -4391,16 +4410,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -4469,7 +4489,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -4563,7 +4583,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -4587,16 +4607,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18
@@ -4665,7 +4686,7 @@
     "player_id": 1,
     "seed": 1,
     "game_version": "0.0.1",
-    "map_version": "map-0.1",
+    "map_version": "map-0.2 (128x64)",
     "balance_version": "balance-0.1",
     "players": [
      {
@@ -11715,7 +11736,7 @@
       "id": 4,
       "owner": 1,
       "kind": "townCenter",
-      "cell_x": 52,
+      "cell_x": 116,
       "cell_z": 30,
       "hp": 1500,
       "complete": true,
@@ -11739,16 +11760,17 @@
      }
     ],
     "map": {
-     "size": 64,
+     "width": 128,
+     "depth": 64,
      "terrain": [
       {
-       "x": 30,
+       "x": 62,
        "z": 8,
        "w": 4,
        "h": 18
       },
       {
-       "x": 30,
+       "x": 62,
        "z": 38,
        "w": 4,
        "h": 18

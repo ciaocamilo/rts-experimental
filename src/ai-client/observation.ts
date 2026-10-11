@@ -74,7 +74,7 @@ export function buildObservation(state: GameState, ctx: ObservationContext): Obs
       cell_z: n.cell.z,
       remaining: n.remaining,
     })),
-    map: { size: state.mapSize, terrain: state.terrain.map((t) => ({ x: t.x, z: t.z, w: t.w, h: t.h })) },
+    map: { width: state.mapWidth, depth: state.mapDepth, terrain: state.terrain.map((t) => ({ x: t.x, z: t.z, w: t.w, h: t.h })) },
     rules: {
       max_population: BALANCE.maxPopulation,
       queue_limit: BALANCE.economy.queueLimit,
