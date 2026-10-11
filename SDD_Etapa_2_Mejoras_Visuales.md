@@ -2,7 +2,7 @@
 
 **Autor del proyecto:** Camilo Andrés Castañeda Galindo  
 **Fecha:** 10 de octubre de 2026 (Colombia)  
-**Versión del documento:** 1.1 (añade P2-R11 a P2-R14 sobre la implementación P2 ya entregada)  
+**Versión del documento:** 1.2 (añade P2-R15 sobre la implementación P2 ya entregada)  
 **Estado:** v1.0 implementada en `mejoras_visuales` (commits `4d881e6`, `03d8443`); P2-R11 a P2-R14 implementadas y verificadas con pruebas de reglas puras, build y muestreo de rendimiento; la inspección visual fue parcial.  
 **Rama de desarrollo requerida:** `mejoras_visuales`  
 
@@ -49,6 +49,7 @@ Las menciones antiguas de P2 como niebla, minimapa o ataque-movimiento eran posi
 | P2-R12 | Las personas caen al suelo al perder toda su vida y desaparecen a los 5 s | Cuerpo cosmético temporal (P2-H09) |
 | P2-R13 | Agua con bordes suavizados, no rectangulares, y mejor textura | Silueta orgánica, orilla en degradado y textura multiescala (P2-H10) |
 | P2-R14 | Personas menos «cuadradas» | Formas redondeadas sin cambiar rol, escala ni coste (P2-H11) |
+| P2-R15 | Mover la cámara con el ratón | Desplazamiento al acercar el cursor a los bordes de la vista (P2-H12) |
 
 Los multiplicadores de árboles, las dimensiones concretas y los presupuestos siguientes son decisiones propuestas por este SDD; no se atribuyen como cifras previamente confirmadas por el autor.
 
@@ -188,6 +189,17 @@ Como jugador, quiero personajes de aspecto más orgánico sin perder la lectura 
 - **CA02:** no cambian radio lógico, proxy de selección ni número de mallas por unidad (geometría fundida compartida). Se registra el número de triángulos por unidad antes y después.
 - **CA03:** las poses de marcha, trabajo, combate y caída siguen sin atravesamientos groseros entre brazos, torso y equipo.
 
+### P2-H12 — Cámara con el ratón (R15)
+
+Como jugador, quiero desplazar el escenario llevando el cursor al borde de la pantalla, sin soltar el ratón.
+
+- **CA01:** con el cursor del ratón a 24 px o menos de un borde de la vista, la cámara se desplaza hacia ese lado a la misma velocidad que con teclado (RF-02); en una esquina se combinan los dos ejes y la diagonal no es más rápida. Se mantiene mientras el cursor permanezca en el borde.
+- **CA02:** la cámara no abandona el mapa (RF-02) y el teclado sigue funcionando; si ambos coinciden en un eje, el efecto no se suma.
+- **CA03:** no se desplaza cuando el cursor está sobre un control de la interfaz (panel inferior, botones, ayuda), fuera de la ventana o con la ventana sin foco; al salir de la ventana o perder el foco el desplazamiento se detiene.
+- **CA04:** no se desplaza durante un arrastre de selección; solo actúa con ratón, no con puntero táctil o lápiz.
+- **CA05:** puede usarse en pausa, igual que el teclado, y no cambia el estado lógico, el contrato con Python ni las órdenes.
+- **CA06:** la ayuda (H) y el README describen la función. La regla de bordes es una función pura comprobable.
+
 ## 4. Diseño técnico propuesto
 
 ### 4.1 Separación de responsabilidades
@@ -243,6 +255,7 @@ Conservar vida máxima, daño, alcance, tiempos, velocidades, costes, capacidad 
 | P2-05 | Extensión del mapa y bosques | R07–R08 | Dimensiones, conectividad, recursos e IA adaptados |
 | P2-06 | Integración y revisión acotada | R01–R10 | Build, evidencias mínimas y matriz de aceptación |
 | P2-07 | Detalles visuales posteriores: fuego, caída de unidades, agua suave y personajes redondeados | R11–R14 | Historias H08–H11 implementadas con pruebas de reglas puras y rendimiento recomprobado |
+| P2-08 | Cámara con el ratón | R15 | Historia H12 con prueba de la regla de bordes y ayuda actualizada |
 
 Al iniciar P2-00, verificar árbol de trabajo y rama. Crear `mejoras_visuales` desde el commit completo aceptado de P1. Si ya existe, inspeccionar su origen y reutilizarla solo si corresponde; no borrarla, forzarla ni sobrescribir trabajo. No desarrollar en `master`/`main`. Commits por incrementos coherentes; merge y publicación solo con instrucción posterior.
 

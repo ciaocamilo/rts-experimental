@@ -5,7 +5,7 @@ import { previewPlacement } from "../core/placement";
 import type { Command } from "../core/types";
 import type { SceneView } from "../rendering/scene-view";
 import { REJECT_TEXT } from "../ui/messages";
-import type { CameraRig, PanKeys } from "./camera-rig";
+import { type CameraRig, edgePan, type PanKeys } from "./camera-rig";
 import { boxSelect, clearSelection, clickSelect, type Selection } from "./selection";
 
 const HUMAN = 0 as const;
@@ -34,6 +34,7 @@ export interface InputHooks {
 /** Traduce ratón y teclado en selección, cámara y órdenes; solo escucha sobre el canvas y la ventana. */
 export class InputController {
   private readonly keys: PanKeys = { up: false, down: false, left: false, right: false };
+  private edge: PanKeys = { up: false, down: false, left: false, right: false };
   private readonly abort = new AbortController();
   private drag: { x: number; y: number; shift: boolean; active: boolean } | null = null;
   private placement: BuildingKind | null = null;
@@ -50,6 +51,8 @@ export class InputController {
     window.addEventListener("keydown", (e) => this.onKey(e, true), opts);
     window.addEventListener("keyup", (e) => this.onKey(e, false), opts);
     window.addEventListener("blur", () => this.resetKeys(), opts);
+    window.addEventListener("pointermove", (e) => this.onEdge(e), opts);
+    document.documentElement.addEventListener("mouseleave", () => this.clearEdge(), opts);
     canvas.addEventListener("pointerdown", (e) => this.onDown(e), opts);
     canvas.addEventListener("pointermove", (e) => this.onMove(e), opts);
     canvas.addEventListener("pointerup", (e) => this.onUp(e), opts);
@@ -59,7 +62,10 @@ export class InputController {
   }
 
   update(dtSec: number): void {
-    this.rig.pan(dtSec, this.keys);
+    const e = this.edge;
+    const k = this.keys;
+    const mouse = this.drag?.active ? null : e;
+    this.rig.pan(dtSec, { up: k.up || !!mouse?.up, down: k.down || !!mouse?.down, left: k.left || !!mouse?.left, right: k.right || !!mouse?.right });
     if (!this.placement) return;
     if (!this.ownVillagers().length) {
       this.cancelPlacement();
@@ -139,6 +145,18 @@ export class InputController {
 
   private resetKeys(): void {
     this.keys.up = this.keys.down = this.keys.left = this.keys.right = false;
+    this.clearEdge();
+  }
+
+  private clearEdge(): void {
+    this.edge = { up: false, down: false, left: false, right: false };
+  }
+
+  /** Solo el ratón sobre el canvas desplaza; sobre la interfaz (paneles, botones, ayuda) se detiene. */
+  private onEdge(e: PointerEvent): void {
+    if (e.pointerType !== "mouse" || e.target !== this.canvas) return this.clearEdge();
+    const r = this.canvas.getBoundingClientRect();
+    this.edge = edgePan(e.clientX - r.left, e.clientY - r.top, r.width, r.height);
   }
 
   private onKey(e: KeyboardEvent, down: boolean): void {

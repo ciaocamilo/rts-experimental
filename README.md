@@ -28,7 +28,7 @@ Los bandos se distinguen por color y por una marca: disco blanco para el jugador
 
 | Acción | Entrada |
 |---|---|
-| Cámara | WASD o flechas; rueda para acercar o alejar |
+| Cámara | WASD o flechas, o cursor en el borde de la pantalla (24 px); rueda para acercar o alejar |
 | Seleccionar | Clic o arrastre; Shift suma o quita; Esc limpia |
 | Mover, recolectar, atacar, reanudar obra | Clic derecho según el objetivo |
 | Construir | Seleccionar aldeanos y usar el panel inferior |
