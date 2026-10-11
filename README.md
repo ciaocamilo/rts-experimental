@@ -9,6 +9,7 @@ Prototipo de estrategia en tiempo real (RTS) que se ejecuta en el navegador. Un 
 - **Partida 1 contra 1** sobre un mapa de 128x64 celdas con terreno, agua y rocas que forman pasos estrechos y un paso central.
 - **Aspecto (etapa 2):** edificios medievales (centro urbano, casa, cuartel), personajes humanoides por rol con animaciones de trabajo y combate, flechas cosméticas, vegetación y agua animada. Todo es procedural (sin recursos externos) y no altera las reglas.
 - **Barras de vida:** unidades y edificios de ambos bandos (incluidas las obras) muestran barra solo cuando 0 < vida < máxima.
+- **Daño visible:** los edificios completos muestran una llama más al bajar al 90 %, 75 %, 50 %, 25 % y 5 % de vida; las unidades caen al morir y su cuerpo desaparece a los 5 s. Es solo aspecto: no cambia las reglas.
 - **Economía:** aldeanos que recolectan alimento y madera, construyen casas y cuarteles, y entrenan unidades con cola de producción y límite de población.
 - **Combate:** soldados y arqueros con rango, enfriamiento y ataque automático a menos de 6 celdas. Gana quien destruye el centro urbano rival; el límite es de 20 minutos.
 - **IA en Python:** una política sin estado decide hasta 4 órdenes cada segundo. Se ejecuta en un worker aislado y se comunica con el juego mediante un contrato de mensajes versionado (`contracts/worker-v2`).

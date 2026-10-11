@@ -4,8 +4,22 @@ import type { AssetLibrary } from "./assets";
 import { type Materials, texBox, texPlane, type TreeGeometry } from "./models";
 import { type BushSpec, planScenery, ROCK_HEIGHT, type SceneryPlan, type TreeSpec } from "./scenery";
 import type { BushGeometry } from "./models";
+import { buildWaterGeometry, cornerRadius, waterSeed, type WaterLayer } from "./water";
 
 const GROUND_MARGIN = 26;
+
+/** Orilla húmeda y agua: anillos desde el borde hacia el centro, con opacidad creciente y más profundidad. */
+const SHORE_LAYERS: readonly WaterLayer[] = [
+  { offset: 0, alpha: 0, shade: [0.72, 0.64, 0.45] },
+  { offset: 0.35, alpha: 0.9, shade: [0.72, 0.64, 0.45] },
+  { offset: 0.9, alpha: 1, shade: [0.6, 0.54, 0.38] },
+];
+const WATER_LAYERS: readonly WaterLayer[] = [
+  { offset: 0.3, alpha: 0, shade: [1, 1, 1] },
+  { offset: 0.75, alpha: 0.55, shade: [0.95, 0.98, 1] },
+  { offset: 1.4, alpha: 0.9, shade: [0.82, 0.9, 0.97] },
+  { offset: 1.8, alpha: 0.94, shade: [0.68, 0.8, 0.9] },
+];
 
 /** Suelo, roca, agua y vegetación decorativa. Es solo aspecto: la lógica del terreno vive en el núcleo. */
 export class TerrainView {
@@ -16,8 +30,10 @@ export class TerrainView {
   private readonly toneMaterial: THREE.MeshBasicMaterial;
   private readonly shoreMaterial: THREE.MeshLambertMaterial;
   private readonly waterMaterial: THREE.MeshPhongMaterial;
+  private readonly rippleMaterial: THREE.MeshBasicMaterial;
   private readonly rockMaterials: THREE.Material[];
   private readonly waterMap: THREE.Texture;
+  private readonly rippleMap: THREE.Texture;
   private readonly animateWater: boolean;
 
   constructor(
@@ -29,11 +45,13 @@ export class TerrainView {
     this.animateWater = assets.quality === "high";
     this.groundMaterial = assets.lambert({ map: assets.textures.grass });
     this.toneMaterial = assets.basic({ map: assets.textures.tone, transparent: true, depthWrite: false });
-    this.shoreMaterial = assets.lambert({ color: 0xc8b98a });
+    this.shoreMaterial = assets.lambert({ vertexColors: true, transparent: true, depthWrite: false });
     this.waterMap = assets.textures.water;
+    this.rippleMap = assets.textures.waterRipple;
     this.waterMaterial = this.assets.track(
-      new THREE.MeshPhongMaterial({ map: this.waterMap, transparent: true, opacity: 0.88, specular: 0x6f8fa8, shininess: 55 }),
+      new THREE.MeshPhongMaterial({ map: this.waterMap, vertexColors: true, transparent: true, depthWrite: false, specular: 0x6f8fa8, shininess: 55 }),
     );
+    this.rippleMaterial = assets.basic({ map: this.rippleMap, vertexColors: true, transparent: true, depthWrite: false, opacity: 0.55 });
     this.rockMaterials = [mat.stone, mat.stone, mat.moss, mat.stone, mat.stone, mat.stone];
   }
 
@@ -84,12 +102,25 @@ export class TerrainView {
   }
 
   private addWater(t: TerrainRect): void {
-    const shore = new THREE.Mesh(this.own(new THREE.PlaneGeometry(t.w + 0.7, t.h + 0.7).rotateX(-Math.PI / 2)), this.shoreMaterial);
-    shore.position.set(t.x + t.w / 2, 0.012, t.z + t.h / 2);
-    const water = new THREE.Mesh(this.own(texPlane(t.w, t.h, 0.25).rotateX(-Math.PI / 2)), this.waterMaterial);
-    water.position.set(t.x + t.w / 2, 0.05, t.z + t.h / 2);
+    // La silueta visual es orgánica y queda dentro del rectángulo lógico, que sigue siendo el obstáculo real.
+    const seed = waterSeed(t.x, t.z);
+    const origin = { x: t.x + t.w / 2, z: t.z + t.h / 2 };
+    const fit = Math.min(1, Math.max(0.1, (0.9 * cornerRadius(t.w, t.h) - Math.min(0.4, Math.min(t.w, t.h) * 0.08)) / 1.8));
+    const scale = (layers: readonly WaterLayer[]): WaterLayer[] => layers.map((l) => ({ ...l, offset: l.offset * fit }));
+    const shore = new THREE.Mesh(this.own(buildWaterGeometry(t.w, t.h, seed, scale(SHORE_LAYERS), origin, 0)), this.shoreMaterial);
+    shore.position.set(origin.x, 0.012, origin.z);
+    shore.renderOrder = 1;
+    const waterGeometry = this.own(buildWaterGeometry(t.w, t.h, seed, scale(WATER_LAYERS), origin, 0.12));
+    const water = new THREE.Mesh(waterGeometry, this.waterMaterial);
+    water.position.set(origin.x, 0.05, origin.z);
     water.renderOrder = 2;
     this.group.add(shore, water);
+    if (this.animateWater) {
+      const ripples = new THREE.Mesh(this.own(buildWaterGeometry(t.w, t.h, seed, scale(WATER_LAYERS), origin, 0.21)), this.rippleMaterial);
+      ripples.position.set(origin.x, 0.058, origin.z);
+      ripples.renderOrder = 3;
+      this.group.add(ripples);
+    }
   }
 
   private addTrees(specs: readonly TreeSpec[]): void {
@@ -141,6 +172,7 @@ export class TerrainView {
   update(animTime: number): void {
     if (!this.animateWater) return;
     this.waterMap.offset.set(animTime * 0.012, animTime * 0.006);
+    this.rippleMap.offset.set(-animTime * 0.02, animTime * 0.014);
   }
 
   dispose(): void {

@@ -8,6 +8,7 @@ export const ASSET_PROVENANCE: readonly { id: string; author: string; origin: st
   "grass",
   "tone-patches",
   "water",
+  "water-ripple",
   "bark",
   "leaf",
   "stone",
@@ -105,24 +106,80 @@ function tonePatches(rng: () => number): HTMLCanvasElement {
   return el;
 }
 
+/** Agua: profundidad con manchas amplias, ondas de varias escalas y destellos; casa al repetirse. */
 function waterTexture(rng: () => number): HTMLCanvasElement {
-  const size = 256;
+  const size = 512;
   const { el, ctx } = canvas(size);
-  ctx.fillStyle = "#2f7fae";
+  ctx.fillStyle = "#2c79a8";
   ctx.fillRect(0, 0, size, size);
-  for (let band = 0; band < 14; band++) {
-    const y0 = (band / 14) * size + rng() * 6;
+  const blobs = (count: number, rMin: number, rMax: number, tones: readonly string[]): void => {
+    for (let i = 0; i < count; i++) {
+      const x = rng() * size;
+      const y = rng() * size;
+      const r = rMin + rng() * (rMax - rMin);
+      const tone = tones[Math.floor(rng() * tones.length)]!;
+      wrapped(size, x, y, r, (dx, dy) => {
+        const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+        g.addColorStop(0, tone);
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+      });
+    }
+  };
+  blobs(26, 70, 150, ["rgba(10,60,100,0.30)", "rgba(90,170,200,0.22)"]);
+  blobs(70, 25, 60, ["rgba(10,55,95,0.20)", "rgba(130,200,225,0.18)"]);
+  ctx.lineCap = "round";
+  for (let band = 0; band < 26; band++) {
+    const y0 = 14 + (band / 26) * (size - 28) + rng() * 8;
     const phase = rng() * Math.PI * 2;
-    const periods = 2 + Math.floor(rng() * 3);
-    ctx.strokeStyle = band % 2 ? "rgba(190,230,245,0.35)" : "rgba(15,70,110,0.30)";
-    ctx.lineWidth = 2 + rng() * 2;
+    const periods = 2 + Math.floor(rng() * 4);
+    const amp = 2 + rng() * 5;
+    const light = band % 3 !== 0;
+    ctx.strokeStyle = light ? "rgba(200,236,248,0.26)" : "rgba(10,60,100,0.28)";
+    ctx.lineWidth = 1.2 + rng() * 2.4;
     ctx.beginPath();
     for (let x = 0; x <= size; x += 4) {
-      const y = y0 + Math.sin((x / size) * Math.PI * 2 * periods + phase) * 3;
+      const y = y0 + Math.sin((x / size) * Math.PI * 2 * periods + phase) * amp + Math.sin((x / size) * Math.PI * 2 * (periods * 3) + phase * 2) * 1.2;
       if (x === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
     ctx.stroke();
+  }
+  for (let i = 0; i < 70; i++) {
+    const x = rng() * size;
+    const y = rng() * size;
+    const r = 2 + rng() * 4;
+    wrapped(size, x, y, r * 2, (dx, dy) => {
+      const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r * 2);
+      g.addColorStop(0, "rgba(255,255,255,0.75)");
+      g.addColorStop(0.4, "rgba(220,245,255,0.25)");
+      g.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(x + dx - r * 2, y + dy - r * 2, r * 4, r * 4);
+    });
+  }
+  return el;
+}
+
+/** Capa translúcida de ondas finas que se desplaza en otra dirección sobre el agua (solo calidad alta). */
+function rippleTexture(rng: () => number): HTMLCanvasElement {
+  const size = 256;
+  const { el, ctx } = canvas(size);
+  ctx.lineCap = "round";
+  for (let i = 0; i < 46; i++) {
+    const x = rng() * size;
+    const y = rng() * size;
+    const len = 14 + rng() * 34;
+    const bend = (rng() - 0.5) * 10;
+    ctx.strokeStyle = `rgba(235,250,255,${0.18 + rng() * 0.3})`;
+    ctx.lineWidth = 0.8 + rng() * 1.4;
+    wrapped(size, x, y, len, (dx, dy) => {
+      ctx.beginPath();
+      ctx.moveTo(x + dx - len / 2, y + dy);
+      ctx.quadraticCurveTo(x + dx, y + dy + bend, x + dx + len / 2, y + dy);
+      ctx.stroke();
+    });
   }
   return el;
 }
@@ -244,6 +301,7 @@ export class AssetLibrary {
     grass: THREE.CanvasTexture;
     tone: THREE.CanvasTexture;
     water: THREE.CanvasTexture;
+    waterRipple: THREE.CanvasTexture;
     bark: THREE.CanvasTexture;
     barkLight: THREE.CanvasTexture;
     leaf: THREE.CanvasTexture;
@@ -257,10 +315,12 @@ export class AssetLibrary {
   constructor(readonly quality: Quality) {
     const rng = mulberry32(20261010);
     const t = (el: HTMLCanvasElement, repeat = true): THREE.CanvasTexture => this.track(makeTexture(el, repeat));
+    const waterRng = mulberry32(20261011);
     this.textures = {
       grass: t(grassTexture(rng)),
       tone: t(tonePatches(rng), false),
-      water: t(waterTexture(rng)),
+      water: t(waterTexture(waterRng)),
+      waterRipple: t(rippleTexture(waterRng)),
       bark: t(barkTexture(rng, "#5b3d27")),
       barkLight: t(barkTexture(rng, "#cfc9bb")),
       leaf: t(leafTexture(rng)),

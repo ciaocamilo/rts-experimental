@@ -1,5 +1,5 @@
 export const ZOOM_MIN = 0.6;
-export const ZOOM_MAX = 9; // TEMP-INSPECT
+export const ZOOM_MAX = 3;
 const PAN_SPEED = 30; // celdas/s con zoom 1
 
 export interface PanKeys {

@@ -18,6 +18,7 @@ export interface UnitRig {
   tools: { axe: THREE.Object3D | null; hammer: THREE.Object3D | null };
   nocked: THREE.Object3D | null;
   shadow: THREE.Object3D | null;
+  mark: THREE.Object3D;
   proxy: THREE.Mesh;
   role: Role;
 }
@@ -69,8 +70,8 @@ export class UnitFactory {
   private legParts(): Part[] {
     const m = this.mat;
     return [
-      { geometry: new THREE.BoxGeometry(0.11, 0.38, 0.12), position: [0, -0.19, 0], color: m.trousers.color.getHex() },
-      { geometry: new THREE.BoxGeometry(0.12, 0.08, 0.16), position: [0, -0.4, 0.015], color: m.leather.color.getHex() },
+      { geometry: new THREE.CapsuleGeometry(0.058, 0.244, 3, 8), position: [0, -0.19, 0], color: m.trousers.color.getHex() },
+      { geometry: new THREE.SphereGeometry(0.065, 8, 6).scale(1, 0.65, 1.5), position: [0, -0.385, 0.035], color: m.leather.color.getHex() },
     ];
   }
 
@@ -78,23 +79,23 @@ export class UnitFactory {
     const m = this.mat;
     const team = m.team[owner].color.getHex();
     const parts: Part[] = [
-      { geometry: new THREE.BoxGeometry(0.32, 0.36, 0.2), position: [0, 0.18, 0], color: team },
-      { geometry: new THREE.BoxGeometry(0.335, 0.05, 0.215), position: [0, 0.03, 0], color: m.leather.color.getHex() },
-      { geometry: new THREE.SphereGeometry(0.1, 8, 6), position: [0, 0.47, 0], color: m.skin.color.getHex() },
+      { geometry: new THREE.CapsuleGeometry(0.1, 0.18, 4, 10).scale(1.5, 1, 0.95), position: [0, 0.19, 0], color: team },
+      { geometry: new THREE.CylinderGeometry(0.11, 0.11, 0.05, 12).scale(1.5, 1, 1), position: [0, 0.05, 0], color: m.leather.color.getHex() },
+      { geometry: new THREE.SphereGeometry(0.1, 10, 8), position: [0, 0.47, 0], color: m.skin.color.getHex() },
     ];
     if (role === "villager") {
-      parts.push({ geometry: new THREE.CylinderGeometry(0.19, 0.19, 0.02, 12), position: [0, 0.54, 0], color: m.straw.color.getHex() });
-      parts.push({ geometry: new THREE.ConeGeometry(0.1, 0.1, 8), position: [0, 0.6, 0], color: m.straw.color.getHex() });
+      parts.push({ geometry: new THREE.CylinderGeometry(0.19, 0.19, 0.02, 16), position: [0, 0.54, 0], color: m.straw.color.getHex() });
+      parts.push({ geometry: new THREE.ConeGeometry(0.1, 0.1, 12), position: [0, 0.6, 0], color: m.straw.color.getHex() });
     } else if (role === "archer") {
-      parts.push({ geometry: new THREE.SphereGeometry(0.115, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.62), position: [0, 0.49, -0.01], color: m.hood.color.getHex() });
-      parts.push({ geometry: new THREE.CylinderGeometry(0.05, 0.045, 0.3, 7), position: [0.07, 0.24, -0.15], rotation: [0, 0, -0.25], color: m.leather.color.getHex() });
-      parts.push({ geometry: new THREE.CylinderGeometry(0.03, 0.03, 0.1, 5), position: [0.085, 0.42, -0.15], rotation: [0, 0, -0.25], color: m.feather.color.getHex() });
+      parts.push({ geometry: new THREE.SphereGeometry(0.115, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.62), position: [0, 0.49, -0.01], color: m.hood.color.getHex() });
+      parts.push({ geometry: new THREE.CylinderGeometry(0.05, 0.045, 0.3, 10), position: [0.07, 0.24, -0.15], rotation: [0, 0, -0.25], color: m.leather.color.getHex() });
+      parts.push({ geometry: new THREE.CylinderGeometry(0.03, 0.03, 0.1, 8), position: [0.085, 0.42, -0.15], rotation: [0, 0, -0.25], color: m.feather.color.getHex() });
     } else {
-      parts.push({ geometry: new THREE.SphereGeometry(0.118, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2), position: [0, 0.49, 0], color: m.steel.color.getHex() });
-      parts.push({ geometry: new THREE.BoxGeometry(0.02, 0.09, 0.02), position: [0, 0.46, 0.115], color: m.steel.color.getHex() });
-      parts.push({ geometry: new THREE.BoxGeometry(0.34, 0.2, 0.22), position: [0, 0.25, 0], color: m.steel.color.getHex() });
-      parts.push({ geometry: new THREE.SphereGeometry(0.075, 6, 5), position: [0.2, 0.36, 0], color: m.steelDark.color.getHex() });
-      parts.push({ geometry: new THREE.SphereGeometry(0.075, 6, 5), position: [-0.2, 0.36, 0], color: m.steelDark.color.getHex() });
+      parts.push({ geometry: new THREE.SphereGeometry(0.118, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), position: [0, 0.49, 0], color: m.steel.color.getHex() });
+      parts.push({ geometry: new THREE.CylinderGeometry(0.012, 0.012, 0.09, 6), position: [0, 0.46, 0.115], color: m.steel.color.getHex() });
+      parts.push({ geometry: new THREE.CapsuleGeometry(0.1, 0.06, 4, 10).scale(1.6, 1, 1.1), position: [0, 0.26, 0], color: m.steel.color.getHex() });
+      parts.push({ geometry: new THREE.SphereGeometry(0.075, 8, 6), position: [0.2, 0.36, 0], color: m.steelDark.color.getHex() });
+      parts.push({ geometry: new THREE.SphereGeometry(0.075, 8, 6), position: [-0.2, 0.36, 0], color: m.steelDark.color.getHex() });
     }
     return parts;
   }
@@ -102,16 +103,16 @@ export class UnitFactory {
   private armParts(role: Role, owner: 0 | 1, side: "L" | "R"): Part[] {
     const m = this.mat;
     const parts: Part[] = [
-      { geometry: new THREE.BoxGeometry(0.08, 0.3, 0.08), position: [0, -0.15, 0], color: m.team[owner].color.getHex() },
-      { geometry: new THREE.SphereGeometry(0.045, 6, 5), position: [0, -0.32, 0], color: m.skin.color.getHex() },
+      { geometry: new THREE.CapsuleGeometry(0.04, 0.22, 3, 8), position: [0, -0.15, 0], color: m.team[owner].color.getHex() },
+      { geometry: new THREE.SphereGeometry(0.045, 8, 6), position: [0, -0.32, 0], color: m.skin.color.getHex() },
     ];
     if (role === "soldier" && side === "R") {
       parts.push({ geometry: new THREE.BoxGeometry(0.035, 0.42, 0.012), position: [0, -0.55, 0], color: m.steel.color.getHex() });
-      parts.push({ geometry: new THREE.BoxGeometry(0.12, 0.025, 0.03), position: [0, -0.34, 0], color: m.leather.color.getHex() });
+      parts.push({ geometry: new THREE.CylinderGeometry(0.015, 0.015, 0.12, 6).rotateZ(Math.PI / 2), position: [0, -0.34, 0], color: m.leather.color.getHex() });
     }
     if (role === "soldier" && side === "L") {
-      parts.push({ geometry: new THREE.CylinderGeometry(0.17, 0.17, 0.03, 12).rotateZ(Math.PI / 2), position: [0.07, -0.2, 0], color: m.team[owner].color.getHex() });
-      parts.push({ geometry: new THREE.SphereGeometry(0.05, 6, 5), position: [0.1, -0.2, 0], color: m.steel.color.getHex() });
+      parts.push({ geometry: new THREE.CylinderGeometry(0.17, 0.17, 0.03, 16).rotateZ(Math.PI / 2), position: [0.07, -0.2, 0], color: m.team[owner].color.getHex() });
+      parts.push({ geometry: new THREE.SphereGeometry(0.05, 8, 6), position: [0.1, -0.2, 0], color: m.steel.color.getHex() });
     }
     if (role === "archer" && side === "L") {
       // Semicírculo en el plano YZ del brazo, centrado en la mano; la cuerda queda del lado del arquero.
@@ -216,8 +217,20 @@ export class UnitFactory {
     }
     const proxy = this.mesh(this.proxyGeometry, root, this.proxyMaterial);
 
-    return { root, facing, bob, torso, legL, legR, armL, armR, bundleWood, bundleFood, tools: { axe, hammer }, nocked, shadow, proxy, role };
+    return { root, facing, bob, torso, legL, legR, armL, armR, bundleWood, bundleFood, tools: { axe, hammer }, nocked, shadow, mark, proxy, role };
   }
+}
+
+/** Cuerpo caído: relaja el esqueleto y lo tumba hacia atrás sobre el suelo. `fall` va de 0 (de pie) a 1 (tendido). */
+export function applyDeath(rig: UnitRig, pose: Pose, fall: number): void {
+  applyPose(rig, pose);
+  rig.bob.rotation.x = -(Math.PI / 2) * fall;
+  rig.bob.position.y = 0.11 * fall;
+  rig.mark.visible = false;
+  rig.bundleWood.visible = false;
+  rig.bundleFood.visible = false;
+  if (rig.tools.axe) rig.tools.axe.visible = false;
+  if (rig.tools.hammer) rig.tools.hammer.visible = false;
 }
 
 /** Aplica una pose calculada por `computePose` al esqueleto. */

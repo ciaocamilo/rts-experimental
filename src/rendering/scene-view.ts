@@ -5,12 +5,13 @@ import type { CameraRig } from "../input/camera-rig";
 import { AssetLibrary, type Quality } from "./assets";
 import { applyConstruction, type BuildingRig, buildBuilding, GeometryCache } from "./buildings";
 import { ArrowPool } from "./effects";
-import { barState } from "./health";
+import { type FlameRig, FlameFactory, updateFlames } from "./fire";
+import { barState, flameCount } from "./health";
 import { buildBushGeometries, buildTreeGeometries, Materials, VISUAL } from "./models";
 import { NodeFactory, type NodeRig, setNodeSpent } from "./nodes";
-import { computePose, type WorkKind } from "./pose";
+import { computePose, deathPose, deathState, type WorkKind } from "./pose";
 import { TerrainView } from "./terrain-view";
-import { applyPose, UnitFactory, type UnitRig } from "./units";
+import { applyDeath, applyPose, UnitFactory, type UnitRig } from "./units";
 
 const CAMERA_OFFSET = new THREE.Vector3(60, 70, 60);
 const MARKER_MS = 600;
@@ -21,6 +22,8 @@ const SNAP_DISTANCE = 3;
 const FADE_BEHIND = 2.8;
 const FADE_SIDE = 0.65;
 const SQRT1_2 = Math.SQRT1_2;
+/** Máximo de cuerpos retenidos a la vez (P2-H09 CA04). */
+const MAX_BODIES = 64;
 
 export type StrikeLike = StrikeEvent & { id: number };
 
@@ -59,6 +62,15 @@ interface BuildingEntry extends Base {
   type: "building";
   rig: BuildingRig;
   key: string;
+  complete: boolean;
+  flames: FlameRig | null;
+  kind: BuildingKind;
+  phase: number;
+}
+/** Figura de una unidad caída: solo visual, ya no forma parte de las entidades del estado. */
+interface Body {
+  rig: UnitRig;
+  diedAt: number;
 }
 interface NodeEntry extends Base {
   type: "node";
@@ -93,6 +105,8 @@ export class SceneView {
   private readonly arrows: ArrowPool;
   private readonly entityRoot = new THREE.Group();
   private readonly entries = new Map<number, Entry>();
+  private bodies: Body[] = [];
+  private readonly flameFactory: FlameFactory;
   private readonly bars = new Map<number, Bar>();
   private readonly rings = new Map<number, THREE.Mesh>();
   private readonly barGeometry: THREE.PlaneGeometry;
@@ -151,6 +165,7 @@ export class SceneView {
     this.nodes = new NodeFactory(this.assets, this.mat, trees);
     this.terrain = new TerrainView(this.assets, this.mat, trees, bushes);
     this.arrows = new ArrowPool(this.assets, this.mat);
+    this.flameFactory = new FlameFactory(this.assets);
 
     this.barGeometry = this.track(new THREE.PlaneGeometry(1, 0.14));
     this.barBack = this.track(new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.75, depthTest: false }));
@@ -192,7 +207,9 @@ export class SceneView {
 
   /** Descarta las entidades dibujadas, por ejemplo al reiniciar la partida. */
   reset(): void {
-    for (const [id, entry] of this.entries) this.removeEntry(id, entry);
+    for (const [id, entry] of [...this.entries]) this.removeEntry(id, entry);
+    for (const body of this.bodies) this.entityRoot.remove(body.rig.root);
+    this.bodies = [];
     for (const bar of this.bars.values()) this.entityRoot.remove(bar.group);
     this.bars.clear();
     for (const ring of this.rings.values()) this.scene.remove(ring);
@@ -205,6 +222,13 @@ export class SceneView {
   private removeEntry(id: number, entry: Entry): void {
     this.entityRoot.remove(entry.root);
     this.entries.delete(id);
+  }
+
+  /** La unidad dejó de existir en el estado: su figura queda como cuerpo cosmético (P2-H09). */
+  private layDown(entry: UnitEntry): void {
+    entry.proxy.visible = false;
+    this.bodies.push({ rig: entry.rig, diedAt: this.animTime });
+    while (this.bodies.length > MAX_BODIES) this.entityRoot.remove(this.bodies.shift()!.rig.root);
   }
 
   /** Crea, actualiza y elimina modelos para coincidir con el estado lógico. */
@@ -232,7 +256,13 @@ export class SceneView {
       live.add(u.id);
       this.syncUnit(u);
     }
-    for (const [id, entry] of this.entries) if (!live.has(id)) this.removeEntry(id, entry);
+    for (const [id, entry] of [...this.entries]) {
+      if (live.has(id)) continue;
+      if (entry.type === "unit") {
+        this.layDown(entry);
+        this.entries.delete(id);
+      } else this.removeEntry(id, entry);
+    }
     for (const [id, bar] of this.bars) {
       if (!live.has(id)) {
         this.entityRoot.remove(bar.group);
@@ -288,6 +318,10 @@ export class SceneView {
         barY: VISUAL.buildingHeight[b.kind] + 0.25,
         ringScale: Math.max(1, def.footprint * 1.1),
         pickable: true,
+        complete: b.complete,
+        flames: null,
+        kind: b.kind,
+        phase: b.id,
       };
       this.entries.set(b.id, entry);
     }
@@ -298,6 +332,7 @@ export class SceneView {
       applyConstruction(entry.rig, b.complete, progress);
     }
     entry.hp = b.hp;
+    entry.complete = b.complete;
   }
 
   private syncUnit(u: Unit): void {
@@ -494,6 +529,36 @@ export class SceneView {
     }
   }
 
+  /** Cuerpos caídos: caen, yacen y se retiran a los 5 s de tiempo de juego (P2-H09). */
+  private animateBodies(): void {
+    const keep: Body[] = [];
+    for (const body of this.bodies) {
+      const state = deathState(this.animTime - body.diedAt);
+      if (state.done) {
+        this.entityRoot.remove(body.rig.root);
+        continue;
+      }
+      applyDeath(body.rig, deathPose(state.fall), state.fall);
+      body.rig.root.scale.setScalar(Math.max(0.001, state.scale));
+      keep.push(body);
+    }
+    this.bodies = keep;
+  }
+
+  /** Llamas por umbral de vida; solo existen en edificios completos (P2-H08). */
+  private animateFlames(): void {
+    for (const entry of this.entries.values()) {
+      if (entry.type !== "building") continue;
+      const count = flameCount(entry.hp, entry.max, entry.complete);
+      if (count === 0 && !entry.flames) continue;
+      if (!entry.flames) {
+        entry.flames = this.flameFactory.create(entry.kind, entry.phase);
+        entry.root.add(entry.flames.group);
+      }
+      updateFlames(entry.flames, count, this.animTime);
+    }
+  }
+
   /** Las copas de los árboles se vuelven translúcidas cuando una unidad queda tras ellas (CA04). */
   private fadeCrowns(): void {
     for (const node of this.entries.values()) {
@@ -592,6 +657,8 @@ export class SceneView {
 
     this.applyRig();
     this.animateUnits(dt);
+    this.animateBodies();
+    this.animateFlames();
     this.arrows.update(this.animTime);
     this.terrain.update(this.animTime);
     this.fadeCrowns();

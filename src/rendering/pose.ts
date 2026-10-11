@@ -36,6 +36,34 @@ function rest(): Pose {
   return { legL: 0, legR: 0, armLx: 0, armLz: 0.08, armRx: 0, armRz: -0.08, torsoPitch: 0, bob: 0, bowDraw: 0 };
 }
 
+/** P2-H09: duración de la caída, tiempo total que permanece el cuerpo y tramo final de encogimiento (segundos). */
+export const DEATH_FALL_S = 0.6;
+export const DEATH_LINGER_S = 5;
+export const DEATH_SHRINK_S = 0.4;
+
+export interface DeathState {
+  /** 0 = de pie, 1 = tendido. */
+  fall: number;
+  /** Escala del cuerpo; baja a 0 en el último tramo. */
+  scale: number;
+  /** El cuerpo ya debe retirarse. */
+  done: boolean;
+}
+
+/** Estado visual de un cuerpo según los segundos de juego transcurridos desde la muerte. */
+export function deathState(age: number): DeathState {
+  const a = Math.max(0, age);
+  if (a >= DEATH_LINGER_S) return { fall: 1, scale: 0, done: true };
+  const k = clamp01(a / DEATH_FALL_S);
+  const shrink = clamp01((a - (DEATH_LINGER_S - DEATH_SHRINK_S)) / DEATH_SHRINK_S);
+  return { fall: easeIn(k) * (2 - k), scale: 1 - shrink, done: false };
+}
+
+/** Esqueleto relajado de un cuerpo caído; las extremidades se abren según avanza la caída. */
+export function deathPose(fall: number): Pose {
+  return { legL: 0.12 * fall, legR: -0.18 * fall, armLx: -0.2 * fall, armLz: 0.08 + 0.7 * fall, armRx: 0.15 * fall, armRz: -0.08 - 0.9 * fall, torsoPitch: 0, bob: 0, bowDraw: 0 };
+}
+
 /** Pose de un esqueleto articulado; función pura para poder comprobarla sin renderizar. */
 export function computePose(input: PoseInput): Pose {
   const { role, t } = input;

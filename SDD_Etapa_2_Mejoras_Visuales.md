@@ -2,8 +2,8 @@
 
 **Autor del proyecto:** Camilo Andrés Castañeda Galindo  
 **Fecha:** 10 de octubre de 2026 (Colombia)  
-**Versión del documento:** 1.0  
-**Estado:** especificación preparada; desarrollo no iniciado.  
+**Versión del documento:** 1.1 (añade P2-R11 a P2-R14 sobre la implementación P2 ya entregada)  
+**Estado:** v1.0 implementada en `mejoras_visuales` (commits `4d881e6`, `03d8443`); P2-R11 a P2-R14 implementadas y verificadas con pruebas de reglas puras, build y muestreo de rendimiento; la inspección visual fue parcial.  
 **Rama de desarrollo requerida:** `mejoras_visuales`  
 
 ## 1. Objetivo y alcance de esta entrega
@@ -45,6 +45,10 @@ Las menciones antiguas de P2 como niebla, minimapa o ataque-movimiento eran posi
 | P2-R08 | Muchos más árboles | Meta de cuatro veces los árboles visibles y dos veces los nodos de madera |
 | P2-R09 | Vida sobre unidades y edificios cuando no esté al 100% | Barra para toda entidad viva dañada, de ambos bandos |
 | P2-R10 | Desarrollo en nueva rama | Nombre exacto `mejoras_visuales` |
+| P2-R11 | Llama de fuego adicional en edificios con vida al 90 %, 75 %, 50 %, 25 % y 5 % | Hasta cinco llamas acumulativas, solo cosméticas (P2-H08) |
+| P2-R12 | Las personas caen al suelo al perder toda su vida y desaparecen a los 5 s | Cuerpo cosmético temporal (P2-H09) |
+| P2-R13 | Agua con bordes suavizados, no rectangulares, y mejor textura | Silueta orgánica, orilla en degradado y textura multiescala (P2-H10) |
+| P2-R14 | Personas menos «cuadradas» | Formas redondeadas sin cambiar rol, escala ni coste (P2-H11) |
 
 Los multiplicadores de árboles, las dimensiones concretas y los presupuestos siguientes son decisiones propuestas por este SDD; no se atribuyen como cifras previamente confirmadas por el autor.
 
@@ -146,6 +150,44 @@ La sincronía visual es aproximada: conservar daño instantáneo implica que la 
 - **CA06:** no dibujar barras detrás de la cámara, fuera del encuadre ni encima del HUD. La vegetación no oculta una barra necesaria de una entidad visible; la barra no captura clics ni revela información adicional si en el futuro se incorpora niebla.
 - **CA07:** si `vida_maxima` no es válida, ocultar barra y registrar diagnóstico, evitando divisiones por cero. No añadir curación para demostrar el estado de vida completa.
 
+### P2-H08 — Fuego en edificios dañados (R11)
+
+Como jugador, quiero ver el estado de ruina de un edificio sin leer su barra.
+
+- **CA01:** con `r = vida_actual / vida_maxima`, un edificio completo muestra 0 llamas si `r > 0,90`; 1 si `r ≤ 0,90`; 2 si `r ≤ 0,75`; 3 si `r ≤ 0,50`; 4 si `r ≤ 0,25`; 5 si `r ≤ 0,05`. Los umbrales son inclusivos y cada llama es adicional a las anteriores. La regla es una función pura comprobable.
+- **CA02:** las obras (`complete = false`) no muestran llamas: su vida inicial baja es normal. Una `vida_maxima` no válida no produce llamas.
+- **CA03:** las llamas se anclan a tejado o muros en posiciones fijas por tipo (el orden de aparición es determinista), con tamaño acorde a la huella, para ambos bandos. No capturan clics ni alteran selección, barra ni marcas de bando.
+- **CA04:** son exclusivamente cosméticas: sin daño por fuego, sin propagación y sin cambio de reglas, vida ni IA. Si `r` sube por encima de un umbral, la llama correspondiente se retira.
+- **CA05:** el parpadeo usa tiempo de juego, se congela en pausa y final de partida, y se limpia al retirar el edificio o reiniciar. Sin luces dinámicas; el modo ligero conserva las llamas con la animación más simple.
+
+### P2-H09 — Caída y retirada de unidades (R12)
+
+Como jugador, quiero que una baja se lea como tal en el campo.
+
+- **CA01:** cuando una unidad pierde toda su vida y sale del estado, su figura cae al suelo hacia atrás en 0,5–0,7 s y queda tendida con las extremidades relajadas, sin herramientas ni arco en gesto de acción.
+- **CA02:** el cuerpo permanece hasta cumplirse 5,0 s de tiempo de juego desde la muerte y entonces desaparece; los últimos 0,4 s pueden usarse para hundirlo o encogerlo.
+- **CA03:** el cuerpo es solo visual. No ocupa celdas, no se selecciona, no recibe órdenes ni ataques, no muestra barra ni anillo, no cuenta para población, observación de la IA ni navegación. Es la excepción deliberada a P2-H03 CA05.
+- **CA04:** la pausa y el final de partida congelan el cronómetro; el reinicio retira todos los cuerpos. Se acota la retención a 64 cuerpos y los más antiguos se retiran primero.
+- **CA05:** la caída no altera el momento ni el resultado de la muerte lógica; el edificio destruido no usa este comportamiento.
+
+### P2-H10 — Agua con bordes suaves (R13)
+
+Como jugador, quiero que lagos y ríos se vean como agua natural y no como rectángulos.
+
+- **CA01:** la silueta visual del agua es orgánica: esquinas redondeadas y borde irregular suave y determinista por semilla de decoración. Queda contenida dentro de la huella lógica bloqueada; nunca cubre suelo transitable.
+- **CA02:** el borde se difumina con degradado de transparencia y una franja de orilla húmeda; no deja huecos ni parpadeo.
+- **CA03:** la textura combina ondas de varias escalas, variación de profundidad (más oscuro hacia el centro) y destellos suaves. En calidad alta se mueven dos capas con desplazamientos distintos; todo se congela en pausa y final (P2-H01 CA06).
+- **CA04:** el modo ligero conserva la silueta suave y el degradado, sin la segunda capa animada.
+- **CA05:** el obstáculo lógico sigue siendo el rectángulo existente: el cambio no toca navegación, colocación, `hash` de estado ni contrato con Python.
+
+### P2-H11 — Personajes suavizados (R14)
+
+Como jugador, quiero personajes de aspecto más orgánico sin perder la lectura de su rol.
+
+- **CA01:** torso, extremidades, manos, botas y cinturón usan formas redondeadas (cápsulas, esferas, cilindros) y no cajas visibles; conservan rol, equipamiento y marca de bando de P2-H03.
+- **CA02:** no cambian radio lógico, proxy de selección ni número de mallas por unidad (geometría fundida compartida). Se registra el número de triángulos por unidad antes y después.
+- **CA03:** las poses de marcha, trabajo, combate y caída siguen sin atravesamientos groseros entre brazos, torso y equipo.
+
 ## 4. Diseño técnico propuesto
 
 ### 4.1 Separación de responsabilidades
@@ -200,6 +242,7 @@ Conservar vida máxima, daño, alcance, tiempos, velocidades, costes, capacidad 
 | P2-04 | Barras de vida | R09 | Visibilidad, anclaje y limpieza correctos para todos los tipos |
 | P2-05 | Extensión del mapa y bosques | R07–R08 | Dimensiones, conectividad, recursos e IA adaptados |
 | P2-06 | Integración y revisión acotada | R01–R10 | Build, evidencias mínimas y matriz de aceptación |
+| P2-07 | Detalles visuales posteriores: fuego, caída de unidades, agua suave y personajes redondeados | R11–R14 | Historias H08–H11 implementadas con pruebas de reglas puras y rendimiento recomprobado |
 
 Al iniciar P2-00, verificar árbol de trabajo y rama. Crear `mejoras_visuales` desde el commit completo aceptado de P1. Si ya existe, inspeccionar su origen y reutilizarla solo si corresponde; no borrarla, forzarla ni sobrescribir trabajo. No desarrollar en `master`/`main`. Commits por incrementos coherentes; merge y publicación solo con instrucción posterior.
 
