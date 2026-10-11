@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { AudioEngine, DUCK_LEVEL, MUSIC_LEVEL, SFX_LEVEL, type ContextLike } from "../../src/audio/engine";
 import { AudioFrame, CueTranslator, collapseVariant, flightSeconds, lowpassOf, type CueRequest } from "../../src/audio/cues";
-import { filter } from "../../src/audio/dsp";
+import { createRng, fdnReverb, filter, humanize, whiteNoise } from "../../src/audio/dsp";
+import { MUSIC_SAMPLE_RATE } from "../../src/audio/music";
 import { buildSfxBank, type SfxBank } from "../../src/audio/sfx";
 import { CUES, type CueId } from "../../src/audio/voices";
 import { createEmptyState } from "../../src/core/state";
@@ -349,5 +350,28 @@ describe("P5 motor", () => {
     const targets = ctx.gains.flatMap((g) => g.gain.calls.filter((c) => c.startsWith("target:")));
     expect(targets.some((c) => c.startsWith(`target:${MUSIC_LEVEL * DUCK_LEVEL}`))).toBe(true);
     expect(targets.some((c) => c.startsWith(`target:${MUSIC_LEVEL}@`))).toBe(true);
+  });
+});
+
+describe("P5 música", () => {
+  it("humanización: variaciones acotadas y deterministas", () => {
+    const a = createRng(9);
+    const b = createRng(9);
+    for (let i = 0; i < 200; i++) {
+      const h = humanize(a, 5, 1, 0.012, 0.08, 4);
+      expect(h).toEqual(humanize(b, 5, 1, 0.012, 0.08, 4));
+      expect(Math.abs(h.at - 5)).toBeLessThanOrEqual(0.012);
+      expect(Math.abs(h.gain - 1)).toBeLessThanOrEqual(0.08);
+      expect(Math.abs(h.cents)).toBeLessThanOrEqual(4);
+    }
+  });
+
+  it("la música usa 32 kHz y la cola de la reverb FDN es finita y decae", () => {
+    expect(MUSIC_SAMPLE_RATE).toBe(32000);
+    const x = whiteNoise(createRng(1), 32000);
+    const [l, r] = fdnReverb(x, x, 32000, 0.28, 1.8, 2);
+    expect(l.every(Number.isFinite) && r.every(Number.isFinite)).toBe(true);
+    expect(rms(l, 32000, 1.6, 2)).toBeLessThan(rms(l, 32000, 0.2, 0.6));
+    expect(rms(l, 32000, 2.2, 2.9)).toBeGreaterThan(0);
   });
 });
