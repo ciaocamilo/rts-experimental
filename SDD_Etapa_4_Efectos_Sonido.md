@@ -286,7 +286,7 @@ Referencias para el implementador; los parámetros exactos se ajustan al oído y
 
 ### 4.7 Visibilidad y panorama
 
-`SceneView.project(x, z)` aplica la matriz de la cámara a `(x, 0, z)` y devuelve `{ x, y }` en coordenadas normalizadas. El director considera «en pantalla» `|x| ≤ 1,05` y `|y| ≤ 1,05`. El cálculo ocurre al consumir el evento, con la cámara de ese cuadro. Un evento que ya no puede evaluarse a tiempo se descarta y no se reproduce con retraso.
+`SceneView.projector()` actualiza la cámara una vez por cuadro y devuelve una función `(x, z) => { x, y }` que aplica la matriz de la cámara a `(x, 0, z)` en coordenadas normalizadas. El director considera «en pantalla» `|x| ≤ 1,05` y `|y| ≤ 1,05`. El cálculo ocurre al consumir el evento, con la cámara de ese cuadro. Un evento que ya no puede evaluarse a tiempo se descarta y no se reproduce con retraso.
 
 ### 4.8 Fuego
 
@@ -335,7 +335,7 @@ Trabajar en `efectos_sonido` conservando su historial. No resetearla, forzarla n
 |---|---|
 | Coste de la simulación | Los eventos nuevos añaden menos de 0,05 ms al p95 del tick. |
 | Cuadro de render | Ningún cuadro sube de 50 ms por la síntesis; `?fixture=objetivo` con audio activo mantiene la mediana de 60 FPS en una medición de 45 s. |
-| Memoria de audio | Música ≈ 17 MB, efectos < 3 MB; total ≤ 24 MB. |
+| Memoria de audio | Música ≈ 17 MB (22 050 Hz estéreo), efectos ≈ 3–4 MB (32 000 Hz los breves y 22 050 Hz los largos); total ≤ 24 MB. |
 | Voces simultáneas | ≤ 24 (§4.4). |
 | Tiempo de preparación | Efectos listos en < 1 s tras el primer gesto; música en segundo plano, sin bloquear la partida. |
 
