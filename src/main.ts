@@ -7,6 +7,7 @@ import { BALANCE_VERSION, GAME_VERSION, MAP_VERSION } from "./content/versions";
 import { createFixture, type FixtureName } from "./core/fixtures";
 import { hashState } from "./core/hash";
 import { validateInitialReachability } from "./core/map-check";
+import { describeEnd } from "./core/result";
 import { createInitialState, livingOf, reservedOf } from "./core/state";
 import type { Command } from "./core/types";
 import { PerfRecorder } from "./diagnostics/recorder";
@@ -18,7 +19,7 @@ import { SceneView } from "./rendering/scene-view";
 import { CommandPanel } from "./ui/command-panel";
 import { describeResult } from "./ui/messages";
 
-const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo"];
+const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa"];
 
 function supported(): boolean {
   if (typeof Worker === "undefined" || typeof WebAssembly === "undefined") return false;
@@ -125,10 +126,18 @@ function start(): void {
 
   const outcomeText = (): string => {
     const outcome = session.state.outcome;
-    if (!outcome) return "";
-    const title = outcome.winner === null ? "Empate" : outcome.winner === 0 ? "Victoria" : "Derrota";
-    const why = outcome.reason === "TIME_LIMIT" ? "se agotó el tiempo de la partida" : outcome.winner === null ? "ambos centros urbanos cayeron a la vez" : outcome.winner === 0 ? "el centro urbano rival fue destruido" : "su centro urbano fue destruido";
-    return `${title}\n${why}\nPulse «Reiniciar» para jugar de nuevo`;
+    const end = describeEnd(session.state);
+    if (!outcome || !end) return "";
+    const centers = outcome.mainBuildings
+      .map((b) => `centro ${b.owner === 0 ? "propio" : "rival"} #${b.id}: ${b.destroyed ? "destruido" : "en pie"} (vida ${b.hp}/${b.maxHp})`)
+      .join(" · ");
+    const lost = outcome.casualties;
+    return (
+      `${end.title}\n${end.reason}\n` +
+      `Fin en el tick ${outcome.endTick} · ${centers}\n` +
+      `Bajas propias: ${lost.units[0]} unidades, ${lost.buildings[0]} edificios · rivales: ${lost.units[1]} unidades, ${lost.buildings[1]} edificios\n` +
+      `Pulse «Reiniciar» para jugar de nuevo`
+    );
   };
 
   const refreshOverlay = (): void => {
@@ -198,7 +207,7 @@ function start(): void {
     const reserved = reservedOf(s, 0);
     hud.textContent =
       `Tick ${s.tick}/${TICKS_PER_SECOND * 1200}  hash ${hashState(s)}\n` +
-      `Jugador: alimento ${p.food}  madera ${p.wood}  población ${living}${reserved > 0 ? ` (+${reserved} en cola)` : ""}/${p.popCapacity}\n` +
+      `Jugador: alimento ${p.food}  madera ${p.wood}  piedra ${p.stone}  población ${living}${reserved > 0 ? ` (+${reserved} en cola)` : ""}/${p.popCapacity}\n` +
       `Selección: ${selected} unidad(es) ${first}${inspected ? `  Inspección: ${inspected}` : ""}\n` +
       `${message}\n` +
       `${aiLine()}\n` +
@@ -211,7 +220,7 @@ function start(): void {
     panel.refresh(s, selection, controller.placing, session.paused);
 
     view.setSelection(selection.units, selection.inspected);
-    view.sync(s, { frozen: session.paused || s.matchStatus === "ended", strikes: session.strikeLog });
+    view.sync(s, { frozen: session.paused || s.matchStatus === "ended", paused: session.paused, strikes: session.strikeLog, destroyed: session.destroyedLog });
     view.render();
   };
 

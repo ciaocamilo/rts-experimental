@@ -1,9 +1,9 @@
-// Tipos del contrato Worker v2. La fuente normativa es contracts/worker-v2/worker-v2.schema.json.
+// Tipos del contrato Worker v2 (ampliado en P3 con piedra, torre y `defending`). La fuente normativa es contracts/worker-v2/worker-v2.schema.json.
 
 export const PROTOCOL_VERSION = 2;
 export const PYODIDE_VERSION = "0.27.7";
 export const PYTHON_VERSION_PREFIX = "3.12";
-export const POLICY_VERSION = "policy-0.2";
+export const POLICY_VERSION = "policy-0.3";
 
 export const MAX_OBSERVATION_BYTES = 1024 * 1024;
 export const MAX_RESPONSE_BYTES = 64 * 1024;
@@ -55,8 +55,10 @@ export interface UnitView {
   activity: "idle" | "moving" | "blocked" | "gathering" | "delivering" | "building" | "attacking";
   dest: { x: number; z: number } | null;
   blocked_reason: "UNREACHABLE" | "STUCK" | null;
-  carry: { kind: "food" | "wood"; amount: number } | null;
+  carry: { kind: "food" | "wood" | "stone"; amount: number } | null;
   target_id: number | null;
+  /** true si el objetivo es un contraataque automático temporal (no una orden manual ni de la IA). */
+  defending: boolean;
 }
 
 export interface QueueItemView {
@@ -68,7 +70,7 @@ export interface QueueItemView {
 export interface BuildingView {
   id: number;
   owner: PlayerIdWire;
-  kind: "townCenter" | "house" | "barracks";
+  kind: "townCenter" | "house" | "barracks" | "tower";
   cell_x: number;
   cell_z: number;
   hp: number;
@@ -80,6 +82,7 @@ export interface BuildingView {
 export interface CostView {
   food: number;
   wood: number;
+  stone: number;
 }
 
 export interface RulesView {
@@ -87,13 +90,13 @@ export interface RulesView {
   queue_limit: number;
   house_housing: number;
   unit_cost: Record<"villager" | "soldier" | "archer", CostView>;
-  building_cost: Record<"house" | "barracks", CostView>;
-  footprint: Record<"townCenter" | "house" | "barracks", number>;
+  building_cost: Record<"house" | "barracks" | "tower", CostView>;
+  footprint: Record<"townCenter" | "house" | "barracks" | "tower", number>;
 }
 
 export interface ResourceNodeView {
   id: number;
-  kind: "food" | "wood";
+  kind: "food" | "wood" | "stone";
   cell_x: number;
   cell_z: number;
   remaining: number;
@@ -117,7 +120,7 @@ export interface ObserveMessage {
   game_version: string;
   map_version: string;
   balance_version: string;
-  players: { id: PlayerIdWire; food: number; wood: number; pop: number; pop_capacity: number }[];
+  players: { id: PlayerIdWire; food: number; wood: number; stone: number; pop: number; pop_capacity: number }[];
   units: UnitView[];
   buildings: BuildingView[];
   resource_nodes: ResourceNodeView[];
@@ -135,7 +138,7 @@ export type WireCommand =
   | (CommandBase & { type: "Move"; payload: { x: number; z: number } })
   | (CommandBase & { type: "Stop"; payload: Record<string, never> })
   | (CommandBase & { type: "Gather" | "Attack" | "ResumeBuild"; payload: { target_id: number } })
-  | (CommandBase & { type: "Build"; payload: { building_kind: "townCenter" | "house" | "barracks"; cell_x: number; cell_z: number } })
+  | (CommandBase & { type: "Build"; payload: { building_kind: "townCenter" | "house" | "barracks" | "tower"; cell_x: number; cell_z: number } })
   | (CommandBase & { type: "Train"; payload: { unit_kind: "villager" | "soldier" | "archer" } })
   | (CommandBase & { type: "CancelBuild"; payload: Record<string, never> })
   | (CommandBase & { type: "CancelTraining"; payload: { queue_item_id: number } });

@@ -74,12 +74,15 @@ const ACTIVITY_TEXT: Record<Activity, string> = {
 
 const IDLE_REASON_TEXT = { TARGET_DEAD: "objetivo destruido", UNREACHABLE: "objetivo inalcanzable" } as const;
 
+const RESOURCE_NAME = { food: "alimento", wood: "madera", stone: "piedra" } as const;
+
 export function describeEntity(state: GameState, id: EntityId): string {
   const u = state.units.find((x) => x.id === id);
   if (u) {
-    const carry = u.carry ? ` carga ${u.carry.amount} ${u.carry.kind === "food" ? "alimento" : "madera"}` : "";
+    const carry = u.carry ? ` carga ${u.carry.amount} ${RESOURCE_NAME[u.carry.kind]}` : "";
+    const defending = u.job?.type === "attack" && u.job.defense ? " (defendiéndose)" : "";
     const idle = u.idleReason && activityOf(u) === "idle" ? ` (${IDLE_REASON_TEXT[u.idleReason]})` : "";
-    return `${u.kind} #${u.id} (jugador ${u.owner}) vida ${u.hp}/${BALANCE.units[u.kind].hp} ${ACTIVITY_TEXT[activityOf(u)]}${idle}${u.blockedReason ? ` [${u.blockedReason}]` : ""}${carry}`;
+    return `${u.kind} #${u.id} (jugador ${u.owner}) vida ${u.hp}/${BALANCE.units[u.kind].hp} ${ACTIVITY_TEXT[activityOf(u)]}${defending}${idle}${u.blockedReason ? ` [${u.blockedReason}]` : ""}${carry}`;
   }
   const b = state.buildings.find((x) => x.id === id);
   if (b) {

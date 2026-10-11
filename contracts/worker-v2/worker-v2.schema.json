@@ -22,8 +22,8 @@
     "Count": { "type": "integer", "minimum": 0, "maximum": 1000000 },
     "Millis": { "type": "number", "minimum": 0, "maximum": 3600000 },
     "UnitKind": { "enum": ["villager", "soldier", "archer"] },
-    "BuildingKind": { "enum": ["townCenter", "house", "barracks"] },
-    "ResourceKind": { "enum": ["food", "wood"] },
+    "BuildingKind": { "enum": ["townCenter", "house", "barracks", "tower"] },
+    "ResourceKind": { "enum": ["food", "wood", "stone"] },
     "ErrorCode": {
       "enum": ["INVALID_MESSAGE", "INCOMPATIBLE_VERSION", "PAYLOAD_TOO_LARGE", "STALE_RESPONSE", "POLICY_ERROR", "LOAD_ERROR", "TIMEOUT"]
     },
@@ -97,11 +97,12 @@
     "PlayerView": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "food", "wood", "pop", "pop_capacity"],
+      "required": ["id", "food", "wood", "stone", "pop", "pop_capacity"],
       "properties": {
         "id": { "$ref": "#/$defs/PlayerId" },
         "food": { "$ref": "#/$defs/Count" },
         "wood": { "$ref": "#/$defs/Count" },
+        "stone": { "$ref": "#/$defs/Count" },
         "pop": { "$ref": "#/$defs/Count" },
         "pop_capacity": { "$ref": "#/$defs/Count" }
       }
@@ -109,7 +110,7 @@
     "UnitView": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "owner", "kind", "x", "z", "hp", "task", "activity", "dest", "blocked_reason", "carry", "target_id"],
+      "required": ["id", "owner", "kind", "x", "z", "hp", "task", "activity", "dest", "blocked_reason", "carry", "target_id", "defending"],
       "properties": {
         "id": { "$ref": "#/$defs/EntityId" },
         "owner": { "$ref": "#/$defs/PlayerId" },
@@ -132,7 +133,8 @@
             }
           ]
         },
-        "target_id": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/EntityId" }] }
+        "target_id": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/EntityId" }] },
+        "defending": { "type": "boolean" }
       }
     },
     "QueueItemView": {
@@ -164,8 +166,8 @@
     "CostView": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["food", "wood"],
-      "properties": { "food": { "$ref": "#/$defs/Count" }, "wood": { "$ref": "#/$defs/Count" } }
+      "required": ["food", "wood", "stone"],
+      "properties": { "food": { "$ref": "#/$defs/Count" }, "wood": { "$ref": "#/$defs/Count" }, "stone": { "$ref": "#/$defs/Count" } }
     },
     "RulesView": {
       "type": "object",
@@ -188,17 +190,18 @@
         "building_cost": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["house", "barracks"],
-          "properties": { "house": { "$ref": "#/$defs/CostView" }, "barracks": { "$ref": "#/$defs/CostView" } }
+          "required": ["house", "barracks", "tower"],
+          "properties": { "house": { "$ref": "#/$defs/CostView" }, "barracks": { "$ref": "#/$defs/CostView" }, "tower": { "$ref": "#/$defs/CostView" } }
         },
         "footprint": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["townCenter", "house", "barracks"],
+          "required": ["townCenter", "house", "barracks", "tower"],
           "properties": {
             "townCenter": { "$ref": "#/$defs/Count" },
             "house": { "$ref": "#/$defs/Count" },
-            "barracks": { "$ref": "#/$defs/Count" }
+            "barracks": { "$ref": "#/$defs/Count" },
+            "tower": { "$ref": "#/$defs/Count" }
           }
         }
       }

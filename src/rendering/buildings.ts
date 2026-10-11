@@ -34,6 +34,25 @@ export class GeometryCache {
   box(w: number, h: number, d: number, density = 1): THREE.BufferGeometry {
     return this.get(`box:${w}:${h}:${d}:${density}`, () => texBox(w, h, d, density));
   }
+
+  private readonly stenciled = new Map<THREE.Material, THREE.Material>();
+
+  /**
+   * Variante del material que marca la plantilla (1) donde se dibuja un edificio. Las unidades detrás de un edificio usan
+   * esa marca para mostrar su contorno solo ahí (P3-R05). Comparte texturas con el original.
+   */
+  stencil(material: THREE.Material): THREE.Material {
+    let m = this.stenciled.get(material);
+    if (!m) {
+      m = this.assets.track(material.clone());
+      m.stencilWrite = true;
+      m.stencilRef = 1;
+      m.stencilFunc = THREE.AlwaysStencilFunc;
+      m.stencilZPass = THREE.ReplaceStencilOp;
+      this.stenciled.set(material, m);
+    }
+    return m;
+  }
 }
 
 type Place = [number, number, number];
@@ -123,7 +142,7 @@ function build(kind: BuildingKind, owner: 0 | 1, mat: Materials, cache: Geometry
 
     roofOf(roof, 1.9, 1.8, 0.75, mat.roofTile, mat.plaster);
     box(roof, 0.18, 0.5, 0.18, mat.stone, [0.55, 0.5, -0.3]);
-  } else {
+  } else if (kind === "barracks") {
     foundationTop = 0.35;
     wallsHeight = 1.0;
     box(foundation, 2.7, 0.35, 2.4, mat.stone, [0, 0.175, 0], 0.8);
@@ -147,6 +166,24 @@ function build(kind: BuildingKind, owner: 0 | 1, mat: Materials, cache: Geometry
     roofOf(roof, 2.8, 2.6, 0.8, mat.roofSlate, mat.planks);
     pole(roof, 0.9, [-1.3, 0.35, 0]);
     flag(roof, 0.6, 0.4, [-1.0, 1.0, 0]);
+  } else {
+    // Torre de piedra: base ancha, fuste cónico, plataforma de madera con parapeto y techo de pizarra.
+    foundationTop = 0.3;
+    wallsHeight = 2.2;
+    box(foundation, 1.9, 0.3, 1.9, mat.stone, [0, 0.15, 0], 0.8);
+
+    put(walls, cache.get("keep", () => new THREE.CylinderGeometry(0.62, 0.78, 2.2, 8).translate(0, 1.1, 0)), mat.stone, [0, 0, 0]);
+    box(walls, 0.34, 0.7, 0.05, mat.dark, [0, 0.35, 0.74]);
+    for (const y of [1.2, 1.75]) box(walls, 0.07, 0.3, 0.06, mat.dark, [0, y, 0.64]);
+    box(walls, 0.5, 0.07, 0.06, mat.team[owner], [0, 0.82, 0.75]);
+
+    box(roof, 1.6, 0.12, 1.6, mat.planks, [0, 0.06, 0]);
+    for (const [x, z] of [[0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]] as const) box(roof, 0.12, 0.5, 0.12, mat.bark, [x, 0.37, z]);
+    for (const z of [0.72, -0.72]) box(roof, 1.5, 0.08, 0.06, mat.bark, [0, 0.3, z]);
+    for (const x of [0.72, -0.72]) box(roof, 0.06, 0.08, 1.5, mat.bark, [x, 0.3, 0]);
+    put(roof, cache.get("keep-roof", () => new THREE.ConeGeometry(1.0, 0.8, 8).translate(0, 0.4, 0)), mat.roofSlate, [0, 0.5, 0]);
+    pole(roof, 0.6, [0, 1.3, 0]);
+    flag(roof, 0.5, 0.3, [0.3, 1.75, 0]);
   }
 
   // Andamio: postes y travesaños alrededor de la huella; se muestra mientras la obra no está completa.
@@ -165,7 +202,7 @@ function build(kind: BuildingKind, owner: 0 | 1, mat: Materials, cache: Geometry
   for (const [group, byMaterial] of pending) {
     for (const [material, parts] of byMaterial) {
       const geometry = cache.get(`b:${kind}:${owner}:${names.get(group)}:${material.uuid}`, () => mergeParts(parts));
-      group.add(new THREE.Mesh(geometry, material));
+      group.add(new THREE.Mesh(geometry, cache.stencil(material)));
     }
   }
 

@@ -132,6 +132,7 @@ class PolicyTest(unittest.TestCase):
             {
                 "id": 100 + i, "owner": 1, "kind": "villager", "x": 60, "z": 5, "hp": 40, "task": "idle",
                 "activity": "idle", "dest": None, "blocked_reason": None, "carry": None, "target_id": None,
+                "defending": False,
             }
             for i in range(250)
         ]

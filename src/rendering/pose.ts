@@ -1,5 +1,5 @@
 export type Role = "villager" | "archer" | "soldier";
-export type WorkKind = "wood" | "food" | "build";
+export type WorkKind = "wood" | "food" | "stone" | "build";
 
 export interface PoseInput {
   role: Role;
@@ -134,7 +134,7 @@ export function computePose(input: PoseInput): Pose {
     }
   }
 
-  if (input.work === "wood") {
+  if (input.work === "wood" || input.work === "stone") {
     const cycle = (t * 1.8) % 1;
     // Subida lenta y golpe rápido: la curva baja en el tramo final del ciclo.
     const rise = cycle < 0.6 ? easeOut(cycle / 0.6) : 1 - easeIn((cycle - 0.6) / 0.4);

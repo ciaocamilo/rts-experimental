@@ -50,6 +50,15 @@ const LOG_LIMIT = 200;
 const EXCHANGE_LIMIT = 40;
 const LATENCY_WINDOW = 300;
 const RESULT_LIMIT = 64;
+const BLOCKED_LIMIT = 256;
+/** Rechazos que dependen solo del mapa: repetir la misma orden no puede tener otro resultado hasta que cambien los obstáculos. */
+const MAP_REJECTS = new Set<string>(["UNREACHABLE", "BLOCKS_PATH"]);
+
+/** Clave estable de una orden: tipo, entidades, destino y tipo de edificio/unidad. */
+function commandKey(command: Pick<Command, "type" | "entityIds" | "target" | "kind">): string {
+  const ids = [...command.entityIds].sort((a, b) => a - b).join(",");
+  return `${command.type}|${ids}|${JSON.stringify(command.target ?? null)}|${command.kind ?? ""}`;
+}
 
 /** Convierte un comando del contrato en una intención del núcleo. */
 export function toCoreCommand(command: WireCommand): Pick<Command, "type" | "entityIds" | "target" | "kind"> {
@@ -105,6 +114,8 @@ export class AIDirector {
   private unreported: OrderResult[] = [];
   private readonly scheduled = new Map<string, AILogEntry>();
   private readonly seen = new Set<string>();
+  /** Orden rechazada por el mapa → versión de obstáculos en que ocurrió. */
+  private readonly blocked = new Map<string, number>();
   private recoveryDone: ((ok: boolean) => void) | null = null;
 
   private readonly playerId: PlayerId;
@@ -334,6 +345,12 @@ export class AIDirector {
       this.pushLog(entry);
 
       const core = toCoreCommand(command);
+      const repeatKey = commandKey(core);
+      if (this.blocked.get(repeatKey) === this.session.state.obstacleVersion) {
+        entry.outcome = "discarded";
+        entry.code = "REPEATED_REJECTION";
+        continue;
+      }
       this.scheduled.set(command.command_id, entry);
       this.session.issue({ id: command.command_id, player: this.playerId, ...core });
     }
@@ -351,6 +368,10 @@ export class AIDirector {
       entry.appliedTick = applied.appliedTick;
       entry.outcome = applied.result.accepted ? "accepted" : "rejected";
       entry.code = applied.result.accepted ? null : applied.result.code;
+      if (!applied.result.accepted && MAP_REJECTS.has(applied.result.code)) {
+        if (this.blocked.size >= BLOCKED_LIMIT) this.blocked.delete(this.blocked.keys().next().value!);
+        this.blocked.set(commandKey(applied.command), this.session.state.obstacleVersion);
+      }
       this.report(toOrderResult(applied.result));
     }
   }

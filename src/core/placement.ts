@@ -68,7 +68,7 @@ export function previewPlacement(state: GameState, grid: NavGrid, player: Player
   if (!def || !def.constructible || !Number.isInteger(x) || !Number.isInteger(z)) return "INVALID_TARGET";
   if (!footprintFree(state, kind, x, z)) return "INVALID_PLACEMENT";
   const p = state.players[player];
-  if (p.food < def.cost.food || p.wood < def.cost.wood) return "INSUFFICIENT_RESOURCES";
+  if (p.food < def.cost.food || p.wood < def.cost.wood || p.stone < def.cost.stone) return "INSUFFICIENT_RESOURCES";
   if (wouldBlockPath(state, grid, kind, x, z)) return "BLOCKS_PATH";
   return null;
 }

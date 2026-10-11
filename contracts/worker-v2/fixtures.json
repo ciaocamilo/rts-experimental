@@ -12,7 +12,7 @@
     "expected": {
      "pyodide": "0.27.7",
      "python": "3.12",
-     "policy": "policy-0.2"
+     "policy": "policy-0.3"
     },
     "config": {
      "max_commands": 4
@@ -30,7 +30,7 @@
     "versions": {
      "pyodide": "0.27.7",
      "python": "3.12.7",
-     "policy": "policy-0.2"
+     "policy": "policy-0.3"
     },
     "timings_ms": {
      "pyodide_load": 1400.5,
@@ -51,14 +51,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -66,6 +67,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -83,7 +85,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -100,7 +103,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -117,7 +121,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -134,7 +139,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -174,6 +180,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -201,31 +214,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -254,14 +278,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -269,6 +294,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -288,31 +314,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": []
@@ -329,7 +366,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -364,7 +401,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [],
     "reason_codes": [],
     "metrics": {
@@ -384,7 +421,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -446,7 +483,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -509,7 +546,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -532,49 +569,71 @@
    }
   },
   {
-   "name": "error mínimo",
+   "name": "decision con Gather de piedra y Build de torre",
    "valid": true,
    "message": {
-    "type": "ERROR",
-    "protocol_version": 2,
-    "code": "LOAD_ERROR",
-    "message": ""
-   }
-  },
-  {
-   "name": "error con identificadores",
-   "valid": true,
-   "message": {
-    "type": "ERROR",
+    "type": "DECISION",
     "protocol_version": 2,
     "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
     "worker_generation": 1,
     "request_id": 7,
-    "code": "POLICY_ERROR",
-    "message": "excepción en la política"
+    "observation_tick": 140,
+    "player_id": 1,
+    "policy_version": "policy-0.3",
+    "commands": [
+     {
+      "command_id": "7:0",
+      "type": "Gather",
+      "entity_ids": [
+       5
+      ],
+      "payload": {
+       "target_id": 10
+      }
+     },
+     {
+      "command_id": "7:1",
+      "type": "Build",
+      "entity_ids": [
+       5
+      ],
+      "payload": {
+       "building_kind": "tower",
+       "cell_x": 40,
+       "cell_z": 20
+      }
+     }
+    ],
+    "reason_codes": [
+     "GATHER"
+    ],
+    "metrics": {
+     "policy_ms": 1.5,
+     "convert_ms": 0.25
+    }
    }
   },
   {
-   "name": "observe con protocolo 1",
-   "valid": false,
-   "code": "INCOMPATIBLE_VERSION",
+   "name": "observe con unidad defendiéndose y carga de piedra",
+   "valid": true,
    "message": {
     "type": "OBSERVE",
-    "protocol_version": 1,
+    "protocol_version": 2,
     "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
     "worker_generation": 1,
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -582,6 +641,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -599,7 +659,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -613,10 +674,11 @@
       "dest": null,
       "blocked_reason": null,
       "carry": {
-       "kind": "food",
-       "amount": 4
+       "kind": "stone",
+       "amount": 8
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -633,7 +695,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": true
      },
      {
       "id": 7,
@@ -650,7 +713,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -690,6 +754,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -717,31 +788,293 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
+     }
+    },
+    "previous_results": [
+     {
+      "command_id": "6:0",
+      "accepted": true,
+      "code": null
+     },
+     {
+      "command_id": "6:1",
+      "accepted": false,
+      "code": "NOT_IMPLEMENTED"
+     }
+    ]
+   }
+  },
+  {
+   "name": "error mínimo",
+   "valid": true,
+   "message": {
+    "type": "ERROR",
+    "protocol_version": 2,
+    "code": "LOAD_ERROR",
+    "message": ""
+   }
+  },
+  {
+   "name": "error con identificadores",
+   "valid": true,
+   "message": {
+    "type": "ERROR",
+    "protocol_version": 2,
+    "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
+    "worker_generation": 1,
+    "request_id": 7,
+    "code": "POLICY_ERROR",
+    "message": "excepción en la política"
+   }
+  },
+  {
+   "name": "observe con protocolo 1",
+   "valid": false,
+   "code": "INCOMPATIBLE_VERSION",
+   "message": {
+    "type": "OBSERVE",
+    "protocol_version": 1,
+    "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
+    "worker_generation": 1,
+    "request_id": 7,
+    "observation_tick": 140,
+    "player_id": 1,
+    "seed": 1,
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
+    "players": [
+     {
+      "id": 0,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     },
+     {
+      "id": 1,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     }
+    ],
+    "units": [
+     {
+      "id": 2,
+      "owner": 0,
+      "kind": "villager",
+      "x": 13.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "idle",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 5,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "gathering",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": {
+       "kind": "food",
+       "amount": 4
+      },
+      "target_id": 8,
+      "defending": false
+     },
+     {
+      "id": 6,
+      "owner": 1,
+      "kind": "villager",
+      "x": 49,
+      "z": 32.5,
+      "hp": 40,
+      "task": "moving",
+      "activity": "moving",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 7,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 33,
+      "hp": 40,
+      "task": "blocked",
+      "activity": "blocked",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": "STUCK",
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     }
+    ],
+    "buildings": [
+     {
+      "id": 1,
+      "owner": 0,
+      "kind": "townCenter",
+      "cell_x": 8,
+      "cell_z": 30,
+      "hp": 1500,
+      "complete": true,
+      "build_done": 0,
+      "queue": []
+     },
+     {
+      "id": 4,
+      "owner": 1,
+      "kind": "townCenter",
+      "cell_x": 116,
+      "cell_z": 30,
+      "hp": 1500,
+      "complete": true,
+      "build_done": 0,
+      "queue": [
+       {
+        "id": 9,
+        "kind": "villager",
+        "remaining": 120
+       }
+      ]
+     }
+    ],
+    "resource_nodes": [
+     {
+      "id": 8,
+      "kind": "food",
+      "cell_x": 15,
+      "cell_z": 22,
+      "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
+     }
+    ],
+    "map": {
+     "width": 128,
+     "depth": 64,
+     "terrain": [
+      {
+       "x": 62,
+       "z": 8,
+       "w": 4,
+       "h": 18
+      },
+      {
+       "x": 62,
+       "z": 38,
+       "w": 4,
+       "h": 18
+      }
+     ]
+    },
+    "rules": {
+     "max_population": 50,
+     "queue_limit": 5,
+     "house_housing": 5,
+     "unit_cost": {
+      "villager": {
+       "food": 50,
+       "wood": 0,
+       "stone": 0
+      },
+      "soldier": {
+       "food": 60,
+       "wood": 20,
+       "stone": 0
+      },
+      "archer": {
+       "food": 40,
+       "wood": 50,
+       "stone": 0
+      }
+     },
+     "building_cost": {
+      "house": {
+       "food": 0,
+       "wood": 50,
+       "stone": 0
+      },
+      "barracks": {
+       "food": 0,
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
+      }
+     },
+     "footprint": {
+      "townCenter": 4,
+      "house": 2,
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -770,7 +1103,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -806,7 +1139,7 @@
     "expected": {
      "pyodide": "0.27.7",
      "python": "3.12",
-     "policy": "policy-0.2"
+     "policy": "policy-0.3"
     },
     "config": {
      "max_commands": 4
@@ -846,14 +1179,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -861,6 +1195,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -878,7 +1213,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -895,7 +1231,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -912,7 +1249,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -929,7 +1267,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -969,6 +1308,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -996,31 +1342,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -1050,14 +1407,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -1065,6 +1423,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -1082,7 +1441,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -1099,7 +1459,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -1116,7 +1477,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -1133,7 +1495,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -1173,6 +1536,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -1200,31 +1570,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -1255,14 +1636,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -1270,6 +1652,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -1288,6 +1671,7 @@
       "blocked_reason": null,
       "carry": null,
       "target_id": null,
+      "defending": false,
       "carga": 5
      },
      {
@@ -1305,7 +1689,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -1322,7 +1707,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -1339,7 +1725,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -1379,6 +1766,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -1406,31 +1800,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -1460,14 +1865,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -1475,6 +1881,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -1492,7 +1899,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -1509,7 +1917,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -1526,7 +1935,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -1543,7 +1953,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -1583,6 +1994,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "rules": {
@@ -1592,31 +2010,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -1646,14 +2075,15 @@
     "observation_tick": 140,
     "player_id": 2,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -1661,6 +2091,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -1678,7 +2109,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -1695,7 +2127,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -1712,7 +2145,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -1729,7 +2163,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -1769,6 +2204,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -1796,31 +2238,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -1850,14 +2303,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -1865,6 +2319,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -1882,7 +2337,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -1899,7 +2355,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -1916,7 +2373,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -1933,7 +2391,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -1973,6 +2432,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -2000,31 +2466,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -2054,14 +2531,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -2069,6 +2547,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -2086,7 +2565,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -2103,7 +2583,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -2120,7 +2601,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -2137,7 +2619,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -2177,6 +2660,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -2204,31 +2694,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -2258,14 +2759,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -2273,6 +2775,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -2290,7 +2793,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -2307,7 +2811,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -2324,7 +2829,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -2341,7 +2847,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -2381,6 +2888,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -2408,31 +2922,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -2462,14 +2987,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -2477,6 +3003,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -2494,7 +3021,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -2511,7 +3039,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -2528,7 +3057,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -2545,7 +3075,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -2585,6 +3116,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -2612,31 +3150,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -2666,14 +3215,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -2681,6 +3231,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -2698,7 +3249,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -2715,7 +3267,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -2732,7 +3285,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -2749,7 +3303,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -2789,6 +3344,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -2816,31 +3378,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -2870,14 +3443,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -2885,6 +3459,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -2902,7 +3477,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -2919,7 +3495,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -2936,7 +3513,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -2953,7 +3531,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -2993,6 +3572,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -3020,31 +3606,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -3074,14 +3671,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -3089,6 +3687,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -3106,7 +3705,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -3123,7 +3723,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -3140,7 +3741,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -3157,7 +3759,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -3196,6 +3799,13 @@
       "kind": "food",
       "cell_x": 15,
       "cell_z": 22,
+      "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
       "remaining": 500
      }
     ],
@@ -3244,14 +3854,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -3259,6 +3870,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -3276,7 +3888,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -3293,7 +3906,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -3310,7 +3924,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -3327,7 +3942,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -3367,6 +3983,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -3394,31 +4017,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -3448,14 +4082,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -3463,6 +4098,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -3480,7 +4116,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -3496,7 +4133,8 @@
       "carry": {
        "kind": "food"
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -3513,7 +4151,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -3530,7 +4169,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -3570,6 +4210,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -3597,31 +4244,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -3651,14 +4309,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -3666,6 +4325,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -3683,7 +4343,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -3700,7 +4361,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -3717,7 +4379,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -3734,7 +4397,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -3799,6 +4463,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -3826,31 +4497,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -3880,14 +4562,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -3895,6 +4578,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -3912,7 +4596,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -3929,7 +4614,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -3946,7 +4632,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -3963,7 +4650,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -4003,6 +4691,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -4030,27 +4725,714 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
+     }
+    },
+    "previous_results": [
+     {
+      "command_id": "6:0",
+      "accepted": true,
+      "code": null
+     },
+     {
+      "command_id": "6:1",
+      "accepted": false,
+      "code": "NOT_IMPLEMENTED"
+     }
+    ]
+   }
+  },
+  {
+   "name": "observe sin piedra en el jugador",
+   "valid": false,
+   "code": "INVALID_MESSAGE",
+   "message": {
+    "type": "OBSERVE",
+    "protocol_version": 2,
+    "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
+    "worker_generation": 1,
+    "request_id": 7,
+    "observation_tick": 140,
+    "player_id": 1,
+    "seed": 1,
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
+    "players": [
+     {
+      "id": 0,
+      "food": 200,
+      "wood": 200,
+      "pop": 3,
+      "pop_capacity": 10
+     },
+     {
+      "id": 1,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     }
+    ],
+    "units": [
+     {
+      "id": 2,
+      "owner": 0,
+      "kind": "villager",
+      "x": 13.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "idle",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 5,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "gathering",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": {
+       "kind": "food",
+       "amount": 4
+      },
+      "target_id": 8,
+      "defending": false
+     },
+     {
+      "id": 6,
+      "owner": 1,
+      "kind": "villager",
+      "x": 49,
+      "z": 32.5,
+      "hp": 40,
+      "task": "moving",
+      "activity": "moving",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 7,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 33,
+      "hp": 40,
+      "task": "blocked",
+      "activity": "blocked",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": "STUCK",
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     }
+    ],
+    "buildings": [
+     {
+      "id": 1,
+      "owner": 0,
+      "kind": "townCenter",
+      "cell_x": 8,
+      "cell_z": 30,
+      "hp": 1500,
+      "complete": true,
+      "build_done": 0,
+      "queue": []
+     },
+     {
+      "id": 4,
+      "owner": 1,
+      "kind": "townCenter",
+      "cell_x": 116,
+      "cell_z": 30,
+      "hp": 1500,
+      "complete": true,
+      "build_done": 0,
+      "queue": [
+       {
+        "id": 9,
+        "kind": "villager",
+        "remaining": 120
+       }
+      ]
+     }
+    ],
+    "resource_nodes": [
+     {
+      "id": 8,
+      "kind": "food",
+      "cell_x": 15,
+      "cell_z": 22,
+      "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
+     }
+    ],
+    "map": {
+     "width": 128,
+     "depth": 64,
+     "terrain": [
+      {
+       "x": 62,
+       "z": 8,
+       "w": 4,
+       "h": 18
+      },
+      {
+       "x": 62,
+       "z": 38,
+       "w": 4,
+       "h": 18
+      }
+     ]
+    },
+    "rules": {
+     "max_population": 50,
+     "queue_limit": 5,
+     "house_housing": 5,
+     "unit_cost": {
+      "villager": {
+       "food": 50,
+       "wood": 0,
+       "stone": 0
+      },
+      "soldier": {
+       "food": 60,
+       "wood": 20,
+       "stone": 0
+      },
+      "archer": {
+       "food": 40,
+       "wood": 50,
+       "stone": 0
+      }
+     },
+     "building_cost": {
+      "house": {
+       "food": 0,
+       "wood": 50,
+       "stone": 0
+      },
+      "barracks": {
+       "food": 0,
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
+      }
+     },
+     "footprint": {
+      "townCenter": 4,
+      "house": 2,
+      "barracks": 3,
+      "tower": 2
+     }
+    },
+    "previous_results": [
+     {
+      "command_id": "6:0",
+      "accepted": true,
+      "code": null
+     },
+     {
+      "command_id": "6:1",
+      "accepted": false,
+      "code": "NOT_IMPLEMENTED"
+     }
+    ]
+   }
+  },
+  {
+   "name": "observe con unidad sin defending",
+   "valid": false,
+   "code": "INVALID_MESSAGE",
+   "message": {
+    "type": "OBSERVE",
+    "protocol_version": 2,
+    "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
+    "worker_generation": 1,
+    "request_id": 7,
+    "observation_tick": 140,
+    "player_id": 1,
+    "seed": 1,
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
+    "players": [
+     {
+      "id": 0,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     },
+     {
+      "id": 1,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     }
+    ],
+    "units": [
+     {
+      "id": 2,
+      "owner": 0,
+      "kind": "villager",
+      "x": 13.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "idle",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null
+     },
+     {
+      "id": 5,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "gathering",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": {
+       "kind": "food",
+       "amount": 4
+      },
+      "target_id": 8,
+      "defending": false
+     },
+     {
+      "id": 6,
+      "owner": 1,
+      "kind": "villager",
+      "x": 49,
+      "z": 32.5,
+      "hp": 40,
+      "task": "moving",
+      "activity": "moving",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 7,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 33,
+      "hp": 40,
+      "task": "blocked",
+      "activity": "blocked",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": "STUCK",
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     }
+    ],
+    "buildings": [
+     {
+      "id": 1,
+      "owner": 0,
+      "kind": "townCenter",
+      "cell_x": 8,
+      "cell_z": 30,
+      "hp": 1500,
+      "complete": true,
+      "build_done": 0,
+      "queue": []
+     },
+     {
+      "id": 4,
+      "owner": 1,
+      "kind": "townCenter",
+      "cell_x": 116,
+      "cell_z": 30,
+      "hp": 1500,
+      "complete": true,
+      "build_done": 0,
+      "queue": [
+       {
+        "id": 9,
+        "kind": "villager",
+        "remaining": 120
+       }
+      ]
+     }
+    ],
+    "resource_nodes": [
+     {
+      "id": 8,
+      "kind": "food",
+      "cell_x": 15,
+      "cell_z": 22,
+      "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
+     }
+    ],
+    "map": {
+     "width": 128,
+     "depth": 64,
+     "terrain": [
+      {
+       "x": 62,
+       "z": 8,
+       "w": 4,
+       "h": 18
+      },
+      {
+       "x": 62,
+       "z": 38,
+       "w": 4,
+       "h": 18
+      }
+     ]
+    },
+    "rules": {
+     "max_population": 50,
+     "queue_limit": 5,
+     "house_housing": 5,
+     "unit_cost": {
+      "villager": {
+       "food": 50,
+       "wood": 0,
+       "stone": 0
+      },
+      "soldier": {
+       "food": 60,
+       "wood": 20,
+       "stone": 0
+      },
+      "archer": {
+       "food": 40,
+       "wood": 50,
+       "stone": 0
+      }
+     },
+     "building_cost": {
+      "house": {
+       "food": 0,
+       "wood": 50,
+       "stone": 0
+      },
+      "barracks": {
+       "food": 0,
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
+      }
+     },
+     "footprint": {
+      "townCenter": 4,
+      "house": 2,
+      "barracks": 3,
+      "tower": 2
+     }
+    },
+    "previous_results": [
+     {
+      "command_id": "6:0",
+      "accepted": true,
+      "code": null
+     },
+     {
+      "command_id": "6:1",
+      "accepted": false,
+      "code": "NOT_IMPLEMENTED"
+     }
+    ]
+   }
+  },
+  {
+   "name": "observe sin coste de torre",
+   "valid": false,
+   "code": "INVALID_MESSAGE",
+   "message": {
+    "type": "OBSERVE",
+    "protocol_version": 2,
+    "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
+    "worker_generation": 1,
+    "request_id": 7,
+    "observation_tick": 140,
+    "player_id": 1,
+    "seed": 1,
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
+    "players": [
+     {
+      "id": 0,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     },
+     {
+      "id": 1,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     }
+    ],
+    "units": [
+     {
+      "id": 2,
+      "owner": 0,
+      "kind": "villager",
+      "x": 13.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "idle",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 5,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "gathering",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": {
+       "kind": "food",
+       "amount": 4
+      },
+      "target_id": 8,
+      "defending": false
+     },
+     {
+      "id": 6,
+      "owner": 1,
+      "kind": "villager",
+      "x": 49,
+      "z": 32.5,
+      "hp": 40,
+      "task": "moving",
+      "activity": "moving",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 7,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 33,
+      "hp": 40,
+      "task": "blocked",
+      "activity": "blocked",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": "STUCK",
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     }
+    ],
+    "buildings": [
+     {
+      "id": 1,
+      "owner": 0,
+      "kind": "townCenter",
+      "cell_x": 8,
+      "cell_z": 30,
+      "hp": 1500,
+      "complete": true,
+      "build_done": 0,
+      "queue": []
+     },
+     {
+      "id": 4,
+      "owner": 1,
+      "kind": "townCenter",
+      "cell_x": 116,
+      "cell_z": 30,
+      "hp": 1500,
+      "complete": true,
+      "build_done": 0,
+      "queue": [
+       {
+        "id": 9,
+        "kind": "villager",
+        "remaining": 120
+       }
+      ]
+     }
+    ],
+    "resource_nodes": [
+     {
+      "id": 8,
+      "kind": "food",
+      "cell_x": 15,
+      "cell_z": 22,
+      "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
+     }
+    ],
+    "map": {
+     "width": 128,
+     "depth": 64,
+     "terrain": [
+      {
+       "x": 62,
+       "z": 8,
+       "w": 4,
+       "h": 18
+      },
+      {
+       "x": 62,
+       "z": 38,
+       "w": 4,
+       "h": 18
+      }
+     ]
+    },
+    "rules": {
+     "max_population": 50,
+     "queue_limit": 5,
+     "house_housing": 5,
+     "unit_cost": {
+      "villager": {
+       "food": 50,
+       "wood": 0,
+       "stone": 0
+      },
+      "soldier": {
+       "food": 60,
+       "wood": 20,
+       "stone": 0
+      },
+      "archer": {
+       "food": 40,
+       "wood": 50,
+       "stone": 0
+      }
+     },
+     "building_cost": {
+      "house": {
+       "food": 0,
+       "wood": 50,
+       "stone": 0
+      },
+      "barracks": {
+       "food": 0,
+       "wood": 150,
+       "stone": 0
+      }
+     },
+     "footprint": {
+      "townCenter": 4,
+      "house": 2,
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -4080,14 +5462,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -4095,6 +5478,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -4112,7 +5496,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -4129,7 +5514,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -4146,7 +5532,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -4163,7 +5550,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -4203,6 +5591,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -4230,31 +5625,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -4284,14 +5690,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -4299,6 +5706,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -4316,7 +5724,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -4333,7 +5742,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -4350,7 +5760,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -4367,7 +5778,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -4407,6 +5819,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -4434,31 +5853,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -4488,14 +5918,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -4513,7 +5944,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -4530,7 +5962,8 @@
        "kind": "food",
        "amount": 4
       },
-      "target_id": 8
+      "target_id": 8,
+      "defending": false
      },
      {
       "id": 6,
@@ -4547,7 +5980,8 @@
       },
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -4564,7 +5998,8 @@
       },
       "blocked_reason": "STUCK",
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -4604,6 +6039,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -4631,31 +6073,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -4685,14 +6138,15 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "0.0.1",
-    "map_version": "map-0.2 (128x64)",
-    "balance_version": "balance-0.1",
+    "game_version": "p3.0.0",
+    "map_version": "map-0.3 (128x64, piedra)",
+    "balance_version": "balance-0.2",
     "players": [
      {
       "id": 0,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      },
@@ -4700,6 +6154,7 @@
       "id": 1,
       "food": 200,
       "wood": 200,
+      "stone": 0,
       "pop": 3,
       "pop_capacity": 10
      }
@@ -4717,7 +6172,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 2,
@@ -4731,7 +6187,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 3,
@@ -4745,7 +6202,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 4,
@@ -4759,7 +6217,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 5,
@@ -4773,7 +6232,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 6,
@@ -4787,7 +6247,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 7,
@@ -4801,7 +6262,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 8,
@@ -4815,7 +6277,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 9,
@@ -4829,7 +6292,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 10,
@@ -4843,7 +6307,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 11,
@@ -4857,7 +6322,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 12,
@@ -4871,7 +6337,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 13,
@@ -4885,7 +6352,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 14,
@@ -4899,7 +6367,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 15,
@@ -4913,7 +6382,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 16,
@@ -4927,7 +6397,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 17,
@@ -4941,7 +6412,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 18,
@@ -4955,7 +6427,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 19,
@@ -4969,7 +6442,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 20,
@@ -4983,7 +6457,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 21,
@@ -4997,7 +6472,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 22,
@@ -5011,7 +6487,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 23,
@@ -5025,7 +6502,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 24,
@@ -5039,7 +6517,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 25,
@@ -5053,7 +6532,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 26,
@@ -5067,7 +6547,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 27,
@@ -5081,7 +6562,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 28,
@@ -5095,7 +6577,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 29,
@@ -5109,7 +6592,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 30,
@@ -5123,7 +6607,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 31,
@@ -5137,7 +6622,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 32,
@@ -5151,7 +6637,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 33,
@@ -5165,7 +6652,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 34,
@@ -5179,7 +6667,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 35,
@@ -5193,7 +6682,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 36,
@@ -5207,7 +6697,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 37,
@@ -5221,7 +6712,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 38,
@@ -5235,7 +6727,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 39,
@@ -5249,7 +6742,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 40,
@@ -5263,7 +6757,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 41,
@@ -5277,7 +6772,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 42,
@@ -5291,7 +6787,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 43,
@@ -5305,7 +6802,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 44,
@@ -5319,7 +6817,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 45,
@@ -5333,7 +6832,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 46,
@@ -5347,7 +6847,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 47,
@@ -5361,7 +6862,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 48,
@@ -5375,7 +6877,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 49,
@@ -5389,7 +6892,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 50,
@@ -5403,7 +6907,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 51,
@@ -5417,7 +6922,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 52,
@@ -5431,7 +6937,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 53,
@@ -5445,7 +6952,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 54,
@@ -5459,7 +6967,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 55,
@@ -5473,7 +6982,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 56,
@@ -5487,7 +6997,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 57,
@@ -5501,7 +7012,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 58,
@@ -5515,7 +7027,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 59,
@@ -5529,7 +7042,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 60,
@@ -5543,7 +7057,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 61,
@@ -5557,7 +7072,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 62,
@@ -5571,7 +7087,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 63,
@@ -5585,7 +7102,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 64,
@@ -5599,7 +7117,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 65,
@@ -5613,7 +7132,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 66,
@@ -5627,7 +7147,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 67,
@@ -5641,7 +7162,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 68,
@@ -5655,7 +7177,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 69,
@@ -5669,7 +7192,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 70,
@@ -5683,7 +7207,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 71,
@@ -5697,7 +7222,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 72,
@@ -5711,7 +7237,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 73,
@@ -5725,7 +7252,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 74,
@@ -5739,7 +7267,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 75,
@@ -5753,7 +7282,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 76,
@@ -5767,7 +7297,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 77,
@@ -5781,7 +7312,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 78,
@@ -5795,7 +7327,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 79,
@@ -5809,7 +7342,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 80,
@@ -5823,7 +7357,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 81,
@@ -5837,7 +7372,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 82,
@@ -5851,7 +7387,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 83,
@@ -5865,7 +7402,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 84,
@@ -5879,7 +7417,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 85,
@@ -5893,7 +7432,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 86,
@@ -5907,7 +7447,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 87,
@@ -5921,7 +7462,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 88,
@@ -5935,7 +7477,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 89,
@@ -5949,7 +7492,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 90,
@@ -5963,7 +7507,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 91,
@@ -5977,7 +7522,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 92,
@@ -5991,7 +7537,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 93,
@@ -6005,7 +7552,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 94,
@@ -6019,7 +7567,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 95,
@@ -6033,7 +7582,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 96,
@@ -6047,7 +7597,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 97,
@@ -6061,7 +7612,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 98,
@@ -6075,7 +7627,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 99,
@@ -6089,7 +7642,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 100,
@@ -6103,7 +7657,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 101,
@@ -6117,7 +7672,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 102,
@@ -6131,7 +7687,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 103,
@@ -6145,7 +7702,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 104,
@@ -6159,7 +7717,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 105,
@@ -6173,7 +7732,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 106,
@@ -6187,7 +7747,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 107,
@@ -6201,7 +7762,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 108,
@@ -6215,7 +7777,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 109,
@@ -6229,7 +7792,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 110,
@@ -6243,7 +7807,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 111,
@@ -6257,7 +7822,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 112,
@@ -6271,7 +7837,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 113,
@@ -6285,7 +7852,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 114,
@@ -6299,7 +7867,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 115,
@@ -6313,7 +7882,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 116,
@@ -6327,7 +7897,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 117,
@@ -6341,7 +7912,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 118,
@@ -6355,7 +7927,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 119,
@@ -6369,7 +7942,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 120,
@@ -6383,7 +7957,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 121,
@@ -6397,7 +7972,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 122,
@@ -6411,7 +7987,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 123,
@@ -6425,7 +8002,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 124,
@@ -6439,7 +8017,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 125,
@@ -6453,7 +8032,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 126,
@@ -6467,7 +8047,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 127,
@@ -6481,7 +8062,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 128,
@@ -6495,7 +8077,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 129,
@@ -6509,7 +8092,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 130,
@@ -6523,7 +8107,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 131,
@@ -6537,7 +8122,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 132,
@@ -6551,7 +8137,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 133,
@@ -6565,7 +8152,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 134,
@@ -6579,7 +8167,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 135,
@@ -6593,7 +8182,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 136,
@@ -6607,7 +8197,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 137,
@@ -6621,7 +8212,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 138,
@@ -6635,7 +8227,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 139,
@@ -6649,7 +8242,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 140,
@@ -6663,7 +8257,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 141,
@@ -6677,7 +8272,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 142,
@@ -6691,7 +8287,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 143,
@@ -6705,7 +8302,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 144,
@@ -6719,7 +8317,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 145,
@@ -6733,7 +8332,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 146,
@@ -6747,7 +8347,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 147,
@@ -6761,7 +8362,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 148,
@@ -6775,7 +8377,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 149,
@@ -6789,7 +8392,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 150,
@@ -6803,7 +8407,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 151,
@@ -6817,7 +8422,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 152,
@@ -6831,7 +8437,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 153,
@@ -6845,7 +8452,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 154,
@@ -6859,7 +8467,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 155,
@@ -6873,7 +8482,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 156,
@@ -6887,7 +8497,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 157,
@@ -6901,7 +8512,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 158,
@@ -6915,7 +8527,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 159,
@@ -6929,7 +8542,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 160,
@@ -6943,7 +8557,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 161,
@@ -6957,7 +8572,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 162,
@@ -6971,7 +8587,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 163,
@@ -6985,7 +8602,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 164,
@@ -6999,7 +8617,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 165,
@@ -7013,7 +8632,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 166,
@@ -7027,7 +8647,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 167,
@@ -7041,7 +8662,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 168,
@@ -7055,7 +8677,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 169,
@@ -7069,7 +8692,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 170,
@@ -7083,7 +8707,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 171,
@@ -7097,7 +8722,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 172,
@@ -7111,7 +8737,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 173,
@@ -7125,7 +8752,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 174,
@@ -7139,7 +8767,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 175,
@@ -7153,7 +8782,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 176,
@@ -7167,7 +8797,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 177,
@@ -7181,7 +8812,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 178,
@@ -7195,7 +8827,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 179,
@@ -7209,7 +8842,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 180,
@@ -7223,7 +8857,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 181,
@@ -7237,7 +8872,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 182,
@@ -7251,7 +8887,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 183,
@@ -7265,7 +8902,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 184,
@@ -7279,7 +8917,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 185,
@@ -7293,7 +8932,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 186,
@@ -7307,7 +8947,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 187,
@@ -7321,7 +8962,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 188,
@@ -7335,7 +8977,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 189,
@@ -7349,7 +8992,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 190,
@@ -7363,7 +9007,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 191,
@@ -7377,7 +9022,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 192,
@@ -7391,7 +9037,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 193,
@@ -7405,7 +9052,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 194,
@@ -7419,7 +9067,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 195,
@@ -7433,7 +9082,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 196,
@@ -7447,7 +9097,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 197,
@@ -7461,7 +9112,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 198,
@@ -7475,7 +9127,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 199,
@@ -7489,7 +9142,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 200,
@@ -7503,7 +9157,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 201,
@@ -7517,7 +9172,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 202,
@@ -7531,7 +9187,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 203,
@@ -7545,7 +9202,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 204,
@@ -7559,7 +9217,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 205,
@@ -7573,7 +9232,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 206,
@@ -7587,7 +9247,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 207,
@@ -7601,7 +9262,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 208,
@@ -7615,7 +9277,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 209,
@@ -7629,7 +9292,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 210,
@@ -7643,7 +9307,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 211,
@@ -7657,7 +9322,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 212,
@@ -7671,7 +9337,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 213,
@@ -7685,7 +9352,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 214,
@@ -7699,7 +9367,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 215,
@@ -7713,7 +9382,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 216,
@@ -7727,7 +9397,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 217,
@@ -7741,7 +9412,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 218,
@@ -7755,7 +9427,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 219,
@@ -7769,7 +9442,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 220,
@@ -7783,7 +9457,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 221,
@@ -7797,7 +9472,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 222,
@@ -7811,7 +9487,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 223,
@@ -7825,7 +9502,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 224,
@@ -7839,7 +9517,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 225,
@@ -7853,7 +9532,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 226,
@@ -7867,7 +9547,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 227,
@@ -7881,7 +9562,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 228,
@@ -7895,7 +9577,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 229,
@@ -7909,7 +9592,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 230,
@@ -7923,7 +9607,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 231,
@@ -7937,7 +9622,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 232,
@@ -7951,7 +9637,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 233,
@@ -7965,7 +9652,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 234,
@@ -7979,7 +9667,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 235,
@@ -7993,7 +9682,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 236,
@@ -8007,7 +9697,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 237,
@@ -8021,7 +9712,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 238,
@@ -8035,7 +9727,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 239,
@@ -8049,7 +9742,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 240,
@@ -8063,7 +9757,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 241,
@@ -8077,7 +9772,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 242,
@@ -8091,7 +9787,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 243,
@@ -8105,7 +9802,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 244,
@@ -8119,7 +9817,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 245,
@@ -8133,7 +9832,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 246,
@@ -8147,7 +9847,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 247,
@@ -8161,7 +9862,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 248,
@@ -8175,7 +9877,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 249,
@@ -8189,7 +9892,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 250,
@@ -8203,7 +9907,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 251,
@@ -8217,7 +9922,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 252,
@@ -8231,7 +9937,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 253,
@@ -8245,7 +9952,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 254,
@@ -8259,7 +9967,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 255,
@@ -8273,7 +9982,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 256,
@@ -8287,7 +9997,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 257,
@@ -8301,7 +10012,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 258,
@@ -8315,7 +10027,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 259,
@@ -8329,7 +10042,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 260,
@@ -8343,7 +10057,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 261,
@@ -8357,7 +10072,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 262,
@@ -8371,7 +10087,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 263,
@@ -8385,7 +10102,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 264,
@@ -8399,7 +10117,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 265,
@@ -8413,7 +10132,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 266,
@@ -8427,7 +10147,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 267,
@@ -8441,7 +10162,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 268,
@@ -8455,7 +10177,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 269,
@@ -8469,7 +10192,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 270,
@@ -8483,7 +10207,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 271,
@@ -8497,7 +10222,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 272,
@@ -8511,7 +10237,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 273,
@@ -8525,7 +10252,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 274,
@@ -8539,7 +10267,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 275,
@@ -8553,7 +10282,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 276,
@@ -8567,7 +10297,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 277,
@@ -8581,7 +10312,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 278,
@@ -8595,7 +10327,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 279,
@@ -8609,7 +10342,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 280,
@@ -8623,7 +10357,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 281,
@@ -8637,7 +10372,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 282,
@@ -8651,7 +10387,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 283,
@@ -8665,7 +10402,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 284,
@@ -8679,7 +10417,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 285,
@@ -8693,7 +10432,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 286,
@@ -8707,7 +10447,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 287,
@@ -8721,7 +10462,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 288,
@@ -8735,7 +10477,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 289,
@@ -8749,7 +10492,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 290,
@@ -8763,7 +10507,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 291,
@@ -8777,7 +10522,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 292,
@@ -8791,7 +10537,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 293,
@@ -8805,7 +10552,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 294,
@@ -8819,7 +10567,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 295,
@@ -8833,7 +10582,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 296,
@@ -8847,7 +10597,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 297,
@@ -8861,7 +10612,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 298,
@@ -8875,7 +10627,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 299,
@@ -8889,7 +10642,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 300,
@@ -8903,7 +10657,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 301,
@@ -8917,7 +10672,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 302,
@@ -8931,7 +10687,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 303,
@@ -8945,7 +10702,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 304,
@@ -8959,7 +10717,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 305,
@@ -8973,7 +10732,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 306,
@@ -8987,7 +10747,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 307,
@@ -9001,7 +10762,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 308,
@@ -9015,7 +10777,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 309,
@@ -9029,7 +10792,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 310,
@@ -9043,7 +10807,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 311,
@@ -9057,7 +10822,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 312,
@@ -9071,7 +10837,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 313,
@@ -9085,7 +10852,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 314,
@@ -9099,7 +10867,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 315,
@@ -9113,7 +10882,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 316,
@@ -9127,7 +10897,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 317,
@@ -9141,7 +10912,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 318,
@@ -9155,7 +10927,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 319,
@@ -9169,7 +10942,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 320,
@@ -9183,7 +10957,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 321,
@@ -9197,7 +10972,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 322,
@@ -9211,7 +10987,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 323,
@@ -9225,7 +11002,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 324,
@@ -9239,7 +11017,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 325,
@@ -9253,7 +11032,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 326,
@@ -9267,7 +11047,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 327,
@@ -9281,7 +11062,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 328,
@@ -9295,7 +11077,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 329,
@@ -9309,7 +11092,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 330,
@@ -9323,7 +11107,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 331,
@@ -9337,7 +11122,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 332,
@@ -9351,7 +11137,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 333,
@@ -9365,7 +11152,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 334,
@@ -9379,7 +11167,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 335,
@@ -9393,7 +11182,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 336,
@@ -9407,7 +11197,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 337,
@@ -9421,7 +11212,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 338,
@@ -9435,7 +11227,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 339,
@@ -9449,7 +11242,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 340,
@@ -9463,7 +11257,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 341,
@@ -9477,7 +11272,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 342,
@@ -9491,7 +11287,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 343,
@@ -9505,7 +11302,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 344,
@@ -9519,7 +11317,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 345,
@@ -9533,7 +11332,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 346,
@@ -9547,7 +11347,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 347,
@@ -9561,7 +11362,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 348,
@@ -9575,7 +11377,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 349,
@@ -9589,7 +11392,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 350,
@@ -9603,7 +11407,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 351,
@@ -9617,7 +11422,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 352,
@@ -9631,7 +11437,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 353,
@@ -9645,7 +11452,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 354,
@@ -9659,7 +11467,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 355,
@@ -9673,7 +11482,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 356,
@@ -9687,7 +11497,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 357,
@@ -9701,7 +11512,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 358,
@@ -9715,7 +11527,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 359,
@@ -9729,7 +11542,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 360,
@@ -9743,7 +11557,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 361,
@@ -9757,7 +11572,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 362,
@@ -9771,7 +11587,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 363,
@@ -9785,7 +11602,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 364,
@@ -9799,7 +11617,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 365,
@@ -9813,7 +11632,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 366,
@@ -9827,7 +11647,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 367,
@@ -9841,7 +11662,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 368,
@@ -9855,7 +11677,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 369,
@@ -9869,7 +11692,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 370,
@@ -9883,7 +11707,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 371,
@@ -9897,7 +11722,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 372,
@@ -9911,7 +11737,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 373,
@@ -9925,7 +11752,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 374,
@@ -9939,7 +11767,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 375,
@@ -9953,7 +11782,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 376,
@@ -9967,7 +11797,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 377,
@@ -9981,7 +11812,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 378,
@@ -9995,7 +11827,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 379,
@@ -10009,7 +11842,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 380,
@@ -10023,7 +11857,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 381,
@@ -10037,7 +11872,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 382,
@@ -10051,7 +11887,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 383,
@@ -10065,7 +11902,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 384,
@@ -10079,7 +11917,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 385,
@@ -10093,7 +11932,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 386,
@@ -10107,7 +11947,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 387,
@@ -10121,7 +11962,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 388,
@@ -10135,7 +11977,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 389,
@@ -10149,7 +11992,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 390,
@@ -10163,7 +12007,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 391,
@@ -10177,7 +12022,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 392,
@@ -10191,7 +12037,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 393,
@@ -10205,7 +12052,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 394,
@@ -10219,7 +12067,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 395,
@@ -10233,7 +12082,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 396,
@@ -10247,7 +12097,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 397,
@@ -10261,7 +12112,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 398,
@@ -10275,7 +12127,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 399,
@@ -10289,7 +12142,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 400,
@@ -10303,7 +12157,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 401,
@@ -10317,7 +12172,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 402,
@@ -10331,7 +12187,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 403,
@@ -10345,7 +12202,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 404,
@@ -10359,7 +12217,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 405,
@@ -10373,7 +12232,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 406,
@@ -10387,7 +12247,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 407,
@@ -10401,7 +12262,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 408,
@@ -10415,7 +12277,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 409,
@@ -10429,7 +12292,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 410,
@@ -10443,7 +12307,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 411,
@@ -10457,7 +12322,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 412,
@@ -10471,7 +12337,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 413,
@@ -10485,7 +12352,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 414,
@@ -10499,7 +12367,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 415,
@@ -10513,7 +12382,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 416,
@@ -10527,7 +12397,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 417,
@@ -10541,7 +12412,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 418,
@@ -10555,7 +12427,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 419,
@@ -10569,7 +12442,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 420,
@@ -10583,7 +12457,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 421,
@@ -10597,7 +12472,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 422,
@@ -10611,7 +12487,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 423,
@@ -10625,7 +12502,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 424,
@@ -10639,7 +12517,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 425,
@@ -10653,7 +12532,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 426,
@@ -10667,7 +12547,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 427,
@@ -10681,7 +12562,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 428,
@@ -10695,7 +12577,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 429,
@@ -10709,7 +12592,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 430,
@@ -10723,7 +12607,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 431,
@@ -10737,7 +12622,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 432,
@@ -10751,7 +12637,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 433,
@@ -10765,7 +12652,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 434,
@@ -10779,7 +12667,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 435,
@@ -10793,7 +12682,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 436,
@@ -10807,7 +12697,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 437,
@@ -10821,7 +12712,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 438,
@@ -10835,7 +12727,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 439,
@@ -10849,7 +12742,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 440,
@@ -10863,7 +12757,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 441,
@@ -10877,7 +12772,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 442,
@@ -10891,7 +12787,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 443,
@@ -10905,7 +12802,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 444,
@@ -10919,7 +12817,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 445,
@@ -10933,7 +12832,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 446,
@@ -10947,7 +12847,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 447,
@@ -10961,7 +12862,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 448,
@@ -10975,7 +12877,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 449,
@@ -10989,7 +12892,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 450,
@@ -11003,7 +12907,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 451,
@@ -11017,7 +12922,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 452,
@@ -11031,7 +12937,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 453,
@@ -11045,7 +12952,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 454,
@@ -11059,7 +12967,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 455,
@@ -11073,7 +12982,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 456,
@@ -11087,7 +12997,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 457,
@@ -11101,7 +13012,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 458,
@@ -11115,7 +13027,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 459,
@@ -11129,7 +13042,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 460,
@@ -11143,7 +13057,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 461,
@@ -11157,7 +13072,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 462,
@@ -11171,7 +13087,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 463,
@@ -11185,7 +13102,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 464,
@@ -11199,7 +13117,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 465,
@@ -11213,7 +13132,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 466,
@@ -11227,7 +13147,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 467,
@@ -11241,7 +13162,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 468,
@@ -11255,7 +13177,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 469,
@@ -11269,7 +13192,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 470,
@@ -11283,7 +13207,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 471,
@@ -11297,7 +13222,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 472,
@@ -11311,7 +13237,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 473,
@@ -11325,7 +13252,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 474,
@@ -11339,7 +13267,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 475,
@@ -11353,7 +13282,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 476,
@@ -11367,7 +13297,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 477,
@@ -11381,7 +13312,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 478,
@@ -11395,7 +13327,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 479,
@@ -11409,7 +13342,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 480,
@@ -11423,7 +13357,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 481,
@@ -11437,7 +13372,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 482,
@@ -11451,7 +13387,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 483,
@@ -11465,7 +13402,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 484,
@@ -11479,7 +13417,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 485,
@@ -11493,7 +13432,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 486,
@@ -11507,7 +13447,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 487,
@@ -11521,7 +13462,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 488,
@@ -11535,7 +13477,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 489,
@@ -11549,7 +13492,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 490,
@@ -11563,7 +13507,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 491,
@@ -11577,7 +13522,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 492,
@@ -11591,7 +13537,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 493,
@@ -11605,7 +13552,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 494,
@@ -11619,7 +13567,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 495,
@@ -11633,7 +13582,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 496,
@@ -11647,7 +13597,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 497,
@@ -11661,7 +13612,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 498,
@@ -11675,7 +13627,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 499,
@@ -11689,7 +13642,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 500,
@@ -11703,7 +13657,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      },
      {
       "id": 501,
@@ -11717,7 +13672,8 @@
       "dest": null,
       "blocked_reason": null,
       "carry": null,
-      "target_id": null
+      "target_id": null,
+      "defending": false
      }
     ],
     "buildings": [
@@ -11757,6 +13713,13 @@
       "cell_x": 15,
       "cell_z": 22,
       "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
      }
     ],
     "map": {
@@ -11784,31 +13747,42 @@
      "unit_cost": {
       "villager": {
        "food": 50,
-       "wood": 0
+       "wood": 0,
+       "stone": 0
       },
       "soldier": {
        "food": 60,
-       "wood": 20
+       "wood": 20,
+       "stone": 0
       },
       "archer": {
        "food": 40,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       }
      },
      "building_cost": {
       "house": {
        "food": 0,
-       "wood": 50
+       "wood": 50,
+       "stone": 0
       },
       "barracks": {
        "food": 0,
-       "wood": 150
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
-      "barracks": 3
+      "barracks": 3,
+      "tower": 2
      }
     },
     "previous_results": [
@@ -11851,7 +13825,7 @@
     "expected": {
      "pyodide": "0.27.7",
      "python": "3.12",
-     "policy": "policy-0.2"
+     "policy": "policy-0.3"
     },
     "config": {
      "max_commands": 5
@@ -11886,7 +13860,7 @@
     "versions": {
      "pyodide": "0.27.7",
      "python": "3.12.7",
-     "policy": "policy-0.2"
+     "policy": "policy-0.3"
     },
     "timings_ms": {
      "pyodide_load": 1400.5,
@@ -11935,7 +13909,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -11999,7 +13973,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": {},
     "reason_codes": [
      "GATHER"
@@ -12022,7 +13996,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12059,7 +14033,7 @@
     "request_id": "7",
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12095,7 +14069,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12131,7 +14105,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12167,7 +14141,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12202,7 +14176,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12233,7 +14207,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12268,7 +14242,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12303,7 +14277,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12338,7 +14312,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12374,7 +14348,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12407,7 +14381,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12542,7 +14516,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12576,7 +14550,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "abc",
@@ -12608,7 +14582,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",
@@ -12644,7 +14618,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.2",
+    "policy_version": "policy-0.3",
     "commands": [
      {
       "command_id": "7:0",

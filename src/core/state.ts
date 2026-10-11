@@ -21,6 +21,8 @@ export function makeUnit(id: number, owner: PlayerId, kind: UnitKind, x: number,
     job: null,
     cooldown: 0,
     idleReason: null,
+    threat: null,
+    avoid: null,
   };
 }
 
@@ -31,6 +33,7 @@ export function createEmptyState(seed: number, mapWidth: number = MAP_WIDTH, map
       id,
       food: BALANCE.start.food,
       wood: BALANCE.start.wood,
+      stone: BALANCE.start.stone,
       popCapacity: BALANCE.start.popCapacity,
     }),
   ) as [PlayerState, PlayerState];
@@ -52,6 +55,7 @@ export function createEmptyState(seed: number, mapWidth: number = MAP_WIDTH, map
     resourceNodes: [],
     nextEntityId: 1,
     lastCommandSeq: 0,
+    losses: { units: [0, 0], buildings: [0, 0] },
   };
 }
 
@@ -86,6 +90,7 @@ export function addBuilding(state: GameState, owner: PlayerId, kind: BuildingKin
     complete,
     buildDone: complete ? def.buildTicks : 0,
     queue: [],
+    cooldown: 0,
   };
   state.buildings.push(building);
   state.obstacleVersion += 1;

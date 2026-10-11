@@ -91,6 +91,7 @@ export function issueMove(state: GameState, grid: NavGrid, command: Command): Mo
     });
     const slot = pool.splice(best, 1)[0]!;
     unit.job = null; // Una orden nueva cancela el trabajo, pero conserva la carga.
+    unit.threat = null;
     walkTo(state, unit, slot);
   }
   return { assigned: slots.length, total: units.length };
@@ -101,6 +102,7 @@ export function issueStop(state: GameState, command: Command): void {
   for (const unit of state.units) {
     if (!ids.has(unit.id)) continue;
     unit.job = null;
+    unit.threat = null;
     clearTask(unit);
   }
 }

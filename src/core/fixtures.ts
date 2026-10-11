@@ -3,7 +3,7 @@ import { BALANCE } from "../content/balance";
 import { addBuilding, addTerrain, addUnit, createEmptyState, createInitialState } from "./state";
 import type { Command, EntityId, GameState, PlayerId } from "./types";
 
-export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo";
+export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa";
 
 export interface Fixture {
   state: GameState;
@@ -77,6 +77,22 @@ function createTargetScene(): Fixture {
 export function createFixture(name: FixtureName): Fixture {
   seq = 0;
   if (name === "objetivo") return createTargetScene();
+  if (name === "defensa") {
+    // Banco de pruebas manual de P3 (sin IA) junto a la cámara inicial: torre que dispara, unidades tras un cuartel y un edificio que cae.
+    const state = createInitialState(1);
+    addBuilding(state, 0, "tower", 24, 24);
+    addBuilding(state, 0, "barracks", 22, 34);
+    const front = addUnit(state, 0, "soldier", 23.5, 32.4);
+    const back = addUnit(state, 0, "archer", 23.5, 37.6);
+    const house = addBuilding(state, 1, "house", 32, 34);
+    house.hp = 60;
+    const raiders = [addUnit(state, 0, "soldier", 30.5, 36.5), addUnit(state, 0, "soldier", 30.5, 37.4)];
+    addUnit(state, 1, "soldier", 31.5, 26.5);
+    const commands = [move([front.id], 23.5, 32.4), move([back.id], 23.5, 37.6)];
+    seq += 1;
+    commands.push({ id: `fx-${seq}`, seq, tick: 0, player: 0, type: "Attack", entityIds: raiders.map((u) => u.id), target: { entityId: house.id } });
+    return { state, commands, groups: [] };
+  }
   if (name === "skirmish") {
     // Partida normal con dos pelotones frente a frente en el paso central, sin IA: banco de pruebas manual del combate.
     const state = createInitialState(1);

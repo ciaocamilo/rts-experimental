@@ -39,6 +39,7 @@ export function buildObservation(state: GameState, ctx: ObservationContext): Obs
       id: p.id,
       food: p.food,
       wood: p.wood,
+      stone: p.stone,
       pop: populationOf(state, p.id),
       pop_capacity: p.popCapacity,
     })),
@@ -55,6 +56,7 @@ export function buildObservation(state: GameState, ctx: ObservationContext): Obs
       blocked_reason: u.blockedReason,
       carry: u.carry ? { kind: u.carry.kind, amount: u.carry.amount } : null,
       target_id: !u.job ? null : u.job.type === "gather" ? u.job.nodeId : u.job.type === "build" ? u.job.siteId : u.job.targetId,
+      defending: u.job?.type === "attack" && u.job.defense,
     })),
     buildings: byId(state.buildings).map((b) => ({
       id: b.id,
@@ -84,11 +86,16 @@ export function buildObservation(state: GameState, ctx: ObservationContext): Obs
         soldier: { ...BALANCE.units.soldier.cost },
         archer: { ...BALANCE.units.archer.cost },
       },
-      building_cost: { house: { ...BALANCE.buildings.house.cost }, barracks: { ...BALANCE.buildings.barracks.cost } },
+      building_cost: {
+        house: { ...BALANCE.buildings.house.cost },
+        barracks: { ...BALANCE.buildings.barracks.cost },
+        tower: { ...BALANCE.buildings.tower.cost },
+      },
       footprint: {
         townCenter: BALANCE.buildings.townCenter.footprint,
         house: BALANCE.buildings.house.footprint,
         barracks: BALANCE.buildings.barracks.footprint,
+        tower: BALANCE.buildings.tower.footprint,
       },
     },
     previous_results: ctx.previousResults,

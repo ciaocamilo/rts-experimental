@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { BALANCE, type BuildingKind, TICKS_PER_SECOND, type UnitKind } from "../content/balance";
-import type { Building, GameState, ResourceNode, StrikeEvent, Unit } from "../core/types";
+import { BALANCE, type BuildingKind, type ResourceKind, TICKS_PER_SECOND, type UnitKind } from "../content/balance";
+import type { Building, BuildingDestroyedEvent, GameState, ResourceNode, StrikeEvent, Unit } from "../core/types";
 import type { CameraRig } from "../input/camera-rig";
 import { AssetLibrary, type Quality } from "./assets";
 import { applyConstruction, type BuildingRig, buildBuilding, GeometryCache } from "./buildings";
@@ -26,12 +26,36 @@ const SQRT1_2 = Math.SQRT1_2;
 const MAX_BODIES = 64;
 
 export type StrikeLike = StrikeEvent & { id: number };
+export type DestroyedLike = BuildingDestroyedEvent & { seq: number };
+
+/** Altura del punto de disparo de la torre sobre el suelo (la plataforma bajo el tejado). */
+const TOWER_MUZZLE_Y = 2.9;
+/** Duración del colapso de un edificio: entre 0,8 s (obra sin terminar) y 1,5 s (centro urbano). */
+const COLLAPSE_MIN_S = 0.8;
+const COLLAPSE_PER_CELL_S = 0.15;
+const DUST_PUFFS = 7;
 
 export interface SyncContext {
   /** Pausa o fin de partida: detiene el tiempo de animación (RF-08). */
   frozen: boolean;
+  /** Solo pausa; el colapso del último edificio debe poder completarse tras el fin de la partida. */
+  paused?: boolean;
   /** Golpes recientes del núcleo; solo se procesan los nuevos. */
   strikes: readonly StrikeLike[];
+  /** Edificios retirados recientemente; cada uno inicia su colapso una sola vez. */
+  destroyed?: readonly DestroyedLike[];
+}
+
+/** Edificio ya retirado del estado que aún se está derrumbando; es solo visual. */
+interface Collapse {
+  rig: BuildingRig;
+  baseX: number;
+  elapsed: number;
+  duration: number;
+  tilt: number;
+  footprint: number;
+  puffs: THREE.Mesh[];
+  dust: THREE.MeshBasicMaterial;
 }
 
 interface Base {
@@ -55,7 +79,7 @@ interface UnitEntry extends Base {
   moveUntil: number;
   strikeAt: number;
   work: WorkKind | null;
-  carry: "food" | "wood" | null;
+  carry: ResourceKind | null;
   phase: number;
 }
 interface BuildingEntry extends Base {
@@ -106,6 +130,10 @@ export class SceneView {
   private readonly entityRoot = new THREE.Group();
   private readonly entries = new Map<number, Entry>();
   private bodies: Body[] = [];
+  private collapses: Collapse[] = [];
+  private readonly dustGeometry: THREE.SphereGeometry;
+  private lastDestroyedSeq = 0;
+  private fxPaused = false;
   private readonly flameFactory: FlameFactory;
   private readonly bars = new Map<number, Bar>();
   private readonly rings = new Map<number, THREE.Mesh>();
@@ -144,10 +172,10 @@ export class SceneView {
     this.mapWidth = mapWidth;
     this.mapDepth = mapDepth;
     this.quality = quality;
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: quality === "high" });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: quality === "high", stencil: true });
     this.renderer.setPixelRatio(1);
     this.scene.background = new THREE.Color(0x203420);
-    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400);
+    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 700);
 
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
     this.scene.add(new THREE.HemisphereLight(0xdfeeff, 0x3a5a2a, 0.45));
@@ -166,6 +194,7 @@ export class SceneView {
     this.terrain = new TerrainView(this.assets, this.mat, trees, bushes);
     this.arrows = new ArrowPool(this.assets, this.mat);
     this.flameFactory = new FlameFactory(this.assets);
+    this.dustGeometry = this.track(new THREE.SphereGeometry(0.5, 6, 5));
 
     this.barGeometry = this.track(new THREE.PlaneGeometry(1, 0.14));
     this.barBack = this.track(new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.75, depthTest: false }));
@@ -210,6 +239,9 @@ export class SceneView {
     for (const [id, entry] of [...this.entries]) this.removeEntry(id, entry);
     for (const body of this.bodies) this.entityRoot.remove(body.rig.root);
     this.bodies = [];
+    for (const c of this.collapses) this.finishCollapse(c);
+    this.collapses = [];
+    this.lastDestroyedSeq = 0;
     for (const bar of this.bars.values()) this.entityRoot.remove(bar.group);
     this.bars.clear();
     for (const ring of this.rings.values()) this.scene.remove(ring);
@@ -234,6 +266,7 @@ export class SceneView {
   /** Crea, actualiza y elimina modelos para coincidir con el estado lógico. */
   sync(state: GameState, ctx: SyncContext = { frozen: false, strikes: [] }): void {
     this.frozen = ctx.frozen;
+    this.fxPaused = ctx.paused ?? ctx.frozen;
     this.mapWidth = state.mapWidth;
     this.mapDepth = state.mapDepth;
     this.syncTerrain(state);
@@ -256,10 +289,19 @@ export class SceneView {
       live.add(u.id);
       this.syncUnit(u);
     }
+    const collapsing = new Set<number>();
+    for (const event of ctx.destroyed ?? []) {
+      if (event.seq <= this.lastDestroyedSeq) continue;
+      this.lastDestroyedSeq = event.seq;
+      collapsing.add(event.id);
+    }
     for (const [id, entry] of [...this.entries]) {
       if (live.has(id)) continue;
       if (entry.type === "unit") {
         this.layDown(entry);
+        this.entries.delete(id);
+      } else if (entry.type === "building" && collapsing.has(id)) {
+        this.beginCollapse(entry);
         this.entries.delete(id);
       } else this.removeEntry(id, entry);
     }
@@ -385,7 +427,7 @@ export class SceneView {
     if (job?.type === "gather") {
       const node = this.nodeById.get(job.nodeId);
       if (node) {
-        if (node.kind === "wood") tool = "axe";
+        if (node.kind === "wood" || node.kind === "stone") tool = "axe";
         if (job.stage === "harvest") {
           work = node.kind;
           entry.heading = Math.atan2(node.cell.x + 0.5 - u.pos.x, node.cell.z + 0.5 - u.pos.z);
@@ -407,6 +449,7 @@ export class SceneView {
     if (hammer) hammer.visible = tool === "hammer";
     entry.rig.bundleWood.visible = entry.carry === "wood";
     entry.rig.bundleFood.visible = entry.carry === "food";
+    entry.rig.bundleStone.visible = entry.carry === "stone";
   }
 
   private consumeStrikes(strikes: readonly StrikeLike[]): void {
@@ -418,10 +461,10 @@ export class SceneView {
         attacker.strikeAt = this.animTime;
         attacker.heading = Math.atan2(strike.to.x - strike.from.x, strike.to.z - strike.from.z);
       }
-      if (strike.attackerKind === "archer") {
+      if (strike.attackerKind === "archer" || strike.attackerKind === "tower") {
         const target = this.entries.get(strike.targetId);
         const targetHeight = target?.type === "building" ? 0.9 : 0.6;
-        this.tmpA.set(strike.from.x, 0.75, strike.from.z);
+        this.tmpA.set(strike.from.x, strike.attackerKind === "tower" ? TOWER_MUZZLE_Y : 0.75, strike.from.z);
         this.tmpB.set(strike.to.x, targetHeight, strike.to.z);
         this.arrows.spawn(this.tmpA, this.tmpB, this.animTime);
       }
@@ -545,6 +588,61 @@ export class SceneView {
     this.bodies = keep;
   }
 
+  /** El edificio dejó de existir en el estado: su modelo se derrumba en lugar de desaparecer (P3-R04). */
+  private beginCollapse(entry: BuildingEntry): void {
+    const footprint = BALANCE.buildings[entry.kind].footprint;
+    const duration = entry.complete ? COLLAPSE_MIN_S + COLLAPSE_PER_CELL_S * footprint : COLLAPSE_MIN_S;
+    const dust = new THREE.MeshBasicMaterial({ color: 0xb9ad98, transparent: true, opacity: 0.6, depthWrite: false });
+    const puffs: THREE.Mesh[] = [];
+    for (let i = 0; i < DUST_PUFFS; i++) {
+      const puff = new THREE.Mesh(this.dustGeometry, dust);
+      puff.visible = false;
+      this.entityRoot.add(puff);
+      puffs.push(puff);
+    }
+    if (entry.flames) entry.flames.group.visible = false;
+    entry.proxy.visible = false;
+    this.collapses.push({ rig: entry.rig, baseX: entry.root.position.x, elapsed: 0, duration, tilt: (entry.phase % 2 === 0 ? 1 : -1) * 0.12, footprint, puffs, dust });
+  }
+
+  private finishCollapse(c: Collapse): void {
+    this.entityRoot.remove(c.rig.root);
+    for (const puff of c.puffs) this.entityRoot.remove(puff);
+    c.dust.dispose();
+  }
+
+  /** Sacudida, muros que se hunden, tejado que cae ladeado y polvo; termina con el modelo bajo el suelo. */
+  private animateCollapses(dt: number): void {
+    if (this.collapses.length === 0) return;
+    const keep: Collapse[] = [];
+    for (const c of this.collapses) {
+      c.elapsed += dt;
+      const k = Math.min(1, c.elapsed / c.duration);
+      if (k >= 1) {
+        this.finishCollapse(c);
+        continue;
+      }
+      const fall = 1 - (1 - k) * (1 - k);
+      const { rig } = c;
+      rig.walls.scale.y = Math.max(0.04, 1 - 0.96 * fall);
+      rig.roof.position.y = rig.foundationTop + rig.wallsHeight * rig.walls.scale.y;
+      rig.roof.rotation.z = c.tilt * fall;
+      const sink = Math.max(0, (k - 0.55) / 0.45);
+      rig.root.position.y = -(rig.foundationTop + rig.wallsHeight * 0.5 + 0.6) * sink * sink;
+      rig.root.position.x = c.baseX + Math.sin(c.elapsed * 55) * 0.05 * (1 - k);
+      c.dust.opacity = 0.6 * (1 - k);
+      const r = c.footprint * 0.45;
+      c.puffs.forEach((puff, i) => {
+        const a = (i / c.puffs.length) * Math.PI * 2;
+        puff.visible = true;
+        puff.position.set(rig.root.position.x + Math.cos(a) * r * (0.5 + k), 0.3 + k * 1.2 + (i % 3) * 0.15, rig.root.position.z + Math.sin(a) * r * (0.5 + k));
+        puff.scale.setScalar(0.5 + k * 1.1 + (i % 2) * 0.2);
+      });
+      keep.push(c);
+    }
+    this.collapses = keep;
+  }
+
   /** Llamas por umbral de vida; solo existen en edificios completos (P2-H08). */
   private animateFlames(): void {
     for (const entry of this.entries.values()) {
@@ -594,7 +692,7 @@ export class SceneView {
   /** Fantasma de colocación; la validez la decide el núcleo, aquí solo se colorea. */
   showGhost(kind: BuildingKind, cellX: number, cellZ: number, valid: boolean): void {
     const w = BALANCE.buildings[kind].footprint;
-    const h = kind === "barracks" ? 1.6 : 1.2;
+    const h = kind === "barracks" ? 1.6 : kind === "tower" ? 2.4 : 1.2;
     this.ghost.scale.set(w, h, w);
     this.ghost.position.set(cellX + w / 2, h / 2, cellZ + w / 2);
     this.ghostMaterial.color.setHex(valid ? 0x4ade80 : 0xf87171);
@@ -658,6 +756,7 @@ export class SceneView {
     this.applyRig();
     this.animateUnits(dt);
     this.animateBodies();
+    this.animateCollapses(this.fxPaused ? 0 : dt);
     this.animateFlames();
     this.arrows.update(this.animTime);
     this.terrain.update(this.animTime);

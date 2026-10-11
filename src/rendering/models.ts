@@ -6,7 +6,7 @@ export const OWNER_COLORS = [0x3b82f6, 0xef4444] as const;
 
 /** Catálogo visual: alturas de ancla para barras y marcas, independientes de la lógica. */
 export const VISUAL = {
-  buildingHeight: { townCenter: 4.4, house: 2.1, barracks: 2.9 },
+  buildingHeight: { townCenter: 4.4, house: 2.1, barracks: 2.9, tower: 3.9 },
   unitHeight: 1.1,
   barOffset: 0.3,
 } as const;
