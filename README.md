@@ -6,7 +6,9 @@ Prototipo de estrategia en tiempo real (RTS) que se ejecuta en el navegador. Un 
 
 ## Resumen
 
-- **Partida 1 contra 1** sobre un mapa de 64x64 celdas con dos pasos estrechos y un paso central.
+- **Partida 1 contra 1** sobre un mapa de 128x64 celdas con terreno, agua y rocas que forman pasos estrechos y un paso central.
+- **Aspecto (etapa 2):** edificios medievales (centro urbano, casa, cuartel), personajes humanoides por rol con animaciones de trabajo y combate, flechas cosméticas, vegetación y agua animada. Todo es procedural (sin recursos externos) y no altera las reglas.
+- **Barras de vida:** unidades y edificios de ambos bandos (incluidas las obras) muestran barra solo cuando 0 < vida < máxima.
 - **Economía:** aldeanos que recolectan alimento y madera, construyen casas y cuarteles, y entrenan unidades con cola de producción y límite de población.
 - **Combate:** soldados y arqueros con rango, enfriamiento y ataque automático a menos de 6 celdas. Gana quien destruye el centro urbano rival; el límite es de 20 minutos.
 - **IA en Python:** una política sin estado decide hasta 4 órdenes cada segundo. Se ejecuta en un worker aislado y se comunica con el juego mediante un contrato de mensajes versionado (`contracts/worker-v2`).
@@ -48,6 +50,7 @@ Parámetros de URL útiles:
 | Parámetro | Efecto |
 |---|---|
 | `?ai=0` | Desactiva la IA |
+| `?graphics=low` | Modo gráfico reducido: sin antialias, sombras ni agua animada, con menos decoración y flechas simples |
 | `?fixture=corridor20`, `crossing`, `crowd100`, `skirmish` | Escenas de prueba de navegación y combate, sin IA |
 | `?fixture=objetivo` | Escena de carga con IA: 100 unidades, 20 edificios y combate |
 
