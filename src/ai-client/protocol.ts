@@ -121,7 +121,7 @@ export interface ObserveMessage {
   units: UnitView[];
   buildings: BuildingView[];
   resource_nodes: ResourceNodeView[];
-  map: { size: number; terrain: { x: number; z: number; w: number; h: number }[] };
+  map: { width: number; depth: number; terrain: { x: number; z: number; w: number; h: number }[] };
   rules: RulesView;
   previous_results: OrderResult[];
 }

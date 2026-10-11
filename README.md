@@ -6,7 +6,10 @@ Prototipo de estrategia en tiempo real (RTS) que se ejecuta en el navegador. Un 
 
 ## Resumen
 
-- **Partida 1 contra 1** sobre un mapa de 64x64 celdas con dos pasos estrechos y un paso central.
+- **Partida 1 contra 1** sobre un mapa de 128x64 celdas con terreno, agua y rocas que forman pasos estrechos y un paso central.
+- **Aspecto (etapa 2):** edificios medievales (centro urbano, casa, cuartel), personajes humanoides por rol con animaciones de trabajo y combate, flechas cosméticas, vegetación y agua animada. Todo es procedural (sin recursos externos) y no altera las reglas.
+- **Barras de vida:** unidades y edificios de ambos bandos (incluidas las obras) muestran barra solo cuando 0 < vida < máxima.
+- **Daño visible:** los edificios completos muestran una llama más al bajar al 90 %, 75 %, 50 %, 25 % y 5 % de vida; las unidades caen al morir y su cuerpo desaparece a los 5 s. Es solo aspecto: no cambia las reglas.
 - **Economía:** aldeanos que recolectan alimento y madera, construyen casas y cuarteles, y entrenan unidades con cola de producción y límite de población.
 - **Combate:** soldados y arqueros con rango, enfriamiento y ataque automático a menos de 6 celdas. Gana quien destruye el centro urbano rival; el límite es de 20 minutos.
 - **IA en Python:** una política sin estado decide hasta 4 órdenes cada segundo. Se ejecuta en un worker aislado y se comunica con el juego mediante un contrato de mensajes versionado (`contracts/worker-v2`).
@@ -21,11 +24,25 @@ Prototipo de estrategia en tiempo real (RTS) que se ejecuta en el navegador. Un 
 
 Los bandos se distinguen por color y por una marca: disco blanco para el jugador (azul) y rombo oscuro para el rival (rojo).
 
+### Etapa 2: mejoras visuales
+
+Capturas posteriores a la etapa visual (especificación en `SDD_Etapa_2_Mejoras_Visuales.md`). Las anteriores se conservan para mostrar la evolución del aspecto.
+
+| Combate contra la IA con agua orgánica y edificios medievales | Edificios con llamas según su vida y unidades caídas |
+|---|---|
+| ![Combate contra la IA, etapa 2](docs/images/etapa2-combate-ia.png) | ![Edificios con llamas y unidades caídas](docs/images/etapa2-caidos.png) |
+
+| Llamas adicionales al 90 %, 75 %, 50 %, 25 % y 5 % de vida | Personajes suavizados por rol (arquero, soldado, aldeano) |
+|---|---|
+| ![Edificios con llamas](docs/images/etapa2-edificios-fuego.png) | ![Personajes suavizados](docs/images/etapa2-unidades.png) |
+
+Novedades de la etapa: edificios y personajes procedurales por rol, animaciones de trabajo y combate, agua con orilla suave y textura multiescala, llamas por daño, caída y desaparición de cuerpos a los 5 s, y desplazamiento de cámara por los bordes de la pantalla.
+
 ## Controles
 
 | Acción | Entrada |
 |---|---|
-| Cámara | WASD o flechas; rueda para acercar o alejar |
+| Cámara | WASD o flechas, o cursor en el borde de la pantalla (24 px, 1,5 veces más rápido); rueda para acercar o alejar |
 | Seleccionar | Clic o arrastre; Shift suma o quita; Esc limpia |
 | Mover, recolectar, atacar, reanudar obra | Clic derecho según el objetivo |
 | Construir | Seleccionar aldeanos y usar el panel inferior |
@@ -48,6 +65,7 @@ Parámetros de URL útiles:
 | Parámetro | Efecto |
 |---|---|
 | `?ai=0` | Desactiva la IA |
+| `?graphics=low` | Modo gráfico reducido: sin antialias, sombras ni agua animada, con menos decoración y flechas simples |
 | `?fixture=corridor20`, `crossing`, `crowd100`, `skirmish` | Escenas de prueba de navegación y combate, sin IA |
 | `?fixture=objetivo` | Escena de carga con IA: 100 unidades, 20 edificios y combate |
 
@@ -88,7 +106,7 @@ Vite 6, TypeScript 7 (modo estricto), Three.js 0.186, Pyodide 0.27.7 (Python 3.1
 
 ## Estado y mediciones
 
-Incrementos completados: P0-A a P0-C (base, navegación, IA en worker) y P1-A a P1-D (economía, combate, rival completo y estabilización).
+Incrementos completados: P0-A a P0-C (base, navegación, IA en worker), P1-A a P1-D (economía, combate, rival completo y estabilización) y la etapa 2 de mejoras visuales (P2-01 a P2-08).
 
 Medición en un equipo con Ryzen 5 5600H y RTX 3050, Chromium, 1366x768, escena `objetivo` durante unos 6 minutos:
 
@@ -101,7 +119,9 @@ Medición en un equipo con Ryzen 5 5600H y RTX 3050, Chromium, 1366x768, escena 
 | Partida de 24 000 ticks con dos IA | Sin violaciones de reglas y reproducible |
 | Diez reinicios seguidos | Un solo worker y memoria estable |
 
-Pruebas: 207 de TypeScript y 44 de Python.
+Las mediciones de rendimiento son anteriores a la etapa 2 y no se han repetido con el nuevo aspecto.
+
+Pruebas: 241 de TypeScript y 44 de Python.
 
 ## Limitaciones conocidas
 

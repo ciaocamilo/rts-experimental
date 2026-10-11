@@ -1,4 +1,4 @@
-import { MAP_SIZE } from "../content/map";
+import { MAP_WIDTH } from "../content/map";
 import { BALANCE } from "../content/balance";
 import { addBuilding, addTerrain, addUnit, createEmptyState, createInitialState } from "./state";
 import type { Command, EntityId, GameState, PlayerId } from "./types";
@@ -38,13 +38,13 @@ function createTargetScene(): Fixture {
   const state = createInitialState(1);
   const commands: Command[] = [];
   const nodesOf = (kind: "food" | "wood", owner: PlayerId) =>
-    state.resourceNodes.filter((n) => n.kind === kind && (owner === 0 ? n.cell.x < MAP_SIZE / 2 : n.cell.x >= MAP_SIZE / 2));
+    state.resourceNodes.filter((n) => n.kind === kind && (owner === 0 ? n.cell.x < MAP_WIDTH / 2 : n.cell.x >= MAP_WIDTH / 2));
   const house = BALANCE.buildings.house.footprint;
   const barracks = BALANCE.buildings.barracks.footprint;
 
   for (const owner of [0, 1] as const) {
-    const mx = (x: number): number => (owner === 0 ? x : MAP_SIZE - x);
-    const cellX = (x: number, w: number): number => (owner === 0 ? x : MAP_SIZE - x - w);
+    const mx = (x: number): number => (owner === 0 ? x : MAP_WIDTH - x);
+    const cellX = (x: number, w: number): number => (owner === 0 ? x : MAP_WIDTH - x - w);
     for (let i = 0; i < 8; i++) addBuilding(state, owner, "house", cellX(4, house), 4 + 3 * i);
     addBuilding(state, owner, "barracks", cellX(20, barracks), 44);
 
@@ -59,7 +59,7 @@ function createTargetScene(): Fixture {
       const kind = i < 12 ? "soldier" : "archer";
       fighters.push(addUnit(state, owner, kind, mx(22 + (i % 5) * 0.8), 28.5 + Math.floor(i / 5) * 0.8).id);
     }
-    commands.push(move(fighters, 32, 31.5, owner));
+    commands.push(move(fighters, MAP_WIDTH / 2, 31.5, owner));
 
     const marchers: EntityId[] = [];
     for (let i = 0; i < 20; i++) {
@@ -80,10 +80,10 @@ export function createFixture(name: FixtureName): Fixture {
   if (name === "skirmish") {
     // Partida normal con dos pelotones frente a frente en el paso central, sin IA: banco de pruebas manual del combate.
     const state = createInitialState(1);
-    for (let i = 0; i < 4; i++) addUnit(state, 0, "soldier", 24 + (i % 2) * 0.8, 29.5 + Math.floor(i / 2) * 0.8);
-    for (let i = 0; i < 2; i++) addUnit(state, 0, "archer", 22.5, 30 + i * 0.8);
-    for (let i = 0; i < 3; i++) addUnit(state, 1, "soldier", 40 + (i % 2) * 0.8, 29.5 + Math.floor(i / 2) * 0.8);
-    for (let i = 0; i < 2; i++) addUnit(state, 1, "archer", 41.5, 30 + i * 0.8);
+    for (let i = 0; i < 4; i++) addUnit(state, 0, "soldier", 56 + (i % 2) * 0.8, 29.5 + Math.floor(i / 2) * 0.8);
+    for (let i = 0; i < 2; i++) addUnit(state, 0, "archer", 54.5, 30 + i * 0.8);
+    for (let i = 0; i < 3; i++) addUnit(state, 1, "soldier", 72 + (i % 2) * 0.8, 29.5 + Math.floor(i / 2) * 0.8);
+    for (let i = 0; i < 2; i++) addUnit(state, 1, "archer", 73.5, 30 + i * 0.8);
     return { state, commands: [], groups: [] };
   }
   const state = createEmptyState(1);

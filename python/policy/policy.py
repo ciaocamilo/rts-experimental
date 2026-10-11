@@ -114,16 +114,17 @@ def _unit_cells(plan):
 def _choose_cell(plan, base, kind):
     """Esquina de la huella en un anillo alrededor del centro; evita el lado del enemigo."""
     size = plan.rules["footprint"][kind]
-    map_size = plan.obs["map"]["size"]
+    map_width = plan.obs["map"]["width"]
+    map_depth = plan.obs["map"]["depth"]
     base_x, base_z = _center(base, plan.rules)
-    toward_enemy = 1 if map_size / 2 > base_x else -1
+    toward_enemy = 1 if map_width / 2 > base_x else -1
     solid = _blocked_cells(plan)
     busy = _unit_cells(plan)
     candidates = []
     span = PLACEMENT_MAX_DISTANCE + size
     for cx in range(int(base_x) - span, int(base_x) + span + 1):
         for cz in range(int(base_z) - span, int(base_z) + span + 1):
-            if cx < 0 or cz < 0 or cx + size > map_size or cz + size > map_size:
+            if cx < 0 or cz < 0 or cx + size > map_width or cz + size > map_depth:
                 continue
             center = (cx + size / 2, cz + size / 2)
             distance = _dist(center, (base_x, base_z))

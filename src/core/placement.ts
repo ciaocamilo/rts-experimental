@@ -11,7 +11,7 @@ function footprintOf(kind: BuildingKind, x: number, z: number): CellRect {
 /** La huella cabe en el mapa y no solapa terreno, edificios u obras, nodos vivos ni unidades. */
 export function footprintFree(state: GameState, kind: BuildingKind, x: number, z: number): boolean {
   const rect = footprintOf(kind, x, z);
-  if (rect.x < 0 || rect.z < 0 || rect.x + rect.w > state.mapSize || rect.z + rect.h > state.mapSize) return false;
+  if (rect.x < 0 || rect.z < 0 || rect.x + rect.w > state.mapWidth || rect.z + rect.h > state.mapDepth) return false;
   if (state.terrain.some((t) => rectsOverlap(rect, t))) return false;
   if (state.buildings.some((b) => rectsOverlap(rect, buildingRect(b)))) return false;
   if (state.resourceNodes.some((n) => n.remaining > 0 && rectsOverlap(rect, nodeRect(n)))) return false;
@@ -30,7 +30,7 @@ function anchorCell(grid: NavGrid, state: GameState, owner: PlayerId): { x: numb
  * antes estaba en la región principal (§4.3).
  */
 export function wouldBlockPath(state: GameState, grid: NavGrid, kind: BuildingKind, x: number, z: number): boolean {
-  const test = new NavGrid(grid.size);
+  const test = new NavGrid(grid.width, grid.depth);
   test.blocked.set(grid.blocked);
   const rect = footprintOf(kind, x, z);
   test.blockRect(rect.x, rect.z, rect.w, rect.h);

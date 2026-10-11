@@ -124,7 +124,7 @@ class BuildingTest(unittest.TestCase):
         payload = command["payload"]
         size = message["rules"]["footprint"][payload["building_kind"]]
         cx, cz = payload["cell_x"], payload["cell_z"]
-        self.assertTrue(0 <= cx and 0 <= cz and cx + size <= 64 and cz + size <= 64)
+        self.assertTrue(0 <= cx and 0 <= cz and cx + size <= message["map"]["width"] and cz + size <= message["map"]["depth"])
         taken = []
         for t in message["map"]["terrain"]:
             taken.append((t["x"], t["z"], t["w"], t["h"]))

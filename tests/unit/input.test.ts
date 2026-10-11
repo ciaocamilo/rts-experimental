@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addUnit, createEmptyState, createInitialState } from "../../src/core/state";
-import { CameraRig, ZOOM_MAX, ZOOM_MIN } from "../../src/input/camera-rig";
+import { CameraRig, EDGE_MARGIN_PX, EDGE_SPEED_FACTOR, edgePan, ZOOM_MAX, ZOOM_MIN } from "../../src/input/camera-rig";
 import { boxSelect, clearSelection, clickSelect, emptySelection, pruneSelection } from "../../src/input/selection";
 
 describe("cámara (RF-02)", () => {
@@ -33,6 +33,54 @@ describe("cámara (RF-02)", () => {
     expect(rig.zoom).toBe(ZOOM_MAX);
     for (let i = 0; i < 100; i++) rig.zoomBy(500);
     expect(rig.zoom).toBe(ZOOM_MIN);
+  });
+});
+
+describe("cámara con el ratón (P2-H12)", () => {
+  const none = { up: false, down: false, left: false, right: false };
+
+  it("el centro de la vista no desplaza", () => {
+    expect(edgePan(600, 300, 1200, 600)).toEqual(none);
+  });
+
+  it("cada borde desplaza hacia su lado y el límite del margen es inclusivo", () => {
+    expect(edgePan(0, 300, 1200, 600)).toEqual({ ...none, left: true });
+    expect(edgePan(1200, 300, 1200, 600)).toEqual({ ...none, right: true });
+    expect(edgePan(600, 0, 1200, 600)).toEqual({ ...none, up: true });
+    expect(edgePan(600, 600, 1200, 600)).toEqual({ ...none, down: true });
+    expect(edgePan(EDGE_MARGIN_PX, 300, 1200, 600)).toEqual({ ...none, left: true });
+    expect(edgePan(EDGE_MARGIN_PX + 1, 300, 1200, 600)).toEqual(none);
+  });
+
+  it("las esquinas combinan dos ejes", () => {
+    expect(edgePan(2, 2, 1200, 600)).toEqual({ ...none, up: true, left: true });
+    expect(edgePan(1199, 599, 1200, 600)).toEqual({ ...none, down: true, right: true });
+  });
+
+  it("fuera de la vista no desplaza", () => {
+    expect(edgePan(-5, 300, 1200, 600)).toEqual(none);
+    expect(edgePan(1300, 300, 1200, 600)).toEqual(none);
+    expect(edgePan(600, 700, 1200, 600)).toEqual(none);
+  });
+
+  it("la diagonal no es más rápida y la cámara sigue dentro del mapa", () => {
+    const straight = new CameraRig(128, 64, { x: 64, z: 32 });
+    straight.pan(0.1, edgePan(600, 0, 1200, 600));
+    const diagonal = new CameraRig(128, 64, { x: 64, z: 32 });
+    diagonal.pan(0.1, edgePan(1199, 1, 1200, 600));
+    expect(Math.hypot(diagonal.x - 64, diagonal.z - 32)).toBeCloseTo(Math.hypot(straight.x - 64, straight.z - 32), 9);
+    for (let i = 0; i < 2000; i++) diagonal.pan(0.1, edgePan(1199, 1, 1200, 600));
+    expect(diagonal.x).toBeLessThanOrEqual(128);
+    expect(diagonal.z).toBeGreaterThanOrEqual(0);
+  });
+
+  it("el desplazamiento por borde es 50 % más rápido que el del teclado", () => {
+    const keyboard = new CameraRig(128, 64, { x: 64, z: 32 });
+    keyboard.pan(0.1, edgePan(600, 0, 1200, 600));
+    const edge = new CameraRig(128, 64, { x: 64, z: 32 });
+    edge.pan(0.1, edgePan(600, 0, 1200, 600), EDGE_SPEED_FACTOR);
+    expect(EDGE_SPEED_FACTOR).toBe(1.5);
+    expect(Math.hypot(edge.x - 64, edge.z - 32)).toBeCloseTo(1.5 * Math.hypot(keyboard.x - 64, keyboard.z - 32), 9);
   });
 });
 

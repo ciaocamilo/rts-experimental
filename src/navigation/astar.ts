@@ -66,8 +66,8 @@ export function findPath(grid: NavGrid, start: Cell, goal: Cell): Cell[] | null 
   if (grid.componentAt(start.x, start.z) !== grid.componentAt(goal.x, goal.z)) return null;
   if (start.x === goal.x && start.z === goal.z) return [];
 
-  const size = grid.size;
-  const n = size * size;
+  const size = grid.width;
+  const n = size * grid.depth;
   const g = new Float64Array(n).fill(Infinity);
   const parent = new Int32Array(n).fill(-1);
   const closed = new Uint8Array(n);

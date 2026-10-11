@@ -2,7 +2,7 @@ import { AIDirector } from "./ai-client/director";
 import { WorkerAIProvider, type WorkerLike } from "./ai-client/provider";
 import { GameSession } from "./app/session";
 import { BALANCE, TICKS_PER_SECOND, validateBalance } from "./content/balance";
-import { MAP_LAYOUT, MAP_SIZE, validateMapLayout } from "./content/map";
+import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH, validateMapLayout } from "./content/map";
 import { BALANCE_VERSION, GAME_VERSION, MAP_VERSION } from "./content/versions";
 import { createFixture, type FixtureName } from "./core/fixtures";
 import { hashState } from "./core/hash";
@@ -70,8 +70,10 @@ function start(): void {
     return created;
   };
 
-  const rig = new CameraRig(MAP_SIZE);
-  const view = new SceneView(el<HTMLCanvasElement>("view"), MAP_SIZE, rig);
+  const rig = new CameraRig(MAP_WIDTH, MAP_DEPTH, { x: 16, z: MAP_DEPTH / 2 });
+  // `?graphics=low` desactiva sombras, antialiasing, decoración fina y animación del agua.
+  const quality = params.get("graphics") === "low" ? "low" : "high";
+  const view = new SceneView(el<HTMLCanvasElement>("view"), MAP_WIDTH, MAP_DEPTH, rig, quality);
   const hud = el("hud");
   const overlay = el("overlay");
   const pauseButton = el<HTMLButtonElement>("btn-pause");
@@ -209,7 +211,7 @@ function start(): void {
     panel.refresh(s, selection, controller.placing, session.paused);
 
     view.setSelection(selection.units, selection.inspected);
-    view.sync(s);
+    view.sync(s, { frozen: session.paused || s.matchStatus === "ended", strikes: session.strikeLog });
     view.render();
   };
 
@@ -255,6 +257,7 @@ function start(): void {
     perf = new PerfRecorder();
     errors.length = 0;
     session = newSession();
+    view.reset();
     ai = aiEnabled ? createAI(session) : null;
     ai?.director.start();
     clearSelection(selection);

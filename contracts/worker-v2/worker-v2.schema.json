@@ -264,9 +264,10 @@
         "map": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["size", "terrain"],
+          "required": ["width", "depth", "terrain"],
           "properties": {
-            "size": { "type": "integer", "minimum": 8, "maximum": 1024 },
+            "width": { "type": "integer", "minimum": 8, "maximum": 1024 },
+            "depth": { "type": "integer", "minimum": 8, "maximum": 1024 },
             "terrain": { "type": "array", "maxItems": 256, "items": { "$ref": "#/$defs/TerrainRect" } }
           }
         },

@@ -22,8 +22,10 @@ describe("escenario inicial (RF-01, §4.2)", () => {
     expect(populationOf(state, 1)).toBe(3);
   });
 
-  it("crea 8 nodos de madera y 8 de alimento por bando con 500 unidades", () => {
-    expect(state.resourceNodes).toHaveLength(32);
+  it("crea 16 nodos de madera y 8 de alimento por bando con 500 unidades (P2)", () => {
+    expect(state.resourceNodes).toHaveLength(48);
+    expect(state.resourceNodes.filter((n) => n.kind === "wood")).toHaveLength(32);
+    expect(state.resourceNodes.filter((n) => n.kind === "food")).toHaveLength(16);
     expect(state.resourceNodes.every((n) => n.remaining === 500)).toBe(true);
   });
 

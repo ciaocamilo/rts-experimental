@@ -19,23 +19,23 @@ export class NavGrid {
   readonly blocked: Uint8Array;
   readonly component: Int32Array;
 
-  constructor(readonly size: number) {
-    this.blocked = new Uint8Array(size * size);
-    this.component = new Int32Array(size * size).fill(-1);
+  constructor(readonly width: number, readonly depth: number = width) {
+    this.blocked = new Uint8Array(width * depth);
+    this.component = new Int32Array(width * depth).fill(-1);
   }
 
   inBounds(x: number, z: number): boolean {
-    return x >= 0 && z >= 0 && x < this.size && z < this.size;
+    return x >= 0 && z >= 0 && x < this.width && z < this.depth;
   }
 
   isBlocked(x: number, z: number): boolean {
-    return !this.inBounds(x, z) || this.blocked[z * this.size + x] === 1;
+    return !this.inBounds(x, z) || this.blocked[z * this.width + x] === 1;
   }
 
   blockRect(x: number, z: number, w: number, h: number = w): void {
     for (let i = 0; i < w; i++) {
       for (let j = 0; j < h; j++) {
-        if (this.inBounds(x + i, z + j)) this.blocked[(z + j) * this.size + x + i] = 1;
+        if (this.inBounds(x + i, z + j)) this.blocked[(z + j) * this.width + x + i] = 1;
       }
     }
   }
@@ -48,12 +48,12 @@ export class NavGrid {
   }
 
   componentAt(x: number, z: number): number {
-    return this.inBounds(x, z) ? this.component[z * this.size + x]! : -1;
+    return this.inBounds(x, z) ? this.component[z * this.width + x]! : -1;
   }
 
   /** Etiqueta regiones conectadas con las mismas reglas de movimiento que A*. */
   label(): void {
-    const n = this.size * this.size;
+    const n = this.width * this.depth;
     this.component.fill(-1);
     const queue = new Int32Array(n);
     let next = 0;
@@ -65,11 +65,11 @@ export class NavGrid {
       this.component[start] = next;
       while (head < tail) {
         const cur = queue[head++]!;
-        const cx = cur % this.size;
-        const cz = (cur - cx) / this.size;
+        const cx = cur % this.width;
+        const cz = (cur - cx) / this.width;
         for (const [dx, dz] of DIRS) {
           if (!this.canStep(cx, cz, dx, dz)) continue;
-          const idx = (cz + dz) * this.size + cx + dx;
+          const idx = (cz + dz) * this.width + cx + dx;
           if (this.component[idx]! >= 0) continue;
           this.component[idx] = next;
           queue[tail++] = idx;
@@ -83,7 +83,7 @@ export class NavGrid {
   nearestFree(x: number, z: number): Cell | null {
     let best: Cell | null = null;
     let bestD = Infinity;
-    for (let radius = 0; radius < this.size; radius++) {
+    for (let radius = 0; radius < Math.max(this.width, this.depth); radius++) {
       if (best && radius > Math.sqrt(bestD) + 1) break;
       for (let cz = z - radius; cz <= z + radius; cz++) {
         for (let cx = x - radius; cx <= x + radius; cx++) {
