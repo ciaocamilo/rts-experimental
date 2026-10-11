@@ -218,6 +218,12 @@ describe("P4 CueTranslator", () => {
     expect(t.process(frame(world(), { works })).map((c) => c.cue)).toEqual(["hammer", "axe", "pick", "forage"]);
   });
 
+  it("recolección: un único sonido por recurso en cada cuadro, aunque haya muchos aldeanos", () => {
+    const t = new CueTranslator();
+    const works = [1, 2, 3, 4, 5, 6].map((seq) => ({ seq, tick: 1, unitId: seq, owner: 0 as const, kind: (seq % 2 ? "wood" : "stone") as WorkEvent["kind"], pos: IN }));
+    expect(t.process(frame(world(), { works })).map((c) => c.cue)).toEqual(["axe", "pick"]);
+  });
+
   it("derrumbe: variante grande para cuartel y centro urbano completos, pequeña para casa y obra", () => {
     const t = new CueTranslator();
     const ev = (seq: number, kind: BuildingDestroyedEvent["kind"], complete: boolean, x = 18): BuildingDestroyedEvent & { seq: number } => ({

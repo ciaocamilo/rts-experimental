@@ -54,6 +54,26 @@ describe("banco de efectos", () => {
     }
   });
 
+  it("espada y pica no suenan a campanilla: la cola tiene más energía grave que aguda", () => {
+    for (const id of ["sword", "pick"] as const) {
+      const sr = bank[id].sampleRate;
+      for (const v of bank[id].variants) {
+        const from = Math.round(0.03 * sr);
+        const to = Math.round(0.25 * sr);
+        const band = (lo: number, hi: number): number => {
+          let sum = 0;
+          let count = 0;
+          for (let f = lo; f <= hi; f += 100) {
+            sum += goertzel(v, sr, f, from, to);
+            count += 1;
+          }
+          return sum / count;
+        };
+        expect(band(200, 1400), id).toBeGreaterThan(band(2000, 4000) * 4);
+      }
+    }
+  });
+
   it("respeta las duraciones del SDD", () => {
     for (const id of ["hammer", "axe", "pick", "forage"] as const) for (let v = 0; v < 2; v++) expect(seconds(id, v), id).toBeLessThanOrEqual(0.35);
     expect(seconds("door")).toBeLessThanOrEqual(1.2);

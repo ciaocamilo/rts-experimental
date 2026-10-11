@@ -39,9 +39,9 @@ export const CUES: Readonly<Record<CueId, CueSpec>> = {
   arrow: { priority: 2, cap: 8, minGap: 0.05, gain: 0.8, variants: 3 },
   blow: { priority: 2, cap: 4, minGap: 0.08, gain: 0.6, variants: 2 },
   hammer: { priority: 1, cap: 6, minGap: 0.08, gain: 0.6, variants: 2 },
-  axe: { priority: 1, cap: 6, minGap: 0.08, gain: 0.6, variants: 2 },
-  pick: { priority: 1, cap: 6, minGap: 0.08, gain: 0.6, variants: 2 },
-  forage: { priority: 1, cap: 4, minGap: 0.08, gain: 0.4, variants: 2 },
+  axe: { priority: 1, cap: 1, minGap: 0.3, gain: 0.6, variants: 2 },
+  pick: { priority: 1, cap: 1, minGap: 0.3, gain: 0.6, variants: 2 },
+  forage: { priority: 1, cap: 1, minGap: 0.3, gain: 0.4, variants: 2 },
   fire: { priority: 0, cap: 3, minGap: 0, gain: 0.25, variants: 1 },
 };
 

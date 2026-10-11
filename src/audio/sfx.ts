@@ -40,9 +40,10 @@ function sword(variant: number, rng: Rng): Float32Array {
   const sr = HI;
   const out = makeBuffer(0.4, sr);
   const n = out.length;
-  addInto(out, bandNoise(rng, n, sr, 2600 + variant * 900, 1.2, 0.012), 0, 0.8);
-  const base = 1000 + variant * 170;
-  for (const [ratio, amp, tau] of [[1, 0.5, 0.09], [2.76, 0.35, 0.06], [5.4, 0.2, 0.04]] as const) {
+  addInto(out, bandNoise(rng, n, sr, 1500 + variant * 400, 0.9, 0.015), 0, 0.9);
+  addInto(out, thump(220 - variant * 20, 110, 0.12, sr, 0.03), 0, 0.7);
+  const base = 330 + variant * 45;
+  for (const [ratio, amp, tau] of [[1, 0.5, 0.05], [2.76, 0.3, 0.03], [5.4, 0.1, 0.015]] as const) {
     addInto(out, multiply(sine(base * ratio, 0.4, sr), expEnv(n, sr, tau)), 0, amp);
   }
   return finish(out, sr);
@@ -134,9 +135,10 @@ function pick(variant: number, rng: Rng): Float32Array {
   const out = makeBuffer(0.3, sr);
   const n = out.length;
   const k = 1 + variant * 0.08;
-  addInto(out, bandNoise(rng, n, sr, 3000, 1.5, 0.01), 0, 0.7);
-  addInto(out, multiply(sine(1800 * k, 0.3, sr), expEnv(n, sr, 0.12)), 0, 0.6);
-  addInto(out, multiply(sine(2900 * k, 0.3, sr), expEnv(n, sr, 0.07)), 0, 0.4);
+  addInto(out, bandNoise(rng, n, sr, 1600, 1, 0.01), 0, 0.7);
+  addInto(out, multiply(sine(600 * k, 0.3, sr), expEnv(n, sr, 0.04)), 0, 0.5);
+  addInto(out, multiply(sine(1050 * k, 0.3, sr), expEnv(n, sr, 0.025)), 0, 0.25);
+  addInto(out, thump(260, 130, 0.1, sr, 0.03), 0, 0.8);
   addInto(out, bandNoise(rng, n, sr, 400, 2, 0.01), 0, 0.3);
   return finish(out, sr);
 }

@@ -136,10 +136,14 @@ export class CueTranslator {
     }
     this.cursors.spawn = lastSeq(frame.spawns, this.cursors.spawn);
 
+    const gathered = new Set<CueId>();
     for (const w of frame.works) {
       if (w.seq <= this.cursors.work) continue;
       const cue: CueId = WORK_CUE[w.kind];
-      if (visible(w.pos)) emit(cue, w.pos, this.rng.int(CUES[cue].variants));
+      if (cue !== "hammer" && gathered.has(cue)) continue;
+      if (!visible(w.pos)) continue;
+      gathered.add(cue);
+      emit(cue, w.pos, this.rng.int(CUES[cue].variants));
     }
     this.cursors.work = lastSeq(frame.works, this.cursors.work);
 
