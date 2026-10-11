@@ -43,7 +43,7 @@ Coherente con P2 y P3, el audio es **procedural**: no se incorporan archivos de 
 - **Alimento:** recolectar arbustos produce un sonido de recolección propio (roce de hojas y chasquido de rama), uno por unidad de alimento obtenida.
 - **Centro urbano armado:** dispara 3 flechas por disparo y el núcleo emite 3 `StrikeEvent` con el mismo atacante y tick. El audio los agrupa en una salva y reproduce **tres** sonidos de flecha, el primero al momento del disparo y cada siguiente **0,5 s** después del anterior (en 0, 0,5 y 1,0 s). El escalonado es solo sonoro: el daño y el abanico visual de flechas no cambian. La salva completa (1,0 s) cabe en la cadencia del arma (1,5 s), de modo que dos salvas no se solapan. La visibilidad se evalúa una sola vez, al momento del disparo.
 - **Piedra = minería:** el efecto de pica se asocia a recolectar nodos de piedra.
-- **Cadencia del martilleo:** un golpe cada 10 ticks (0,5 s) de trabajo efectivo. **Hacha, pica y alimento:** un sonido por unidad de recurso recolectado (cada `harvestIntervalTicks` = 20 ticks, 1 s).
+- **Cadencia del martilleo:** un golpe cada 10 ticks (0,5 s) de trabajo efectivo. **Hacha, pica y alimento:** un `WorkEvent` por unidad de recurso recolectado (cada `harvestIntervalTicks` = 20 ticks, 1 s), pero el audio los agrupa: ver P4-H05 CA06.
 - **Estado del juego intacto:** los eventos nuevos son datos de salida de `stepSimulation`, igual que `strikes` y `destroyed`. No entran en el estado, en el hash, en la observación de Python ni en el contrato `worker-v2`. Con las mismas órdenes, la partida produce el mismo `hashState` que antes de P4.
 - **Aleatoriedad del audio:** variaciones de tono y volumen usan un generador propio con semilla, separado del de la simulación. No consume ni altera la semilla del juego.
 - **Rama y publicación:** se trabaja en `efectos_sonido`. No se hace merge, push ni publicación como parte de esta especificación; se requerirá instrucción expresa.
@@ -100,8 +100,9 @@ Voces habladas, sonido de selección u órdenes, sonido de interfaz (botones, me
 - **CA01:** un aldeano de cualquier bando que construye (etapa `work` de un trabajo de construcción) genera un golpe de martillo cada 10 ticks, si está en pantalla.
 - **CA02:** un aldeano de cualquier bando que recolecta madera genera un golpe de hacha por recurso obtenido; si recolecta piedra, un golpe de pica; si recolecta alimento, un sonido de recolección (roce de hojas y chasquido de rama).
 - **CA03:** no suena nada durante la aproximación, el regreso con la carga, la entrega ni cuando el trabajo está bloqueado o cancelado.
-- **CA04:** los cuatro sonidos son claramente distintos: martillo (golpe seco agudo sobre clavo), hacha (golpe grave sobre madera con grieta corta), pica (tintineo metálico sobre roca) y recolección de alimento (roce suave de follaje, el más discreto de los cuatro). Duración ≤ 0,35 s y 2 variantes cada uno.
+- **CA04:** los cuatro sonidos son claramente distintos: martillo (golpe seco agudo sobre clavo), hacha (golpe grave sobre madera con grieta corta), pica (golpe seco de metal sobre roca, grave y sin resonancia de campanilla) y recolección de alimento (roce suave de follaje, el más discreto de los cuatro). Duración ≤ 0,35 s y 2 variantes cada uno.
 - **CA05:** con muchos aldeanos trabajando, el límite de voces de §4.4 evita saturación sin perder la sensación de actividad.
+- **CA06 (ajuste tras la prueba de escucha):** hacha, pica y recolección de alimento suenan **una sola vez a la vez por tipo**: mientras uno de esos sonidos está en curso no se repite otro igual, aunque varios aldeanos recolecten el mismo recurso. El traductor emite como máximo un sonido por recurso en cada cuadro y el control de voces fija tope 1 y separación mínima de 0,3 s. El martillo de construcción no cambia.
 
 ### P4-H06 — Fuego de edificios (P4-R08)
 
@@ -242,8 +243,9 @@ Los buffers de efectos se sintetizan una vez en la carga y se reproducen con `Au
 | `door` | 3 | 3 | 200 ms | 0,7 |
 | `sword`, `arrow` | 2 | 8 | 50 ms | 0,8 |
 | `blow` (golpe del aldeano) | 2 | 4 | 80 ms | 0,6 |
-| `hammer`, `axe`, `pick` | 1 | 6 | 80 ms | 0,6 |
-| `forage` (alimento) | 1 | 4 | 80 ms | 0,4 |
+| `hammer` | 1 | 6 | 80 ms | 0,6 |
+| `axe`, `pick` | 1 | 1 | 300 ms | 0,6 |
+| `forage` (alimento) | 1 | 1 | 300 ms | 0,4 |
 | `fire` (bucle) | 0 | 3 bucles | — | 0,25 a 0,6 según llamas |
 
 - **Tope global:** 24 voces. Con el tope alcanzado, una señal de prioridad mayor sustituye a la voz más antigua de prioridad menor; si no hay ninguna, se descarta la nueva y se cuenta como descartada.
@@ -254,18 +256,18 @@ Los buffers de efectos se sintetizan una vez en la carga y se reproducen con `Au
 
 ### 4.5 Recetas de efectos (guía de diseño)
 
-Referencias para el implementador; los parámetros exactos se ajustan al oído y se fijan en `sfx.ts`.
+Referencias para el implementador; los parámetros exactos se ajustan al oído y se fijan en `sfx.ts`. Espada y pica se ajustaron tras la primera escucha del autor (sonaban a campanilla por exceso de agudos).
 
 | Cue | Síntesis |
 |---|---|
-| Espada | Ráfaga de ruido filtrado paso banda (2 a 6 kHz, 50 ms) más parciales inarmónicos (razones 1; 2,76; 5,4) con decaimiento de 250 ms. |
+| Espada | Choque metálico grave, no de campanilla: ráfaga de ruido paso banda (1,5 a 2,3 kHz, 15 ms), golpe sordo de 220 Hz con caída a 110 Hz y parciales inarmónicos (razones 1; 2,76; 5,4) sobre una base de 330 a 420 Hz con decaimiento corto (≤ 50 ms). La cola debe tener más energía grave (200 a 1400 Hz) que aguda (2 a 4 kHz). |
 | Flecha | Pulsación de cuerda (seno de 140 Hz, 40 ms) más ruido paso banda con barrido descendente de 3 a 1,5 kHz en 180 ms. Tres variantes de timbre; el centro urbano usa una distinta en cada flecha de la salva. |
 | Golpe del aldeano | Golpe sordo: seno de 150 Hz con caída de tono, ruido paso bajo a 700 Hz (60 ms) y un leve crujido; sin resonancia metálica. |
 | Grito | Diente de sierra con formantes de vocal abierta (≈ 700 y 1100 Hz), tono descendente de 330 a 180 Hz en 450 ms, vibrato leve y envolvente suave; el aldeano sube el tono ≈ 25 %. |
 | Campana | Parciales inarmónicos (razones 0,5; 1; 1,2; 1,5; 2; 2,5; 3) sobre una fundamental de 220 Hz, cada uno con su decaimiento exponencial; dos golpes, el segundo una cuarta más grave. |
 | Martillo | Seno de 900 Hz con caída de tono más tic de ruido paso banda a 1,8 kHz (50 ms) y cuerpo grave de 180 Hz. |
 | Hacha | Golpe grave (120 Hz) más ruido paso bajo a 900 Hz (80 ms) y crujido corto de madera. |
-| Pica | Ruido paso banda a 3 kHz más parciales de 1,8 y 2,9 kHz con decaimiento de 120 ms (tintineo de metal sobre piedra). |
+| Pica | Golpe seco de metal sobre roca: golpe sordo de 260 Hz con caída a 130 Hz, ruido paso banda a 1,6 kHz y dos parciales de 600 y 1050 Hz con decaimiento ≤ 40 ms. Misma condición de energía grave que la espada; sin tintineo. |
 | Recolección de alimento | Ruido paso banda ancho (1 a 4 kHz) con envolvente suave de 150 ms (roce de hojas) y un chasquido breve de rama (seno de 600 Hz con caída rápida, 20 ms). |
 | Fuego | Bucle de 4 s: rumor de ruido marrón paso bajo (≈ 400 Hz), siseo filtrado modulado y chasquidos de impulsos con amplitud aleatoria. Empalme con fundido cruzado en el punto de repetición. |
 | Puerta | Chirrido con pulso grave (90 a 140 Hz) y barrido paso banda (400 a 900 Hz) de 0,35 s; golpe de pestillo (seno de 70 Hz más ruido, 60 ms); tras 0,6 s, chirrido invertido más corto y segundo golpe. |
@@ -344,7 +346,7 @@ Trabajar en `efectos_sonido` conservando su historial. No resetearla, forzarla n
 No se ejecutan pruebas ni se modifica el juego al preparar este documento. Durante el desarrollo se verifican solo los riesgos introducidos por P4:
 
 1. **Núcleo:** golpe con `targetOwner`; un `DeathEvent` por unidad muerta y ninguno por edificios; `SpawnEvent` solo cuando la unidad realmente aparece; cadencia de `WorkEvent` (cada 10 ticks al construir, cada recolección al talar o minar); `hashState` idéntico antes y después en partidas de referencia, y los tests existentes (TS y Python) sin modificaciones.
-2. **Traducción a señales (puras):** cada fila de §3 con sus casos negativos: eventos de ambos bandos suenan igual cuando están en pantalla salvo puerta y campana (puerta: solo del jugador; campana: solo si el jugador es atacado, no al atacar), fuera de pantalla mudo salvo campana y fin de partida, victoria con `winner = 0`, derrota con `winner = 1` o `null`, un solo sonido de fin por `endTick`, retardo de 1,0 s y cancelación por reinicio, alimento con su propio sonido, golpe del aldeano defensor distinto de la espada, salva del centro urbano con tres sonidos en 0, 0,5 y 1,0 s (y uno solo para arquero y torre), salva cancelada por reinicio y congelada por pausa, campana con separación de 8 s.
+2. **Traducción a señales (puras):** cada fila de §3 con sus casos negativos: eventos de ambos bandos suenan igual cuando están en pantalla salvo puerta y campana (puerta: solo del jugador; campana: solo si el jugador es atacado, no al atacar), fuera de pantalla mudo salvo campana y fin de partida, victoria con `winner = 0`, derrota con `winner = 1` o `null`, un solo sonido de fin por `endTick`, retardo de 1,0 s y cancelación por reinicio, alimento con su propio sonido, un único sonido de hacha, pica o alimento por cuadro aunque haya varios recolectores, golpe del aldeano defensor distinto de la espada, salva del centro urbano con tres sonidos en 0, 0,5 y 1,0 s (y uno solo para arquero y torre), salva cancelada por reinicio y congelada por pausa, campana con separación de 8 s.
 3. **Voces:** topes por cue y global, separación mínima, robo por prioridad y contadores de descartes.
 4. **Fuego:** inicio al pasar de 0 a más de 0 llamas con el edificio en pantalla, ajuste de intensidad, fin al salir de pantalla, destruirse o reiniciar; máximo de 3 bucles. **Derrumbe:** un sonido por edificio destruido de cualquier bando (con variantes pequeña y grande según la huella y para obra sin terminar), ninguno fuera de pantalla, sin repetición por el mismo `seq`, y el bucle de fuego del mismo edificio se detiene.
 5. **Procesamiento de señal:** determinismo (mismo resultado con la misma semilla), valores finitos, pico ≤ 0,98, duraciones dentro de §3, continuidad en el empalme del bucle de fuego y de la música, energía en la frecuencia esperada de la campana (filtro de Goertzel), notas de la partitura dentro del modo, 60 compases y fragmento inicial de la música generado sin NaN.
