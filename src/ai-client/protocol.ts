@@ -3,7 +3,7 @@
 export const PROTOCOL_VERSION = 2;
 export const PYODIDE_VERSION = "0.27.7";
 export const PYTHON_VERSION_PREFIX = "3.12";
-export const POLICY_VERSION = "policy-0.3";
+export const POLICY_VERSION = "policy-0.4";
 
 export const MAX_OBSERVATION_BYTES = 1024 * 1024;
 export const MAX_RESPONSE_BYTES = 64 * 1024;

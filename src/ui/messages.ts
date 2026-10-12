@@ -1,3 +1,4 @@
+import type { ToastKind } from "./toasts";
 import type { CommandResult, CommandType, RejectCode } from "../core/types";
 
 /** Texto por cada código de rechazo; el tipo exhaustivo obliga a mantenerlo al día. */
@@ -38,4 +39,11 @@ export function describeResult(result: CommandResult, type: CommandType): string
   if (type === "ResumeBuild") return "Reanudar obra: 1 constructor asignado";
   const missing = result.total - result.assigned;
   return `${LABEL[type]}: ${result.assigned}/${result.total} unidades${missing > 0 ? ` (${missing} sin acceso o no aplicables)` : ""}`;
+}
+
+/** Tipo de aviso según el texto: rechazos y avisos de uso en ámbar, fallos en rojo y el resto neutro. */
+export function toastKind(text: string): ToastKind {
+  if (/^Error inesperado/.test(text)) return "error";
+  if (/^(Orden rechazada|Ubicación rechazada|Ubicación fuera|Destino fuera|En pausa|Seleccione|No hay unidades)/.test(text)) return "warn";
+  return "info";
 }

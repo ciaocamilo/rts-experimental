@@ -441,3 +441,29 @@ export interface Humanized {
 export function humanize(rng: Rng, at: number, gain: number, maxTime = 0.012, maxVelocity = 0.08, maxCents = 4): Humanized {
   return { at: Math.max(0, at + rng.range(-maxTime, maxTime)), gain: gain * (1 + rng.range(-maxVelocity, maxVelocity)), cents: rng.range(-maxCents, maxCents) };
 }
+
+/** Filtro de peine directo: `y[n] = x[n] + gain * x[n - delay]`; da el rizado metálico del roce de dos hojas. */
+export function combFilter(input: Float32Array, sr: number, delaySeconds: number, gain: number): Float32Array {
+  const d = Math.max(1, Math.round(delaySeconds * sr));
+  const out = new Float32Array(input.length);
+  for (let i = 0; i < input.length; i++) out[i] = input[i]! + (i >= d ? gain * input[i - d]! : 0);
+  return out;
+}
+
+/**
+ * Pulsación amortiguada: un seno por modo con decaimiento exponencial y una caída de tono del `drop` relativo
+ * (p. ej. 0,05 = 5 %) durante `dropSeconds`, como una cuerda que pierde tensión tras soltarse.
+ */
+export function pluckedString(freqs: readonly number[], amps: readonly number[], taus: readonly number[], drop: number, dropSeconds: number, seconds: number, sr: number): Float32Array {
+  const out = makeBuffer(seconds, sr);
+  for (let k = 0; k < freqs.length; k++) {
+    let phase = 0;
+    for (let i = 0; i < out.length; i++) {
+      const t = i / sr;
+      const f = freqs[k]! * (1 - drop * Math.min(1, t / dropSeconds));
+      phase += (2 * Math.PI * f) / sr;
+      out[i]! += amps[k]! * Math.exp(-t / taus[k]!) * Math.sin(phase);
+    }
+  }
+  return out;
+}

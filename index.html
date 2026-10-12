@@ -5,21 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RTS experimental</title>
     <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; background: #111; color: #eee; font: 14px system-ui, sans-serif; }
-      #view { position: fixed; inset: 0; }
-      #hud { position: fixed; top: 8px; left: 8px; padding: 6px 10px; background: rgba(0,0,0,.6); border-radius: 4px; pointer-events: none; white-space: pre; }
+      :root { --bar-h: 140px; }
+      @media (max-height: 599px) { :root { --bar-h: 108px; } }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color: #eee; font: 14px system-ui, sans-serif; }
+      #view { position: fixed; left: 0; top: 0; display: block; width: 100vw; height: calc(100vh - var(--bar-h)); background: #000; }
+
+      #resources { position: fixed; top: 8px; left: 8px; z-index: 2; display: flex; gap: 14px; align-items: center; padding: 5px 12px; background: rgba(0,0,0,.65); border: 1px solid #3a3a3a; border-radius: 6px; pointer-events: none; font-weight: 600; }
+      #resources .res { display: inline-flex; align-items: center; gap: 6px; }
+      #resources .res i { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.35); }
+      .res.food i, .chip.food::before { background: #e2b23b; }
+      .res.wood i, .chip.wood::before { background: #9a6a3a; }
+      .res.stone i, .chip.stone::before { background: #aab4bd; }
+      .res.pop i { background: #4aa8ff; }
+      #hud { position: fixed; top: 46px; left: 8px; z-index: 2; display: none; max-height: calc(100vh - var(--bar-h) - 60px); overflow: hidden; padding: 6px 10px; background: rgba(0,0,0,.7); border-radius: 4px; pointer-events: none; white-space: pre; }
+      #hud.visible { display: block; }
       #controls { position: fixed; top: 8px; right: 8px; z-index: 2; display: flex; gap: 6px; }
       #controls button { font: inherit; padding: 4px 10px; }
-      #panel { position: fixed; left: 8px; bottom: 8px; z-index: 2; display: none; flex-direction: column; gap: 6px; max-width: min(560px, calc(100vw - 16px)); padding: 8px 10px; background: rgba(0,0,0,.7); border-radius: 4px; }
-      #panel .panel-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-      #panel button { font: inherit; padding: 3px 8px; cursor: pointer; }
-      #panel button.active { outline: 2px solid #4ade80; }
-      #panel .queue-item { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border: 1px solid #555; border-radius: 3px; }
+      #controls button[aria-pressed="true"] { outline: 2px solid #4ade80; }
+
+      #toasts { position: fixed; top: 46px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(520px, calc(100vw - 16px)); pointer-events: none; }
+      .toast { max-width: 100%; box-sizing: border-box; padding: 6px 14px; border-radius: 6px; border: 1px solid #555; background: rgba(20,20,20,.9); color: #eee; text-align: center; animation: toast-in .12s ease-out; transition: opacity .3s ease, transform .3s ease; }
+      .toast.warn { border-color: #d99a1c; background: rgba(60,42,6,.92); color: #ffe2a0; }
+      .toast.error { border-color: #d9413a; background: rgba(70,12,10,.94); color: #ffc9c4; }
+      .toast.leaving { opacity: 0; transform: translateY(-6px); }
+      @keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+      #bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bar-h); z-index: 2; box-sizing: border-box; display: grid; grid-template-columns: 240px 1fr auto; gap: 0; background: linear-gradient(#262a2e, #14171a); border-top: 2px solid #3d444b; box-shadow: 0 -2px 8px rgba(0,0,0,.6); }
+      #info { box-sizing: border-box; padding: 8px 10px; overflow: auto; white-space: pre-line; font-size: 13px; line-height: 1.35; border-right: 1px solid #3d444b; }
+      #info.hint { color: #8d949b; }
+      #panel { box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; overflow: auto; }
+      #panel .panel-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+      #panel .act { display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px 4px 8px; min-height: 40px; font: inherit; color: #f1f1f1; cursor: pointer; background: linear-gradient(#4a5159, #2b3036); border: 1px solid #1a1d20; border-top-color: #7b858f; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.6); }
+      #panel .act:hover:not(:disabled) { background: linear-gradient(#59626b, #343a41); }
+      #panel .act:active:not(:disabled) { background: linear-gradient(#22262a, #3a4047); border-top-color: #1a1d20; transform: translateY(1px); }
+      #panel .act.active { border-color: #4ade80; box-shadow: 0 0 0 1px #4ade80; }
+      #panel .act:disabled { opacity: .45; cursor: default; }
+      #panel .act.short { opacity: .6; }
+      #panel .act .ico { display: inline-flex; color: #d8e6f2; }
+      #panel .act .lbl { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+      #panel .act .name { font-weight: 600; text-transform: capitalize; }
+      #panel .act .costs { display: flex; gap: 6px; font-size: 12px; }
+      .chip { display: inline-flex; align-items: center; gap: 3px; }
+      .chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.3); }
+      .chip.missing { color: #ff6b63; font-weight: 700; }
+      #panel .act.mini { min-height: 0; padding: 0 4px; }
+      #panel .queue-item { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border: 1px solid #555; border-radius: 4px; }
       #panel .queue-item.first { border-color: #4ade80; }
-      #panel .queue-item button { padding: 0 5px; }
-      #overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); font-size: 22px; white-space: pre-line; text-align: center; }
+      .bar { display: inline-block; width: 70px; height: 5px; background: #0b0d0f; border: 1px solid #444; border-radius: 3px; overflow: hidden; }
+      .bar i { display: block; height: 100%; width: 0; background: #4ade80; }
+      #minimap-box { display: flex; align-items: center; padding: 6px; border-left: 1px solid #3d444b; }
+      #minimap { display: block; width: 256px; height: 128px; background: #000; border: 1px solid #7b858f; cursor: crosshair; touch-action: none; }
+      @media (max-height: 599px) { #minimap { width: 192px; height: 96px; } }
+
+      #overlay { position: fixed; left: 0; top: 0; right: 0; bottom: var(--bar-h); display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); font-size: 22px; white-space: pre-line; text-align: center; }
       #overlay.visible { display: flex; }
-      #help { position: fixed; top: 44px; right: 8px; z-index: 3; display: none; width: 340px; max-height: calc(100vh - 150px); overflow-y: auto; box-sizing: border-box; padding: 8px 12px; background: rgba(0,0,0,.82); border: 1px solid #555; border-radius: 4px; font-size: 13px; line-height: 1.35; }
+      #help { position: fixed; top: 44px; right: 8px; z-index: 3; display: none; width: 340px; max-height: calc(100vh - var(--bar-h) - 60px); overflow-y: auto; box-sizing: border-box; padding: 8px 12px; background: rgba(0,0,0,.82); border: 1px solid #555; border-radius: 4px; font-size: 13px; line-height: 1.35; }
       #help.visible { display: block; }
       #help h2 { margin: 0 0 4px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
       #help ul { margin: 2px 0 6px; padding-left: 16px; }
@@ -30,12 +70,20 @@
   </head>
   <body>
     <canvas id="view"></canvas>
+    <div id="resources" aria-label="Recursos">
+      <span class="res food" title="Alimento"><i></i><b id="res-food">0</b></span>
+      <span class="res wood" title="Madera"><i></i><b id="res-wood">0</b></span>
+      <span class="res stone" title="Piedra"><i></i><b id="res-stone">0</b></span>
+      <span class="res pop" title="Población: viva (+en cola) / capacidad"><i></i><b id="res-pop">0</b></span>
+    </div>
     <div id="hud"></div>
+    <div id="toasts"></div>
     <div id="controls">
       <button id="btn-pause" type="button">Pausar</button>
       <button id="btn-restart" type="button">Reiniciar</button>
       <button id="btn-music" type="button">Música: sí</button>
       <button id="btn-sfx" type="button">Efectos: sí</button>
+      <button id="btn-logs" type="button" aria-pressed="false">Registros (L)</button>
       <button id="btn-help" type="button">Ayuda (H)</button>
       <button id="btn-export" type="button">Exportar diagnóstico</button>
     </div>
@@ -43,26 +91,33 @@
       <h2>Ayuda <button id="help-close" type="button">Cerrar</button></h2>
       <p style="margin:0 0 4px">Destruya el centro urbano rival antes de perder el propio. Partida máxima: 20 minutos.</p>
       <ul>
-        <li><b>Cámara:</b> WASD o flechas, o lleve el cursor al borde de la pantalla; rueda para acercar o alejar.</li>
-        <li><b>Selección:</b> clic o arrastre (solo unidades propias); Shift suma o quita; Esc limpia.</li>
+        <li><b>Cámara:</b> WASD o flechas, o lleve el cursor al borde de la vista; rueda para acercar o alejar (hasta 4,5×). Clic o arrastre en la miniatura (abajo a la derecha) para saltar a otro punto del mapa.</li>
+        <li><b>Selección:</b> clic o arrastre (solo unidades propias); Shift suma o quita; Esc limpia. La barra inferior muestra qué está seleccionado.</li>
         <li><b>Clic derecho:</b> suelo = mover; recurso = recolectar (aldeanos); enemigo = atacar (militares); obra propia = reanudar.</li>
-        <li><b>Construir:</b> con aldeanos seleccionados use el panel inferior (casa 50 madera, cuartel 150 madera, torre 300 piedra) y confirme con clic izquierdo.</li>
+        <li><b>Construir:</b> con aldeanos seleccionados use la barra inferior (casa 50 madera, cuartel 150 madera, torre 300 piedra) y confirme con clic izquierdo. Si falta un recurso, su cifra se pone en rojo.</li>
         <li><b>Producir:</b> clic en un edificio propio para entrenar y ver o cancelar la cola.</li>
         <li><b>Combate:</b> los militares libres atacan solos a menos de 6 celdas y se defienden si los hieren; las torres completas disparan solas.</li>
+        <li><b>Mapa:</b> un río separa las bases; solo se cruza por el puente central. Cada bando empieza con 6 casas y 2 torres.</li>
+        <li><b>Avisos:</b> los rechazos y confirmaciones aparecen arriba al centro unos segundos.</li>
+        <li><b>Registros (L):</b> muestra u oculta el panel técnico (hash, IA, rendimiento, audio, versiones).</li>
         <li><b>Pausa:</b> botón Pausar; ocultar la pestaña también pausa.</li>
         <li><b>Audio:</b> suena tras el primer clic o tecla; M silencia todo y los botones Música y Efectos los activan por separado.</li>
         <li><b>Gráficos:</b> si va lento, añada <code>?graphics=low</code> a la dirección (o <code>?shadows=0</code> para quitar solo las sombras).</li>
       </ul>
       <p style="margin:0 0 2px"><b>Bandos</b> (además del color):</p>
       <ul>
-        <li><span class="mark">○</span> disco blanco, azul: usted.</li>
-        <li><span class="mark">◆</span> rombo oscuro, rojo: rival (IA en Python).</li>
+        <li><span class="mark">○</span> anillo blanco, azul: usted.</li>
+        <li><span class="mark">◇</span> rombo oscuro hueco, rojo: rival (IA en Python).</li>
       </ul>
       <p style="margin:0">Unidades: sombrero de paja = aldeano, capucha y arco = arquero, casco y escudo = soldado. «Exportar diagnóstico» descarga un JSON local con versiones, rendimiento y órdenes.</p>
     </div>
-    <div id="panel"></div>
     <div id="overlay"></div>
     <div id="drag-box"></div>
+    <div id="bottom-bar">
+      <div id="info" class="hint">Seleccione unidades o un edificio propio</div>
+      <div id="panel"></div>
+      <div id="minimap-box"><canvas id="minimap" width="256" height="128" aria-label="Miniatura del mapa"></canvas></div>
+    </div>
     <div id="unsupported">Navegador incompatible: se requiere WebGL, Worker y WebAssembly.</div>
     <script type="module" src="/src/main.ts"></script>
   </body>

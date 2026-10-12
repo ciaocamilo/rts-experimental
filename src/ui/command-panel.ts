@@ -1,6 +1,6 @@
 import { BALANCE, type BuildingKind, type UnitKind } from "../content/balance";
 import type { EntityId, GameState } from "../core/types";
-import type { Selection } from "../input/selection";
+import { describeEntity, type Selection } from "../input/selection";
 
 export interface PanelActions {
   build(kind: BuildingKind): void;
@@ -12,9 +12,33 @@ export interface PanelActions {
 
 const HUMAN = 0;
 const UNIT_NAME: Record<UnitKind, string> = { villager: "aldeano", soldier: "soldado", archer: "arquero" };
+const UNIT_PLURAL: Record<UnitKind, string> = { villager: "aldeanos", soldier: "soldados", archer: "arqueros" };
 const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel", tower: "torre" };
+const RESOURCES = ["food", "wood", "stone"] as const;
+type Resource = (typeof RESOURCES)[number];
+type Cost = { food: number; wood: number; stone: number };
 
-function costText(cost: { food: number; wood: number; stone: number }): string {
+/** Iconos en línea (24 × 24, `currentColor`); texto estático propio, sin datos del usuario. */
+const ICONS: Record<string, string> = {
+  house: '<path d="M3 12 12 4l9 8h-2.5v8h-13v-8z"/>',
+  barracks: '<path d="M3 20V9l9-5 9 5v11h-6v-6H9v6z"/><path d="M12 4V1h4v2h-4" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  tower: '<path d="M7 21V8H5V3h3v2h2V3h4v2h2V3h3v5h-2v13z"/>',
+  villager: '<circle cx="12" cy="7" r="3"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8z"/><path d="M6 6h12" stroke="currentColor" stroke-width="2"/>',
+  soldier: '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/>',
+  archer: '<path d="M6 3c8 2 12 8 12 9s-4 7-12 9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 12h15m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="2"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+  cancel: '<path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="3"/>',
+};
+
+function icon(name: string): HTMLElement {
+  const span = document.createElement("span");
+  span.className = "ico";
+  span.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">${ICONS[name] ?? ""}</svg>`;
+  return span;
+}
+
+/** Texto de un coste para la descripción accesible del botón. */
+function costText(cost: Cost): string {
   const parts: string[] = [];
   if (cost.food > 0) parts.push(`${cost.food} alimento`);
   if (cost.wood > 0) parts.push(`${cost.wood} madera`);
@@ -23,16 +47,21 @@ function costText(cost: { food: number; wood: number; stone: number }): string {
 }
 
 /**
- * Panel de órdenes (DOM). Solo traduce clics en intenciones; las reglas y validaciones viven en el núcleo.
- * La estructura se reconstruye únicamente cuando cambia, para no destruir botones bajo el cursor.
+ * Barra de acciones (DOM): zona de información y zona de acciones. Solo traduce clics en intenciones;
+ * las reglas y validaciones viven en el núcleo. La estructura se reconstruye únicamente cuando cambia,
+ * para no destruir botones bajo el cursor; el estado de coste insuficiente se actualiza en el sitio.
  */
 export class CommandPanel {
   private signature = "";
+  private infoText = "";
   private readonly progress = new Map<string, HTMLElement>();
+  private readonly bars = new Map<string, HTMLElement>();
+  private readonly costed: { button: HTMLButtonElement; cost: Cost; short: boolean; chips: Map<Resource, HTMLElement> }[] = [];
 
   constructor(
     private readonly root: HTMLElement,
     private readonly actions: PanelActions,
+    private readonly infoRoot: HTMLElement | null = null,
   ) {
     root.addEventListener("click", (e) => {
       const button = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-act]");
@@ -62,24 +91,60 @@ export class CommandPanel {
       this.signature = signature;
       this.rebuild(hasVillager, military, building, placing, paused);
     }
+    this.updateAffordability(state);
     this.updateProgress(building);
+    this.updateInfo(state, selection);
+  }
+
+  private updateInfo(state: GameState, selection: Selection): void {
+    if (!this.infoRoot) return;
+    let text: string;
+    if (selection.inspected !== null) text = describeEntity(state, selection.inspected);
+    else if (selection.units.size === 1) text = describeEntity(state, [...selection.units][0]!);
+    else if (selection.units.size > 1) {
+      const counts = new Map<UnitKind, number>();
+      for (const u of state.units) if (selection.units.has(u.id)) counts.set(u.kind, (counts.get(u.kind) ?? 0) + 1);
+      const detail = (["villager", "soldier", "archer"] as const).filter((k) => counts.has(k)).map((k) => `${counts.get(k)} ${UNIT_PLURAL[k]}`);
+      text = `${selection.units.size} unidades seleccionadas\n${detail.join(" · ")}`;
+    } else text = "Seleccione unidades o un edificio propio";
+    if (text === this.infoText) return;
+    this.infoText = text;
+    this.infoRoot.textContent = text;
+    this.infoRoot.classList.toggle("hint", selection.inspected === null && selection.units.size === 0);
+  }
+
+  /** Atenúa el botón y enrojece la ficha del recurso que falta, sin reconstruir ni deshabilitar. */
+  private updateAffordability(state: GameState): void {
+    const p = state.players[HUMAN];
+    for (const entry of this.costed) {
+      const missing = RESOURCES.filter((r) => entry.cost[r] > p[r]);
+      const short = missing.length > 0;
+      if (short !== entry.short) {
+        entry.short = short;
+        entry.button.classList.toggle("short", short);
+      }
+      for (const [r, chip] of entry.chips) {
+        const isMissing = missing.includes(r);
+        if (chip.classList.contains("missing") !== isMissing) chip.classList.toggle("missing", isMissing);
+      }
+    }
   }
 
   private rebuild(hasVillager: boolean, military: EntityId[], building: GameState["buildings"][number] | null, placing: BuildingKind | null, paused: boolean): void {
     this.progress.clear();
+    this.bars.clear();
+    this.costed.length = 0;
     this.root.replaceChildren();
-    this.root.style.display = hasVillager || military.length > 0 || building ? "flex" : "none";
 
     if (military.length > 0) {
       const row = this.row(`Militares (${military.length}):`);
-      row.append(this.button("Detener", `stop:${military.join(",")}`, paused, "cancela la orden actual; si hay un enemigo cerca, el militar libre vuelve a atacarlo"));
+      row.append(this.button("Detener", `stop:${military.join(",")}`, paused, "stop", undefined, "cancela la orden actual; si hay un enemigo cerca, el militar libre vuelve a atacarlo"));
     }
 
     if (hasVillager) {
       const row = this.row("Construir:");
       for (const kind of ["house", "barracks", "tower"] as const) {
-        const def = BALANCE.buildings[kind];
-        const b = this.button(`${BUILDING_NAME[kind]} · ${costText(def.cost)}`, `build:${kind}`, paused);
+        const b = this.button(BUILDING_NAME[kind], `build:${kind}`, paused, kind, BALANCE.buildings[kind].cost);
         if (placing === kind) b.classList.add("active");
         row.append(b);
       }
@@ -92,7 +157,7 @@ export class CommandPanel {
     if (!building.complete) {
       const span = document.createElement("span");
       this.progress.set("site", span);
-      title.append(span, this.button("cancelar obra (devuelve 75 %)", `cancelsite:${building.id}`, paused));
+      title.append(span, this.bar("site"), this.button("Cancelar obra", `cancelsite:${building.id}`, paused, "cancel", undefined, "devuelve el 75 % del coste"));
       return;
     }
     if (def.trains.length === 0) {
@@ -103,8 +168,7 @@ export class CommandPanel {
     if (def.weapon) title.append(this.text(`dispara ${def.arrows ?? 1} flechas (alcance ${BALANCE.units[def.weapon].range})`));
     const train = this.row("Entrenar:");
     for (const kind of def.trains) {
-      const u = BALANCE.units[kind];
-      train.append(this.button(`${UNIT_NAME[kind]} · ${costText(u.cost)}`, `train:${building.id}:${kind}`, paused));
+      train.append(this.button(UNIT_NAME[kind], `train:${building.id}:${kind}`, paused, kind, BALANCE.units[kind].cost));
     }
     const queue = this.row(`Cola ${building.queue.length}/${BALANCE.economy.queueLimit}:`);
     building.queue.forEach((item, index) => {
@@ -112,9 +176,13 @@ export class CommandPanel {
       entry.className = "queue-item";
       const status = document.createElement("span");
       this.progress.set(`q${item.id}`, status);
-      entry.append(this.text(`${UNIT_NAME[item.kind]} `), status, this.button("✕", `cancelq:${building.id}:${item.id}`, paused, "cancelar entrenamiento (reembolso completo)"));
+      entry.append(icon(item.kind), this.text(`${UNIT_NAME[item.kind]} `), status);
+      if (index === 0) {
+        entry.classList.add("first");
+        entry.append(this.bar(`q${item.id}`));
+      }
+      entry.append(this.button("", `cancelq:${building.id}:${item.id}`, paused, "cancel", undefined, "cancelar entrenamiento (reembolso completo)", "mini"));
       queue.append(entry);
-      if (index === 0) entry.classList.add("first");
     });
     if (building.queue.length === 0) queue.append(this.text("vacía"));
   }
@@ -123,8 +191,10 @@ export class CommandPanel {
     if (!building || this.progress.size === 0) return;
     if (!building.complete) {
       const total = BALANCE.buildings[building.kind].buildTicks;
+      const pct = Math.floor((100 * building.buildDone) / total);
       const span = this.progress.get("site");
-      if (span) span.textContent = `obra ${Math.floor((100 * building.buildDone) / total)} % · vida ${building.hp}/${BALANCE.buildings[building.kind].hp}`;
+      if (span) span.textContent = `obra ${pct} % · vida ${building.hp}/${BALANCE.buildings[building.kind].hp}`;
+      this.setBar("site", pct);
       return;
     }
     building.queue.forEach((item, index) => {
@@ -133,8 +203,27 @@ export class CommandPanel {
       const total = BALANCE.units[item.kind].trainTicks;
       if (index > 0) span.textContent = "(en espera)";
       else if (item.remaining === 0) span.textContent = "(lista: sin salida libre)";
-      else span.textContent = `${Math.floor((100 * (total - item.remaining)) / total)} %`;
+      else {
+        const pct = Math.floor((100 * (total - item.remaining)) / total);
+        span.textContent = `${pct} %`;
+        this.setBar(`q${item.id}`, pct);
+      }
     });
+  }
+
+  private bar(key: string): HTMLElement {
+    const track = document.createElement("span");
+    track.className = "bar";
+    const fill = document.createElement("i");
+    track.append(fill);
+    this.bars.set(key, fill);
+    return track;
+  }
+
+  private setBar(key: string, pct: number): void {
+    const fill = this.bars.get(key);
+    const width = `${Math.min(100, Math.max(0, pct))}%`;
+    if (fill && fill.style.width !== width) fill.style.width = width;
   }
 
   private row(label: string): HTMLElement {
@@ -151,12 +240,40 @@ export class CommandPanel {
     return span;
   }
 
-  private button(label: string, act: string, disabled: boolean, title?: string): HTMLButtonElement {
+  private button(label: string, act: string, disabled: boolean, iconName: string, cost?: Cost, title?: string, extra?: string): HTMLButtonElement {
     const b = document.createElement("button");
     b.type = "button";
-    b.textContent = label;
+    b.className = `act${extra ? ` ${extra}` : ""}`;
     b.dataset["act"] = act;
     b.disabled = disabled;
+    b.append(icon(iconName));
+    if (label) {
+      const body = document.createElement("span");
+      body.className = "lbl";
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = label;
+      body.append(name);
+      if (cost) {
+        const costs = document.createElement("span");
+        costs.className = "costs";
+        const chips = new Map<Resource, HTMLElement>();
+        for (const r of RESOURCES) {
+          if (cost[r] <= 0) continue;
+          const chip = document.createElement("span");
+          chip.className = `chip ${r}`;
+          chip.textContent = String(cost[r]);
+          chips.set(r, chip);
+          costs.append(chip);
+        }
+        body.append(costs);
+        this.costed.push({ button: b, cost, short: false, chips });
+        b.setAttribute("aria-label", `${label}: ${costText(cost)}`);
+      }
+      b.append(body);
+    } else {
+      b.setAttribute("aria-label", title ?? act);
+    }
     if (title) b.title = title;
     return b;
   }

@@ -15,9 +15,14 @@ describe("escenario inicial (RF-01, §4.2)", () => {
     for (const p of state.players) {
       expect(p.food).toBe(200);
       expect(p.wood).toBe(200);
-      expect(p.popCapacity).toBe(10);
+      expect(p.popCapacity).toBe(40);
     }
     expect(state.buildings.filter((b) => b.kind === "townCenter")).toHaveLength(2);
+    for (const owner of [0, 1]) {
+      expect(state.buildings.filter((b) => b.owner === owner && b.kind === "house")).toHaveLength(6);
+      expect(state.buildings.filter((b) => b.owner === owner && b.kind === "tower")).toHaveLength(2);
+    }
+    expect(state.buildings.every((b) => b.complete)).toBe(true);
     expect(populationOf(state, 0)).toBe(3);
     expect(populationOf(state, 1)).toBe(3);
   });

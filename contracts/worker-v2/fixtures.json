@@ -12,7 +12,7 @@
     "expected": {
      "pyodide": "0.27.7",
      "python": "3.12",
-     "policy": "policy-0.3"
+     "policy": "policy-0.4"
     },
     "config": {
      "max_commands": 4
@@ -30,7 +30,7 @@
     "versions": {
      "pyodide": "0.27.7",
      "python": "3.12.7",
-     "policy": "policy-0.3"
+     "policy": "policy-0.4"
     },
     "timings_ms": {
      "pyodide_load": 1400.5,
@@ -51,9 +51,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -194,16 +194,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -278,9 +278,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -366,7 +366,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -401,7 +401,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [],
     "reason_codes": [],
     "metrics": {
@@ -421,7 +421,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -483,7 +483,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -546,7 +546,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -579,7 +579,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -625,9 +625,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -768,16 +768,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -876,9 +876,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -1019,16 +1019,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -1103,7 +1103,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -1139,7 +1139,7 @@
     "expected": {
      "pyodide": "0.27.7",
      "python": "3.12",
-     "policy": "policy-0.3"
+     "policy": "policy-0.4"
     },
     "config": {
      "max_commands": 4
@@ -1179,9 +1179,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -1322,16 +1322,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -1407,9 +1407,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -1550,16 +1550,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -1636,9 +1636,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -1780,16 +1780,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -1865,9 +1865,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -2075,9 +2075,9 @@
     "observation_tick": 140,
     "player_id": 2,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -2218,16 +2218,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -2303,9 +2303,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -2446,16 +2446,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -2531,9 +2531,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -2674,16 +2674,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -2759,9 +2759,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -2902,16 +2902,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -2987,9 +2987,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -3130,16 +3130,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -3215,9 +3215,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -3358,16 +3358,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -3443,9 +3443,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -3586,16 +3586,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -3671,9 +3671,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -3814,16 +3814,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -3854,9 +3854,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -3997,16 +3997,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -4082,9 +4082,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -4224,16 +4224,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -4309,9 +4309,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -4477,16 +4477,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -4562,9 +4562,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -4705,16 +4705,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -4785,9 +4785,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -4927,16 +4927,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -5012,9 +5012,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -5154,16 +5154,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -5239,9 +5239,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -5382,16 +5382,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -5462,9 +5462,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -5605,16 +5605,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -5690,9 +5690,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -5833,16 +5833,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -5918,9 +5918,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -6053,16 +6053,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -6138,9 +6138,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p3.0.0",
-    "map_version": "map-0.3 (128x64, piedra)",
-    "balance_version": "balance-0.2",
+    "game_version": "p6.0.0",
+    "map_version": "map-0.4 (128x64, río y puente)",
+    "balance_version": "balance-0.3",
     "players": [
      {
       "id": 0,
@@ -13727,16 +13727,16 @@
      "depth": 64,
      "terrain": [
       {
-       "x": 62,
-       "z": 8,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
       },
       {
-       "x": 62,
-       "z": 38,
-       "w": 4,
-       "h": 18
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
       }
      ]
     },
@@ -13825,7 +13825,7 @@
     "expected": {
      "pyodide": "0.27.7",
      "python": "3.12",
-     "policy": "policy-0.3"
+     "policy": "policy-0.4"
     },
     "config": {
      "max_commands": 5
@@ -13860,7 +13860,7 @@
     "versions": {
      "pyodide": "0.27.7",
      "python": "3.12.7",
-     "policy": "policy-0.3"
+     "policy": "policy-0.4"
     },
     "timings_ms": {
      "pyodide_load": 1400.5,
@@ -13909,7 +13909,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -13973,7 +13973,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": {},
     "reason_codes": [
      "GATHER"
@@ -13996,7 +13996,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14033,7 +14033,7 @@
     "request_id": "7",
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14069,7 +14069,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14105,7 +14105,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14141,7 +14141,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14176,7 +14176,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14207,7 +14207,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14242,7 +14242,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14277,7 +14277,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14312,7 +14312,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14348,7 +14348,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14381,7 +14381,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14516,7 +14516,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14550,7 +14550,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "abc",
@@ -14582,7 +14582,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",
@@ -14618,7 +14618,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.3",
+    "policy_version": "policy-0.4",
     "commands": [
      {
       "command_id": "7:0",

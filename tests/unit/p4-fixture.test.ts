@@ -34,7 +34,7 @@ describe("fixture sonidos", () => {
     const rejected = session.commandLog.filter((c) => !c.result.accepted).map((c) => `${c.command.type}:${"code" in c.result ? c.result.code : ""}`);
     expect(rejected).toEqual([]);
     const seen = new Set(cues.map((c) => c.cue));
-    for (const cue of ["sword", "arrow", "blow", "bell", "hammer", "axe", "pick", "forage", "death", "door", "collapse"] as const) {
+    for (const cue of ["sword", "arrow", "arrowHit", "blow", "bell", "hammer", "axe", "pick", "forage", "death", "door", "collapse"] as const) {
       expect(seen.has(cue), cue).toBe(true);
     }
     expect(fire).toBeGreaterThan(0);

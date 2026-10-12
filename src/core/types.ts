@@ -88,8 +88,8 @@ export interface TerrainRect {
   z: number;
   w: number;
   h: number;
-  /** Solo cosmético: el agua bloquea igual que la roca. Ausente = roca. */
-  kind?: "water";
+  /** El agua bloquea igual que la roca; el puente se camina pero no admite obras. Ausente = roca. */
+  kind?: "water" | "bridge";
 }
 
 export interface QueueItem {

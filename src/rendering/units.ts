@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { AssetLibrary } from "./assets";
 import { mergeParts, type Part } from "./merge";
-import { type Materials, OWNER_COLORS, VISUAL } from "./models";
+import { type Materials, OWNER_COLORS, rhombusMarkGeometry, ringMarkGeometry, VISUAL } from "./models";
 import type { Pose, Role } from "./pose";
 
 export interface UnitRig {
@@ -62,10 +62,7 @@ export class UnitFactory {
       });
     this.occluded = [silhouette(0), silhouette(1)];
     this.proxyMaterial = assets.basic({ visible: false });
-    this.markGeometry = [
-      assets.track(new THREE.CylinderGeometry(0.2, 0.2, 0.02, 14)),
-      assets.track(new THREE.BoxGeometry(0.3, 0.02, 0.3).rotateY(Math.PI / 4)),
-    ];
+    this.markGeometry = [assets.track(ringMarkGeometry(0.2)), assets.track(rhombusMarkGeometry(0.212))];
     this.shadowGeometry = assets.track(new THREE.CircleGeometry(0.34, 12).rotateX(-Math.PI / 2));
     this.proxyGeometry = assets.track(new THREE.CylinderGeometry(0.4, 0.4, VISUAL.unitHeight, 8).translate(0, VISUAL.unitHeight / 2, 0));
   }

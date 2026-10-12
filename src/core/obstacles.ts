@@ -13,7 +13,7 @@ const cache = new WeakMap<GameState, CacheEntry>();
 
 function build(state: GameState): NavGrid {
   const grid = new NavGrid(state.mapWidth, state.mapDepth);
-  for (const t of state.terrain) grid.blockRect(t.x, t.z, t.w, t.h);
+  for (const t of state.terrain) if (t.kind !== "bridge") grid.blockRect(t.x, t.z, t.w, t.h);
   for (const b of state.buildings) {
     const w = BALANCE.buildings[b.kind].footprint;
     grid.blockRect(b.cell.x, b.cell.z, w);

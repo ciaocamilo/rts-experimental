@@ -3,7 +3,7 @@ export interface SceneryRect {
   z: number;
   w: number;
   h: number;
-  kind?: "water";
+  kind?: "water" | "bridge";
 }
 
 export interface TreeSpec {
@@ -34,9 +34,6 @@ export interface SceneryPlan {
 
 /** Altura visual de los bloques de roca; los árboles decorativos crecen sobre ellos. */
 export const ROCK_HEIGHT = 1.2;
-/** Anchura de la franja arbolada fuera del terreno jugable. */
-export const BORDER_BAND = 9;
-const BORDER_GAP = 0.8;
 
 /** Generador determinista y propio: la decoración nunca consume la aleatoriedad de la lógica. */
 export function mulberry32(seed: number): () => number {
@@ -51,17 +48,17 @@ export function mulberry32(seed: number): () => number {
 }
 
 /**
- * Vegetación puramente decorativa: solo sobre celdas ya bloqueadas (roca) o fuera del terreno
- * jugable. Nunca produce troncos sobre celdas transitables ni entidades económicas (P2-H06 CA06).
+ * Vegetación puramente decorativa: solo sobre celdas ya bloqueadas (roca). Nunca produce troncos sobre celdas
+ * transitables, agua, puente ni fuera del mapa (P2-H06 CA06, P6-H07).
  */
-export function planScenery(width: number, depth: number, terrain: readonly SceneryRect[], seed = 1337, density = 1): SceneryPlan {
+export function planScenery(_width: number, _depth: number, terrain: readonly SceneryRect[], seed = 1337, density = 1): SceneryPlan {
   const rng = mulberry32(seed);
   const trees: TreeSpec[] = [];
   const bushes: BushSpec[] = [];
   const variant3 = (): 0 | 1 | 2 => Math.min(2, Math.floor(rng() * 3)) as 0 | 1 | 2;
 
   for (const t of terrain) {
-    if (t.kind === "water") continue;
+    if (t.kind === "water" || t.kind === "bridge") continue;
     for (let i = 0; i < t.w; i++) {
       for (let j = 0; j < t.h; j++) {
         const r = rng();
@@ -76,21 +73,5 @@ export function planScenery(width: number, depth: number, terrain: readonly Scen
     }
   }
 
-  const step = 2.1;
-  for (let x = -BORDER_BAND; x <= width + BORDER_BAND; x += step) {
-    for (let z = -BORDER_BAND; z <= depth + BORDER_BAND; z += step) {
-      const px = x + (rng() - 0.5) * step * 0.9;
-      const pz = z + (rng() - 0.5) * step * 0.9;
-      const outside = px < -BORDER_GAP || px > width + BORDER_GAP || pz < -BORDER_GAP || pz > depth + BORDER_GAP;
-      const keep = rng() < 0.8 * density;
-      const kind = rng();
-      if (!outside || !keep) continue;
-      if (kind < 0.82) {
-        trees.push({ x: px, y: 0, z: pz, variant: variant3(), scale: 0.9 + rng() * 0.8, rot: rng() * Math.PI * 2, tone: rng() });
-      } else {
-        bushes.push({ x: px, y: 0, z: pz, variant: rng() < 0.5 ? 0 : 1, scale: 0.8 + rng() * 0.6, rot: rng() * Math.PI * 2, tone: rng() });
-      }
-    }
-  }
   return { trees, bushes };
 }

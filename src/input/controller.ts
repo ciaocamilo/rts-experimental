@@ -26,7 +26,11 @@ const KEY_MAP: Record<string, keyof PanKeys> = {
 export interface InputHooks {
   getSession(): GameSession;
   selection: Selection;
-  message(text: string): void;
+  /** Aviso temporal; el tipo se deduce del texto si no se indica. */
+  notify(text: string): void;
+  /** Aviso fijo con id (se retira con clearSticky). */
+  sticky(id: string, text: string): void;
+  clearSticky(id: string): void;
   /** Id de la última orden enviada, para informar su resultado. */
   onOrder(commandId: string): void;
 }
@@ -70,7 +74,7 @@ export class InputController {
     if (!this.placement) return;
     if (!this.ownVillagers().length) {
       this.cancelPlacement();
-      this.hooks.message("Colocación cancelada: no quedan aldeanos seleccionados");
+      this.hooks.notify("Colocación cancelada: no quedan aldeanos seleccionados");
     } else {
       this.updateGhost();
     }
@@ -82,15 +86,16 @@ export class InputController {
   }
 
   beginPlacement(kind: BuildingKind): void {
-    if (this.hooks.getSession().paused) return this.hooks.message("En pausa: reanude para dar órdenes");
-    if (!this.ownVillagers().length) return this.hooks.message("Seleccione al menos un aldeano para construir");
+    if (this.hooks.getSession().paused) return this.hooks.notify("En pausa: reanude para dar órdenes");
+    if (!this.ownVillagers().length) return this.hooks.notify("Seleccione al menos un aldeano para construir");
     this.placement = kind;
-    this.hooks.message(`Colocando ${BUILDING_NAME[kind]}: clic izquierdo confirma · Esc o clic derecho cancela`);
+    this.hooks.sticky("placement", `Colocando ${BUILDING_NAME[kind]}: clic izquierdo confirma · Esc o clic derecho cancela`);
     this.updateGhost();
   }
 
   cancelPlacement(): void {
     this.placement = null;
+    this.hooks.clearSticky("placement");
     this.view.hideGhost();
   }
 
@@ -125,12 +130,12 @@ export class InputController {
     if (!kind) return;
     this.pointer = { x: e.clientX, y: e.clientY };
     const session = this.hooks.getSession();
-    if (session.paused) return this.hooks.message("En pausa: reanude para dar órdenes");
+    if (session.paused) return this.hooks.notify("En pausa: reanude para dar órdenes");
     const cell = this.placementCell();
-    if (!cell) return this.hooks.message("Ubicación fuera del mapa");
+    if (!cell) return this.hooks.notify("Ubicación fuera del mapa");
     const state = session.state;
     const code = previewPlacement(state, currentGrid(state), HUMAN, kind, cell.x, cell.z);
-    if (code) return this.hooks.message(`Ubicación rechazada: ${REJECT_TEXT[code]}`);
+    if (code) return this.hooks.notify(`Ubicación rechazada: ${REJECT_TEXT[code]}`);
     this.order({ type: "Build", entityIds: this.ownVillagers(), kind, target: cell });
     if (!e.shiftKey) this.cancelPlacement();
   }
@@ -168,7 +173,7 @@ export class InputController {
     } else if (down && e.code === "Escape") {
       if (this.placement) {
         this.cancelPlacement();
-        this.hooks.message("Colocación cancelada");
+        this.hooks.notify("Colocación cancelada");
       } else {
         clearSelection(this.hooks.selection);
       }
@@ -232,12 +237,12 @@ export class InputController {
     e.preventDefault();
     if (this.placement) {
       this.cancelPlacement();
-      return this.hooks.message("Colocación cancelada");
+      return this.hooks.notify("Colocación cancelada");
     }
     const session = this.hooks.getSession();
     const sel = this.hooks.selection;
-    if (session.paused) return this.hooks.message("En pausa: reanude para dar órdenes");
-    if (sel.units.size === 0) return this.hooks.message("No hay unidades propias seleccionadas");
+    if (session.paused) return this.hooks.notify("En pausa: reanude para dar órdenes");
+    if (sel.units.size === 0) return this.hooks.notify("No hay unidades propias seleccionadas");
 
     // Se ignoran las unidades propias que tapan al objetivo (p. ej. aldeanos sobre un árbol).
     const s = session.state;
@@ -256,7 +261,7 @@ export class InputController {
     }
 
     const point = this.view.groundPoint(e.clientX, e.clientY);
-    if (!point) return this.hooks.message("Destino fuera del mapa");
+    if (!point) return this.hooks.notify("Destino fuera del mapa");
     this.order({ type: "Move", entityIds: [...sel.units], target: point });
     this.view.showMarker(point.x, point.z);
   }

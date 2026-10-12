@@ -9,13 +9,20 @@ export interface TerrainRectSpec {
   readonly z: number;
   readonly w: number;
   readonly h: number;
-  readonly kind?: "water";
+  readonly kind?: "water" | "bridge";
+}
+
+export interface StartBuildingSpec {
+  readonly owner: 0 | 1;
+  readonly kind: "house" | "tower";
+  readonly cell: CellPos;
 }
 
 export interface MapLayout {
   readonly width: number;
   readonly depth: number;
   readonly terrain: readonly TerrainRectSpec[];
+  readonly startBuildings: readonly StartBuildingSpec[];
   readonly townCenters: readonly [CellPos, CellPos];
   readonly villagerSpawns: readonly [readonly Pos[], readonly Pos[]];
   readonly nodes: readonly NodeSpec[];
@@ -47,15 +54,23 @@ const HALF_TERRAIN: readonly TerrainRectSpec[] = [
   { x: 38, z: 58, w: 10, h: 6, kind: "water" },
 ];
 
-// Dos bloques centrales (x 62..65) dejan un paso central de 12 celdas y corredores de 8 en los bordes.
-const CENTER_TERRAIN: readonly TerrainRectSpec[] = [
-  { x: 62, z: 8, w: 4, h: 18 },
-  { x: 62, z: 38, w: 4, h: 18 },
+// P6: río de borde a borde (x 61..66) con un único puente de 6 celdas (z 29..34) alineado con la salida de las bases.
+const RIVER: readonly TerrainRectSpec[] = [
+  { x: 61, z: 0, w: 6, h: 29, kind: "water" },
+  { x: 61, z: 29, w: 6, h: 6, kind: "bridge" },
+  { x: 61, z: 35, w: 6, h: 29, kind: "water" },
 ];
 
 const mirrorRect = (t: TerrainRectSpec): TerrainRectSpec => ({ ...t, x: MAP_WIDTH - t.x - t.w });
 
-const TERRAIN: readonly TerrainRectSpec[] = [...HALF_TERRAIN, ...HALF_TERRAIN.map(mirrorRect), ...CENTER_TERRAIN];
+const TERRAIN: readonly TerrainRectSpec[] = [...HALF_TERRAIN, ...HALF_TERRAIN.map(mirrorRect), ...RIVER];
+
+// P6: aldea inicial del jugador 0 (6 casas y 2 torres de 2 × 2); el jugador 1 es el espejo.
+const START_BUILDINGS_HALF: readonly { kind: "house" | "tower"; cell: CellPos }[] = [
+  ...[4, 7, 10].flatMap((x) => [25, 37].map((z) => ({ kind: "house" as const, cell: { x, z } }))),
+  { kind: "tower", cell: { x: 19, z: 27 } },
+  { kind: "tower", cell: { x: 19, z: 35 } },
+];
 
 // Bosque propio del jugador 0: la hilera de P1 más una segunda capa irregular hacia el centro.
 const WOOD_CELLS: readonly CellPos[] = [
@@ -98,7 +113,14 @@ function build(): MapLayout {
     nodes.push({ owner: 1, kind: "stone", cell: { x: MAP_WIDTH - 1 - cell.x, z: cell.z } });
   }
 
-  return { width: MAP_WIDTH, depth: MAP_DEPTH, terrain: TERRAIN, townCenters: [tc0, tc1], villagerSpawns: [spawns0, spawns1], nodes };
+  const startBuildings: StartBuildingSpec[] = [];
+  for (const b of START_BUILDINGS_HALF) {
+    const size = BALANCE.buildings[b.kind].footprint;
+    startBuildings.push({ owner: 0, kind: b.kind, cell: b.cell });
+    startBuildings.push({ owner: 1, kind: b.kind, cell: { x: MAP_WIDTH - b.cell.x - size, z: b.cell.z } });
+  }
+
+  return { width: MAP_WIDTH, depth: MAP_DEPTH, terrain: TERRAIN, startBuildings, townCenters: [tc0, tc1], villagerSpawns: [spawns0, spawns1], nodes };
 }
 
 export const MAP_LAYOUT: MapLayout = build();
@@ -120,6 +142,12 @@ export function validateMapLayout(layout: MapLayout): void {
   };
   for (const tc of layout.townCenters) claim(tc.x, tc.z, TC, "centro principal");
   for (const n of layout.nodes) claim(n.cell.x, n.cell.z, 1, `nodo ${n.kind}`);
+  for (const b of layout.startBuildings) claim(b.cell.x, b.cell.z, BALANCE.buildings[b.kind].footprint, `edificio inicial ${b.kind}`);
+  for (const b of layout.startBuildings.filter((s) => s.owner === 0)) {
+    const size = BALANCE.buildings[b.kind].footprint;
+    const mirror = layout.startBuildings.find((m) => m.owner === 1 && m.kind === b.kind && m.cell.x === layout.width - b.cell.x - size && m.cell.z === b.cell.z);
+    if (!mirror) throw new Error(`Mapa inválido: edificio inicial ${b.kind} sin simétrico`);
+  }
   for (const t of layout.terrain) {
     for (let i = 0; i < t.w; i++) for (let j = 0; j < t.h; j++) claim(t.x + i, t.z + j, 1, "terreno");
     const mirrored = layout.terrain.some((m) => m.x === layout.width - t.x - t.w && m.z === t.z && m.w === t.w && m.h === t.h && m.kind === t.kind);

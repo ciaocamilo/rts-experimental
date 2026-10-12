@@ -296,8 +296,8 @@ class StoneAndTowerTest(unittest.TestCase):
     def workers(self, count=8):
         return [unit(10 + i, activity="gathering", target=100) for i in range(count)]
 
-    def test_version_is_policy_0_3(self):
-        self.assertEqual(policy.VERSION, "policy-0.3")
+    def test_version_is_policy_0_4(self):
+        self.assertEqual(policy.VERSION, "policy-0.4")
 
     def test_sends_two_idle_villagers_to_stone_when_a_tower_is_missing(self):
         units = [unit(10 + i, activity="gathering", target=100) for i in range(4)]
@@ -344,7 +344,7 @@ class StoneAndTowerTest(unittest.TestCase):
         site = building(70, "tower", 1, 46, 30, complete=False)
         commands, _ = policy.decide(scene(units=units, extra_buildings=[site], stone=300))
         self.assertNotIn("tower", [c["payload"].get("building_kind") for c in commands])
-        done = [building(70 + i, "tower", 1, 46, 26 + 4 * i) for i in range(2)]
+        done = [building(70 + i, "tower", 1, 46, 26 + 4 * i) for i in range(4)]
         commands, _ = policy.decide(scene(units=self.workers(7) + [unit(30)], extra_buildings=done, stone=300))
         self.assertNotIn("tower", [c["payload"].get("building_kind") for c in commands])
 
@@ -368,6 +368,47 @@ class StoneAndTowerTest(unittest.TestCase):
         self.assertEqual(policy.decide(scene(units=base + army))[0], [])
         army[0].update(defending=False)
         self.assertEqual(policy.decide(scene(units=base + army))[0], [])
+
+
+class TowerTargetTest(unittest.TestCase):
+    """P6: la expedición ataca una torre enemiga visible si está más cerca que el centro urbano."""
+
+    def setUp(self):
+        self.base = [unit(10 + i, activity="gathering", target=100) for i in range(12)]
+
+    def run_scene(self, tower_cell=(32, 31), complete=True, center_x=8):
+        message = scene(units=self.base + soldiers(8), extra_buildings=[building(80, "tower", 0, tower_cell[0], tower_cell[1], complete=complete)])
+        message["buildings"][0]["cell_x"] = center_x
+        return message
+
+    def test_attacks_the_closest_visible_tower_when_it_is_closer_than_the_center(self):
+        commands, reasons = policy.decide(self.run_scene())
+        self.assertEqual(reasons, ["ATTACK_TOWER"])
+        self.assertEqual(commands, [{"type": "Attack", "entity_ids": list(range(50, 58)), "payload": {"target_id": 80}}])
+
+    def test_ignores_a_tower_outside_the_vision_radius(self):
+        commands, reasons = policy.decide(self.run_scene(tower_cell=(10, 5)))
+        self.assertEqual(reasons, ["ATTACK"])
+        self.assertEqual(commands[0]["payload"]["target_id"], 1)
+
+    def test_ignores_an_unfinished_tower(self):
+        commands, reasons = policy.decide(self.run_scene(complete=False))
+        self.assertEqual(reasons, ["ATTACK"])
+        self.assertEqual(commands[0]["payload"]["target_id"], 1)
+
+    def test_keeps_the_center_when_it_is_closer_than_the_tower(self):
+        commands, reasons = policy.decide(self.run_scene(center_x=40))
+        self.assertEqual(reasons, ["ATTACK"])
+        self.assertEqual(commands[0]["payload"]["target_id"], 1)
+
+    def test_enemy_military_still_come_first_and_the_choice_is_deterministic(self):
+        foe = unit(300, kind="soldier", owner=0, x=39.0, z=31.0, hp=100)
+        message = self.run_scene()
+        message["units"] = message["units"] + [foe]
+        commands, reasons = policy.decide(message)
+        self.assertEqual((reasons, commands[0]["payload"]["target_id"]), (["ATTACK"], 300))
+        plain = self.run_scene()
+        self.assertEqual(policy.decide(plain), policy.decide(plain))
 
 
 class BatchTest(unittest.TestCase):

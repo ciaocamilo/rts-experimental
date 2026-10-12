@@ -127,6 +127,57 @@ export function buildWaterGeometry(w: number, h: number, seed: number, layers: r
   return g;
 }
 
+const RIVER_STEP = 1;
+
+/**
+ * Cinta de agua de orilla a orilla: de `-length/2` a `length/2` en z, con extremos rectos, y de `-w/2` a `w/2` en x con
+ * orillas que serpentean. Mismos atributos que `buildWaterGeometry`; las orillas quedan dentro del rectángulo lógico.
+ */
+export function buildRiverGeometry(w: number, length: number, seed: number, layers: readonly WaterLayer[], uvOrigin: { x: number; z: number }, uvScale: number): THREE.BufferGeometry {
+  const rows = Math.max(1, Math.round(length / RIVER_STEP));
+  const maxInset = Math.min(0.4, w * 0.08);
+  const left = rimInset(rows + 1, seed, maxInset);
+  const right = rimInset(rows + 1, seed ^ 0x5bd1e995, maxInset);
+  const count = layers.length;
+  const cols = count * 2;
+  const span = Math.max(1, count - 1);
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const uvs: number[] = [];
+  const depths: number[] = [];
+  for (let i = 0; i <= rows; i++) {
+    const z = -length / 2 + (length * i) / rows;
+    for (let j = 0; j < cols; j++) {
+      const k = j < count ? j : cols - 1 - j;
+      const layer = layers[k]!;
+      const x = j < count ? -w / 2 + left[i]! + layer.offset : w / 2 - right[i]! - layer.offset;
+      positions.push(x, 0, z);
+      colors.push(layer.shade[0], layer.shade[1], layer.shade[2], layer.alpha);
+      uvs.push((uvOrigin.x + x) * uvScale, (uvOrigin.z + z) * uvScale);
+      depths.push(k / span);
+    }
+  }
+  const indices: number[] = [];
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < cols - 1; j++) {
+      const a = i * cols + j;
+      const b = a + 1;
+      const c = a + cols + 1;
+      const d = a + cols;
+      // Cara superior (+y): el sentido sale de x creciente y z creciente.
+      indices.push(a, d, b, b, d, c);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(colors, 4));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  g.setAttribute("depth", new THREE.Float32BufferAttribute(depths, 1));
+  g.setIndex(indices);
+  g.computeVertexNormals();
+  return g;
+}
+
 /** Semilla estable por rectángulo para que el contorno no cambie entre reconstrucciones. */
 export function waterSeed(x: number, z: number): number {
   return ((Math.imul(x | 0, 73856093) ^ Math.imul(z | 0, 19349663)) >>> 0) + 17;

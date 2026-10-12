@@ -14,7 +14,7 @@ const base = {
     protocol_version: 2,
     session_id: SESSION,
     worker_generation: 1,
-    expected: { pyodide: "0.27.7", python: "3.12", policy: "policy-0.3" },
+    expected: { pyodide: "0.27.7", python: "3.12", policy: "policy-0.4" },
     config: { max_commands: 4 },
   },
   ready: {
@@ -22,7 +22,7 @@ const base = {
     protocol_version: 2,
     session_id: SESSION,
     worker_generation: 1,
-    versions: { pyodide: "0.27.7", python: "3.12.7", policy: "policy-0.3" },
+    versions: { pyodide: "0.27.7", python: "3.12.7", policy: "policy-0.4" },
     timings_ms: { pyodide_load: 1400.5, policy_load: 12.25, total: 1420 },
   },
   observe: {
@@ -34,9 +34,9 @@ const base = {
     observation_tick: 140,
     player_id: 1,
     seed: 1,
-    game_version: "p3.0.0",
-    map_version: "map-0.3 (128x64, piedra)",
-    balance_version: "balance-0.2",
+    game_version: "p6.0.0",
+    map_version: "map-0.4 (128x64, río y puente)",
+    balance_version: "balance-0.3",
     players: [
       { id: 0, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
       { id: 1, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
@@ -55,7 +55,7 @@ const base = {
       { id: 8, kind: "food", cell_x: 15, cell_z: 22, remaining: 500 },
       { id: 10, kind: "stone", cell_x: 15, cell_z: 46, remaining: 500 },
     ],
-    map: { width: 128, depth: 64, terrain: [{ x: 62, z: 8, w: 4, h: 18 }, { x: 62, z: 38, w: 4, h: 18 }] },
+    map: { width: 128, depth: 64, terrain: [{ x: 61, z: 0, w: 6, h: 29 }, { x: 61, z: 35, w: 6, h: 29 }] },
     rules: {
       max_population: 50,
       queue_limit: 5,
@@ -85,7 +85,7 @@ const base = {
     request_id: 7,
     observation_tick: 140,
     player_id: 1,
-    policy_version: "policy-0.3",
+    policy_version: "policy-0.4",
     commands: [{ command_id: "7:0", type: "Move", entity_ids: [5, 6], payload: { x: 48.5, z: 32.5 } }],
     reason_codes: ["GATHER"],
     metrics: { policy_ms: 1.5, convert_ms: 0.25 },

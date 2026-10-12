@@ -5,9 +5,10 @@ import { type Materials, texPlane, type TreeGeometry } from "./models";
 import { type BushSpec, mulberry32, planScenery, ROCK_HEIGHT, type SceneryPlan, type TreeSpec } from "./scenery";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { BushGeometry } from "./models";
-import { buildWaterGeometry, cornerRadius, waterSeed, type WaterLayer } from "./water";
+import { buildRiverGeometry, buildWaterGeometry, cornerRadius, waterSeed, type WaterLayer } from "./water";
 import { WaterMaterial } from "./water-material";
 import { applyWind, WIND } from "./wind";
+import { buildBridge } from "./bridge";
 
 /** Máximo de mechones de hierba instanciados y margen respecto a roca y agua (P5-H08). */
 const MAX_TUFTS = 6000;
@@ -38,12 +39,7 @@ function roughRock(w: number, h: number, d: number, density: number, seed: numbe
   return g;
 }
 
-/**
- * La cámara puede centrarse en el borde del mapa con el zoom mínimo (vista de ~113 unidades de alto y, en pantallas anchas,
- * ~270 de ancho); el suelo se extiende más que cualquier vista posible para que nunca asome el fondo (P3-R07).
- */
-const GROUND_MARGIN = 190;
-
+/** Nada se dibuja fuera del rectángulo del mapa: el exterior es el fondo negro (P6-H07). */
 /** Orilla húmeda y agua: anillos desde el borde hacia el centro, con opacidad creciente y más profundidad. */
 const SHORE_LAYERS: readonly WaterLayer[] = [
   { offset: 0, alpha: 0, shade: [0.72, 0.64, 0.45] },
@@ -117,9 +113,7 @@ export class TerrainView {
 
   build(width: number, depth: number, terrain: readonly TerrainRect[]): void {
     this.clear();
-    const gw = width + GROUND_MARGIN * 2;
-    const gd = depth + GROUND_MARGIN * 2;
-    const ground = new THREE.Mesh(this.own(texPlane(gw, gd, 0.2).rotateX(-Math.PI / 2).translate(width / 2, 0, depth / 2)), this.groundMaterial);
+    const ground = new THREE.Mesh(this.own(texPlane(width, depth, 0.2).rotateX(-Math.PI / 2).translate(width / 2, 0, depth / 2)), this.groundMaterial);
     ground.matrixAutoUpdate = false;
     ground.receiveShadow = true;
     this.group.add(ground);
@@ -130,9 +124,15 @@ export class TerrainView {
       this.group.add(tone);
     }
 
+    const bridges = terrain.filter((t) => t.kind === "bridge");
+    const isRiver = (t: TerrainRect): boolean => t.kind === "water" && bridges.some((b) => b.x === t.x && b.w === t.w);
+    const river = terrain.filter(isRiver);
+    if (river.length > 0) this.addRiver([...river, ...bridges.filter((b) => river.some((r) => r.x === b.x && r.w === b.w))]);
     for (const t of terrain) {
-      if (t.kind === "water") this.addWater(t);
-      else this.addRock(t);
+      if (t.kind === "bridge") this.addBridge(t);
+      else if (t.kind === "water") {
+        if (!isRiver(t)) this.addWater(t);
+      } else this.addRock(t);
     }
 
     this.plan = planScenery(width, depth, terrain);
@@ -206,6 +206,35 @@ export class TerrainView {
     rock.position.set(t.x + t.w / 2, ROCK_HEIGHT / 2, t.z + t.h / 2);
     rock.castShadow = rock.receiveShadow = true;
     this.group.add(rock);
+  }
+
+  /** Una sola cinta de agua que une los tramos y pasa bajo el puente, de borde a borde del mapa. */
+  private addRiver(rects: readonly TerrainRect[]): void {
+    const x = rects[0]!.x;
+    const w = rects[0]!.w;
+    const z0 = Math.min(...rects.map((r) => r.z));
+    const z1 = Math.max(...rects.map((r) => r.z + r.h));
+    const length = z1 - z0;
+    const origin = { x: x + w / 2, z: z0 + length / 2 };
+    const seed = waterSeed(x, z0);
+    const fit = Math.min(1, Math.max(0.1, (0.9 * cornerRadius(w, w) - Math.min(0.4, w * 0.08)) / 1.8));
+    const scale = (layers: readonly WaterLayer[]): WaterLayer[] => layers.map((l) => ({ ...l, offset: l.offset * fit }));
+    const shore = new THREE.Mesh(this.own(buildRiverGeometry(w, length, seed, scale(SHORE_LAYERS), origin, 0)), this.shoreMaterial);
+    shore.position.set(origin.x, 0.012, origin.z);
+    shore.renderOrder = 1;
+    const water = new THREE.Mesh(this.own(buildRiverGeometry(w, length, seed, scale(WATER_LAYERS), origin, 0.12)), this.shaderWater ?? this.waterMaterial);
+    water.position.set(origin.x, 0.05, origin.z);
+    water.renderOrder = 2;
+    this.waterMeshes.push(water);
+    this.group.add(shore, water);
+  }
+
+  private addBridge(t: TerrainRect): void {
+    for (const part of buildBridge(t, this.mat)) {
+      const mesh = new THREE.Mesh(this.own(part.geometry), part.material);
+      mesh.castShadow = mesh.receiveShadow = true;
+      this.group.add(mesh);
+    }
   }
 
   private addWater(t: TerrainRect): void {
