@@ -23,8 +23,8 @@ describe("escenario inicial (RF-01, §4.2)", () => {
       expect(state.buildings.filter((b) => b.owner === owner && b.kind === "tower")).toHaveLength(2);
     }
     expect(state.buildings.every((b) => b.complete)).toBe(true);
-    expect(populationOf(state, 0)).toBe(3);
-    expect(populationOf(state, 1)).toBe(3);
+    expect(populationOf(state, 0)).toBe(4);
+    expect(populationOf(state, 1)).toBe(4);
   });
 
   it("crea 16 nodos de madera, 8 de alimento y 8 de piedra por bando con 500 unidades (P3)", () => {
@@ -68,7 +68,7 @@ describe("tick reproducible (RNF-06)", () => {
     expect(s.tick).toBe(10);
   });
 
-  it("rechaza propietario ajeno, entidad inexistente, secuencia repetida y ataque de un aldeano", () => {
+  it("rechaza propietario ajeno, entidad inexistente, secuencia repetida y acepta el ataque ordenado de un aldeano", () => {
     const s = createInitialState(1);
     const own = s.units.find((u) => u.owner === 0)!.id;
     const enemy = s.units.find((u) => u.owner === 1)!.id;
@@ -87,7 +87,7 @@ describe("tick reproducible (RNF-06)", () => {
     expect(code("foreign")).toBe("NOT_OWNER");
     expect(code("ghost")).toBe("UNKNOWN_ENTITY");
     expect(code("dup")).toBe("DUPLICATE_SEQUENCE");
-    expect(code("mv")).toBe("INCOMPATIBLE_ENTITY");
+    expect(code("mv")).toBe("ok");
   });
 
   it("una partida terminada no cambia", () => {

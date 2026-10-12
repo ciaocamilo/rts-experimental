@@ -178,15 +178,42 @@ describe("T-07 obstáculos y objetivo", () => {
     expect(state.units.includes(enemy)).toBe(false);
   });
 
-  it("valida objetivo y atacantes: ajeno inexistente, nodo, aldeanos", () => {
+  it("valida el objetivo; los aldeanos aceptan atacar por orden expresa", () => {
     const state = world();
     const s = addUnit(state, 0, "soldier", 20, 20);
     const v = addUnit(state, 0, "villager", 22, 20);
     const e = addUnit(state, 1, "villager", 30, 30);
     expect(codeOf(send(state, attack([s], 9999))[0])).toBe("INVALID_TARGET");
-    expect(codeOf(send(state, attack([v], e.id))[0])).toBe("INCOMPATIBLE_ENTITY");
     const mixed = send(state, attack([s, v], e.id))[0]!;
-    expect(mixed).toMatchObject({ accepted: true, assigned: 1, total: 1 });
+    expect(mixed).toMatchObject({ accepted: true, assigned: 2, total: 2 });
+  });
+
+  it("un aldeano ordenado persigue y hiere al enemigo; sin orden no lo ataca aunque esté cerca", () => {
+    const state = world();
+    const idle = addUnit(state, 0, "villager", 20.5, 20.5);
+    const foe = addUnit(state, 1, "soldier", 22.5, 20.5);
+    foe.hp = 1000;
+    const bystander = { ...foe };
+    run(state, 1);
+    expect(idle.job).toBeNull();
+    expect(bystander.hp).toBe(1000);
+    const result = send(state, attack([idle], foe.id))[0]!;
+    expect(result).toMatchObject({ accepted: true, assigned: 1, total: 1 });
+    run(state, 60);
+    expect(foe.hp).toBeLessThan(1000);
+  });
+
+  it("un aldeano que termina su ataque ordenado no adquiere otro objetivo solo", () => {
+    const state = world();
+    const v = addUnit(state, 0, "villager", 20.5, 20.5);
+    const weak = addUnit(state, 1, "villager", 21.5, 20.5);
+    weak.hp = 3;
+    const next = addUnit(state, 1, "villager", 23.5, 20.5);
+    send(state, attack([v], weak.id));
+    run(state, 100);
+    expect(state.units.includes(weak)).toBe(false);
+    expect(v.job).toBeNull();
+    expect(next.hp).toBe(BALANCE.units.villager.hp);
   });
 });
 

@@ -2,7 +2,7 @@ import { BALANCE, type ResourceKind } from "../content/balance";
 import type { NavGrid } from "../navigation/grid";
 import { walkTo } from "./movement";
 import { buildingRect, distanceToRect, findApproachCell, inRange, nodeRect, ringCells, type CellRect } from "./spatial";
-import { addUnit, capacityOf, initialSiteHp, populationOf } from "./state";
+import { addUnit, capacityOf, initialSiteHp, populationOf, rollGender } from "./state";
 import type { Building, BuildingDestroyedEvent, DeathEvent, GameState, Job, MainBuildingFinal, PlayerId, SpawnEvent, Unit, WorkEvent } from "./types";
 
 /** Intentos de aproximación antes de abandonar un trabajo (multitudes que no llegan al borde). */
@@ -225,7 +225,8 @@ export function updateProduction(state: GameState, grid: NavGrid): SpawnEvent[] 
     const cell = findExitCell(state, grid, building);
     if (!cell) continue;
     building.queue.shift();
-    const unit = addUnit(state, building.owner, item.kind, cell.x + 0.5, cell.z + 0.5);
+    const gender = item.kind === "villager" ? rollGender(state.seed, state.nextEntityId) : "male";
+    const unit = addUnit(state, building.owner, item.kind, cell.x + 0.5, cell.z + 0.5, gender);
     spawns.push({ tick: state.tick + 1, buildingId: building.id, unitId: unit.id, owner: unit.owner, kind: unit.kind, pos: { x: unit.pos.x, z: unit.pos.z } });
   }
   return spawns;

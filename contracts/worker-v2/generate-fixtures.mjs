@@ -36,7 +36,7 @@ const base = {
     seed: 1,
     game_version: "p8.0.0",
     map_version: "map-0.5 (128x64, río, bosques)",
-    balance_version: "balance-0.5",
+    balance_version: "balance-0.6",
     players: [
       { id: 0, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
       { id: 1, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },

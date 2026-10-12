@@ -20,12 +20,13 @@ const ARROW_SPREAD = 0.3;
 
 export const isBuilding = (t: Target): t is Building => "queue" in t;
 
-/** Unidad de combate: adquiere objetivos y acepta órdenes de ataque (el aldeano solo se defiende). */
+/** Unidad de combate: adquiere objetivos sola. El aldeano solo se defiende o ataca por orden expresa (`canFight`). */
 export function isMilitary(unit: Unit): boolean {
   return unit.kind !== "villager" && BALANCE.units[unit.kind].damage > 0;
 }
 
-function canFight(unit: Unit): boolean {
+/** Puede dar golpes: los militares y los aldeanos (estos solo en defensa o por orden). */
+export function canFight(unit: Unit): boolean {
   return BALANCE.units[unit.kind].damage > 0;
 }
 

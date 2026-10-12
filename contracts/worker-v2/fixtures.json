@@ -53,7 +53,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -280,7 +280,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -627,7 +627,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -878,7 +878,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -1181,7 +1181,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -1409,7 +1409,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -1638,7 +1638,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -1867,7 +1867,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -2077,7 +2077,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -2305,7 +2305,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -2533,7 +2533,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -2761,7 +2761,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -2989,7 +2989,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -3217,7 +3217,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -3445,7 +3445,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -3673,7 +3673,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -3856,7 +3856,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -4084,7 +4084,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -4311,7 +4311,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -4564,7 +4564,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -4787,7 +4787,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -5014,7 +5014,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -5241,7 +5241,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -5464,7 +5464,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -5692,7 +5692,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -5920,7 +5920,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,
@@ -6140,7 +6140,7 @@
     "seed": 1,
     "game_version": "p8.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.5",
+    "balance_version": "balance-0.6",
     "players": [
      {
       "id": 0,

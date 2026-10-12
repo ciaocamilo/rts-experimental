@@ -49,7 +49,7 @@ function createTargetScene(): Fixture {
     addBuilding(state, owner, "barracks", cellX(20, barracks), 44);
 
     const villagers = state.units.filter((u) => u.owner === owner).map((u) => u.id);
-    for (let i = 0; i < 7; i++) villagers.push(addUnit(state, owner, "villager", mx(13.5), 34.5 + i).id);
+    for (let i = 0; i < 6; i++) villagers.push(addUnit(state, owner, "villager", mx(13.5), 35.5 + i).id);
     const food = nodesOf("food", owner);
     const wood = nodesOf("wood", owner);
     villagers.forEach((id, i) => commands.push(gather(id, (i % 2 === 0 ? food : wood)[Math.floor(i / 2) % 8]!.id, owner)));

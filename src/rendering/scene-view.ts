@@ -398,7 +398,7 @@ export class SceneView {
     const def = BALANCE.units[u.kind];
     let entry = this.entries.get(u.id) as UnitEntry | undefined;
     if (!entry) {
-      const rig = this.units.create(u.kind, u.owner, this.quality === "high");
+      const rig = this.units.create(u.kind, u.owner, this.quality === "high", u.gender === "female");
       rig.proxy.userData["id"] = u.id;
       rig.root.position.set(u.pos.x, 0, u.pos.z);
       this.entityRoot.add(rig.root);

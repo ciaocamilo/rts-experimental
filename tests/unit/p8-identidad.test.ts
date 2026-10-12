@@ -3,11 +3,13 @@ import { describe, expect, it } from "vitest";
 import { BALANCE } from "../../src/content/balance";
 import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH, homeView } from "../../src/content/map";
 import { BALANCE_VERSION, GAME_CREDIT, GAME_NAME, GAME_SUBTITLE } from "../../src/content/versions";
-import { createInitialState } from "../../src/core/state";
+import { addUnit, createInitialState, rollGender } from "../../src/core/state";
+import { stepSimulation } from "../../src/core/simulation";
 import type { GameState } from "../../src/core/types";
 import { CameraRig, INITIAL_ZOOM, ZOOM_MAX, ZOOM_MIN } from "../../src/input/camera-rig";
 import { CURSOR_HOTSPOT, CURSOR_SIZE, cursorCss, cursorFor, cursorSvg, resolveRightClick, selectionCaps, type CursorKind } from "../../src/input/cursors";
-import { combatText, describeSelection, emptySelection } from "../../src/input/selection";
+import { portraitModelKey } from "../../src/rendering/portrait";
+import { combatLabel, combatStats, describeSelection, emptySelection } from "../../src/input/selection";
 import { BRICK_BUTTON_TILE, BRICK_BUTTON_TONES, brickButtonSvg } from "../../src/ui/castle-bar";
 import { fullscreenLabel } from "../../src/ui/fullscreen";
 import { welcomeContent } from "../../src/ui/welcome";
@@ -33,7 +35,7 @@ function contrast(a: string, b: string, factorA = 1): number {
 
 describe("P8 vida de centros urbanos y torres", () => {
   it("el balance duplica la vida y el estado inicial la refleja en ambos bandos", () => {
-    expect(BALANCE_VERSION).toBe("balance-0.5");
+    expect(BALANCE_VERSION).toBe("balance-0.6");
     expect(BALANCE.buildings.townCenter.hp).toBe(3000);
     expect(BALANCE.buildings.tower.hp).toBe(1600);
     const state = createInitialState(1);
@@ -84,18 +86,18 @@ describe("P8 ataque y alcance en la ficha", () => {
 
   it("las unidades muestran el ataque y el alcance de su balance", () => {
     const villager = state.units.find((u) => u.kind === "villager")!;
-    expect(info(villager.id).combat).toBe("Ataque 3 (solo defensa) · Alcance cuerpo a cuerpo");
+    expect(info(villager.id).combat).toEqual({ attack: 3, range: null });
     const soldier = { ...villager, id: 9001, kind: "soldier" as const };
     const archer = { ...villager, id: 9002, kind: "archer" as const };
     const armed = { ...state, units: [...state.units, soldier, archer] } as GameState;
-    expect(describeSelection(armed, soldier.id, 0)!.combat).toBe("Ataque 10 · Alcance cuerpo a cuerpo");
-    expect(describeSelection(armed, archer.id, 0)!.combat).toBe("Ataque 8 · Alcance 5");
+    expect(describeSelection(armed, soldier.id, 0)!.combat).toEqual({ attack: 10, range: null });
+    expect(describeSelection(armed, archer.id, 0)!.combat).toEqual({ attack: 8, range: 5 });
   });
 
   it("torre y centro urbano completos atacan; casa, cuartel, recursos y obras no", () => {
     const own = (kind: string) => state.buildings.find((b) => b.owner === 0 && b.kind === kind)!;
-    expect(info(own("tower").id).combat).toBe("Ataque 8 · Alcance 5");
-    expect(info(own("townCenter").id).combat).toBe("Ataque 24 (3 × 8) · Alcance 5");
+    expect(info(own("tower").id).combat).toEqual({ attack: 8, range: 5 });
+    expect(info(own("townCenter").id).combat).toEqual({ attack: 24, range: 5 });
     expect(info(own("house").id).combat).toBeNull();
     const site = { ...own("tower"), id: 9003, complete: false, buildDone: 10 };
     const building = { ...state, buildings: [...state.buildings, site] } as GameState;
@@ -104,7 +106,9 @@ describe("P8 ataque y alcance en la ficha", () => {
   });
 
   it("el texto sale del balance y la ficha lo muestra bajo la vida", () => {
-    expect(combatText("archer")).toBe(`Ataque ${BALANCE.units.archer.damage} · Alcance ${BALANCE.units.archer.range}`);
+    expect(combatStats("archer")).toEqual({ attack: BALANCE.units.archer.damage, range: BALANCE.units.archer.range });
+    expect(combatLabel({ attack: 10, range: null })).toBe("Ataque 10");
+    expect(combatLabel({ attack: 8, range: 5 })).toBe("Ataque 8, alcance 5");
     expect(html).toContain("#info .info-stats");
     const panel = readFileSync(new URL("../../src/ui/command-panel.ts", import.meta.url), "utf8");
     expect(panel.indexOf('"vtext"')).toBeLessThan(panel.indexOf('"info-stats"'));
@@ -139,12 +143,13 @@ describe("P8 cursores de acción", () => {
     expect(cursorFor({ kind: "gather", node }, villagers)).toBeNull();
   });
 
-  it("el cursor de ataque exige militares y un objetivo enemigo vivo", () => {
+  it("el cursor de ataque exige unidades que ataquen (militares o aldeanos) y un objetivo enemigo vivo", () => {
     for (const target of [foeUnit.id, foeBuilding.id]) {
       const action = resolveRightClick(state, [target], 0);
       expect(action?.kind).toBe("attack");
       expect(cursorFor(action, military)).toBe("attack");
-      expect(cursorFor(action, villagers)).toBeNull();
+      expect(cursorFor(action, villagers)).toBe("attack");
+      expect(cursorFor(action, nobody)).toBeNull();
     }
     expect(cursorFor({ kind: "attack", target: { ...foeBuilding, hp: 0 } }, military)).toBeNull();
   });
@@ -251,5 +256,56 @@ describe("P8 identidad en index.html", () => {
   it("la ayuda arranca cerrada", () => {
     expect(html).toMatch(/<div id="help">/);
     expect(html).not.toMatch(/<div id="help" class="visible">/);
+  });
+});
+
+describe("P8 aldeanas", () => {
+  it("cada bando empieza con dos aldeanos y dos aldeanas", () => {
+    const state = createInitialState(1);
+    for (const owner of [0, 1] as const) {
+      const villagers = state.units.filter((u) => u.owner === owner && u.kind === "villager");
+      expect(villagers).toHaveLength(BALANCE.start.villagers);
+      expect(villagers.filter((u) => u.gender === "male")).toHaveLength(2);
+      expect(villagers.filter((u) => u.gender === "female")).toHaveLength(2);
+    }
+  });
+
+  it("el sorteo depende solo de semilla e id y reparte aproximadamente mitad y mitad", () => {
+    expect(rollGender(7, 12)).toBe(rollGender(7, 12));
+    let female = 0;
+    const total = 2000;
+    for (let id = 1; id <= total; id++) if (rollGender(3, id) === "female") female++;
+    expect(female / total).toBeGreaterThan(0.45);
+    expect(female / total).toBeLessThan(0.55);
+    const seeds = new Set([1, 2, 3, 4, 5, 6, 7, 8].map((seed) => rollGender(seed, 20)));
+    expect(seeds.size).toBe(2);
+  });
+
+  it("los aldeanos entrenados en el centro urbano salen con el género sorteado; los militares son hombres", () => {
+    const state = createInitialState(9);
+    state.players[0]!.food = 5000;
+    state.players[0]!.wood = 5000;
+    const tc = state.buildings.find((b) => b.owner === 0 && b.kind === "townCenter")!;
+    const firstId = state.nextEntityId;
+    stepSimulation(state, [{ id: "t", seq: 1, tick: 0, player: 0, type: "Train", entityIds: [tc.id], kind: "villager" }]);
+    for (let i = 0; i < 1200 && state.units.every((u) => u.id < firstId); i++) stepSimulation(state);
+    const born = state.units.find((u) => u.id >= firstId)!;
+    expect(born.kind).toBe("villager");
+    expect(born.gender).toBe(rollGender(9, born.id));
+    expect(addUnit(state, 0, "soldier", 20, 20).gender).toBe("male");
+  });
+
+  it("la ficha y el retrato distinguen a la aldeana", () => {
+    const state = createInitialState(1);
+    const male = state.units.find((u) => u.owner === 0 && u.gender === "male")!;
+    const female = state.units.find((u) => u.owner === 0 && u.gender === "female")!;
+    const a = describeSelection(state, male.id, 0)!;
+    const b = describeSelection(state, female.id, 0)!;
+    expect(a.name).toBe("Aldeano");
+    expect(b.name).toBe("Aldeana");
+    expect(b.gender).toBe("female");
+    expect(b.aspectKey).not.toBe(a.aspectKey);
+    expect(portraitModelKey(b)).not.toBe(portraitModelKey(a));
+    expect(b.combat).toEqual(a.combat);
   });
 });

@@ -107,9 +107,10 @@ function build(): MapLayout {
   const tc1: CellPos = { x: MAP_WIDTH - tc0.x - TC, z: tc0.z };
 
   const spawns0: Pos[] = [
-    { x: 13.5, z: 31 },
-    { x: 13.5, z: 32 },
-    { x: 13.5, z: 33 },
+    { x: 12.9, z: 31.5 },
+    { x: 14.1, z: 31.5 },
+    { x: 12.9, z: 33.5 },
+    { x: 14.1, z: 33.5 },
   ];
   const spawns1: Pos[] = spawns0.map((p) => ({ x: MAP_WIDTH - p.x, z: p.z }));
 

@@ -50,7 +50,7 @@
       #bottom-bar::before { content: ""; position: absolute; left: 0; right: 0; top: -16px; height: 14px; background: var(--cren, none) repeat-x; pointer-events: none; }
       #info, #panel, #minimap-box { margin: 5px 0 5px 5px; background: rgba(8,10,12,.62); border-radius: 3px; box-shadow: 0 0 0 1px #4a525a, inset 0 2px 8px rgba(0,0,0,.85); }
       #minimap-box { margin-right: 5px; }
-      #info { box-sizing: border-box; padding: 8px 10px; overflow: auto; font-size: 13px; line-height: 1.35; }
+      #info { box-sizing: border-box; padding: 8px 10px; overflow-x: hidden; overflow-y: auto; font-size: 13px; line-height: 1.35; }
       #info.hint { color: #8d949b; }
       #info .info-text { white-space: pre-line; }
       #info .info-card { display: flex; gap: 12px; align-items: flex-start; }
@@ -67,10 +67,12 @@
       #info .vbar i { display: block; height: 100%; width: 0; background: #4ade80; }
       #info .info-vital.work .vbar i { background: #d9b45a; }
       #info .vtext { display: block; margin-top: 2px; font-size: 12px; color: #d8dde1; white-space: nowrap; }
-      #info .info-stats { margin-bottom: 4px; font-size: 12px; color: #e6d7a8; white-space: nowrap; }
-      #info .info-stats[hidden] { display: none; }
+      #info .info-stats { display: flex; gap: 14px; align-items: center; margin-bottom: 4px; font-size: 13px; color: #e6d7a8; white-space: nowrap; }
+      #info .info-stats[hidden], #info .info-stats .stat[hidden] { display: none; }
+      #info .info-stats .stat { display: inline-flex; gap: 4px; align-items: center; }
+      #info .info-stats .stat-ico { display: inline-flex; }
       #info .info-lines { white-space: pre-line; color: #b9c0c6; font-size: 12px; }
-      @media (max-height: 599px) { #info { padding: 5px 8px; line-height: 1.25; } #info .info-card { gap: 8px; } #info .info-name { font-size: 14px; } #info .info-side { margin: 1px 0 3px; } #info .info-vital { margin-bottom: 2px; } }
+      @media (max-height: 599px) { #info { padding: 5px 8px; line-height: 1.25; } #info .info-card { gap: 8px; } #info .info-name { display: inline-block; margin-right: 6px; font-size: 14px; } #info .info-side { margin: 0 0 3px; } #info .info-vital { margin-bottom: 2px; } #info .info-stats { margin-bottom: 2px; } }
       #panel { box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; overflow: auto; }
       #panel .panel-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
       #panel .act { display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px 4px 8px; min-height: 40px; font: inherit; color: #f1f1f1; cursor: pointer; background: linear-gradient(#4a5159, #2b3036); border: 1px solid #1a1d20; border-top-color: #7b858f; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.6); }
@@ -171,11 +173,11 @@
       <p style="margin:0 0 4px">Destruya el centro urbano rival antes de perder el propio. Partida máxima: 30 minutos (si ningún centro cae, es empate). «RTS Camilus» es un nombre provisional.</p>
       <ul>
         <li><b>Cámara:</b> WASD o flechas, o lleve el cursor al borde de la vista; rueda para acercar o alejar (hasta 7×). La partida empieza con la vista acercada sobre su ciudad. Clic o arrastre en la miniatura (abajo a la derecha) para saltar a otro punto del mapa. F activa o quita la pantalla completa.</li>
-        <li><b>Selección:</b> clic o arrastre (solo unidades propias); Shift suma o quita; Esc limpia. La barra inferior muestra un retrato de lo seleccionado con su nombre, su bando (jugador, enemigo o naturaleza), su barra de vida o de recurso restante y, si ataca, su ataque y alcance en celdas.</li>
-        <li><b>Clic derecho:</b> suelo = mover; recurso = recolectar (aldeanos); enemigo = atacar (militares); obra propia = reanudar. El cursor anuncia la acción: hacha sobre un árbol, cesta sobre un arbusto, pico sobre una roca y espada sobre un enemigo (solo si la selección puede hacerlo).</li>
+        <li><b>Selección:</b> clic o arrastre (solo unidades propias); Shift suma o quita; Esc limpia. La barra inferior muestra un retrato de lo seleccionado con su nombre, su bando (jugador, enemigo o naturaleza), su barra de vida o de recurso restante y, si ataca, su ataque (espada) y su alcance en celdas (arco; los cuerpo a cuerpo no lo muestran).</li>
+        <li><b>Clic derecho:</b> suelo = mover; recurso = recolectar (aldeanos); enemigo = atacar (militares y, solo por orden suya, aldeanos); obra propia = reanudar. El cursor anuncia la acción: hacha sobre un árbol, cesta sobre un arbusto, pico sobre una roca y espada sobre un enemigo (solo si la selección puede hacerlo).</li>
         <li><b>Construir:</b> con aldeanos seleccionados use la barra inferior (casa 50 madera, cuartel 150 madera, torre 300 piedra) y confirme con clic izquierdo. Si falta un recurso, su cifra se pone en rojo.</li>
         <li><b>Producir:</b> clic en un edificio propio para entrenar y ver o cancelar la cola.</li>
-        <li><b>Combate:</b> los militares libres atacan solos a menos de 6 celdas y se defienden si los hieren; las torres completas disparan solas. Los centros urbanos y las torres de ambos bandos tienen el doble de vida.</li>
+        <li><b>Combate:</b> los militares libres atacan solos a menos de 6 celdas y se defienden si los hieren (los aldeanos solo se defienden o atacan si usted se lo ordena); las torres completas disparan solas. Los centros urbanos y las torres de ambos bandos tienen el doble de vida.</li>
         <li><b>Mapa:</b> un río separa las bases; solo se cruza por el puente central. Hay bosques en los bordes y arbustos, árboles y rocas con comida, madera y piedra. Cada bando empieza con 12 casas y 2 torres; se oyen aves de fondo.</li>
         <li><b>Fin de partida:</b> una ventana muestra el resultado, la duración y las bajas; «Ver el campo» la cierra y el botón Resultado la vuelve a abrir.</li>
         <li><b>Avisos:</b> los rechazos y confirmaciones aparecen arriba al centro unos segundos.</li>
@@ -189,7 +191,7 @@
         <li><span class="mark">○</span> anillo blanco, azul: usted.</li>
         <li><span class="mark">◇</span> rombo oscuro hueco, rojo: rival (IA en Python).</li>
       </ul>
-      <p style="margin:0">Unidades: sombrero de paja = aldeano, capucha y arco = arquero, casco y escudo = soldado. «Exportar diagnóstico» descarga un JSON local con versiones, rendimiento y órdenes.</p>
+      <p style="margin:0">Unidades: sombrero de paja = aldeano, toca blanca y falda = aldeana, capucha y arco = arquero, casco y escudo = soldado. «Exportar diagnóstico» descarga un JSON local con versiones, rendimiento y órdenes.</p>
     </div>
     <div id="overlay"></div>
     <div id="end-dialog" tabindex="-1" hidden></div>

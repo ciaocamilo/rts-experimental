@@ -1,6 +1,6 @@
 import { BALANCE, type BuildingKind, type Cost, type UnitKind } from "../content/balance";
 import type { NavGrid } from "../navigation/grid";
-import { canEngage, findTarget, isMilitary } from "./combat";
+import { canEngage, canFight, findTarget } from "./combat";
 import { clearTask } from "./movement";
 import { previewPlacement } from "./placement";
 import { addBuilding, populationOf } from "./state";
@@ -152,13 +152,13 @@ export function issueTrain(state: GameState, command: Command): OrderOutcome {
   return {};
 }
 
-/** Attack: militares persiguen y atacan a un enemigo vivo; el resto de la selecci\u00f3n se ignora. */
+/** Attack: las unidades que pueden golpear (militares y aldeanos) persiguen y atacan a un enemigo vivo; el resto se ignora. */
 export function issueAttack(state: GameState, grid: NavGrid, command: Command): OrderOutcome {
   const target = findTarget(state, targetEntity(command));
   if (!target || target.hp <= 0 || target.owner === command.player) return fail("INVALID_TARGET");
 
   const ids = new Set(command.entityIds);
-  const soldiers = state.units.filter((u) => ids.has(u.id) && isMilitary(u)).sort((a, b) => a.id - b.id);
+  const soldiers = state.units.filter((u) => ids.has(u.id) && canFight(u)).sort((a, b) => a.id - b.id);
   if (soldiers.length === 0) return fail("INCOMPATIBLE_ENTITY");
 
   const able = soldiers.filter((u) => canEngage(grid, u, target));

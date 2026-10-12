@@ -33,7 +33,7 @@ export function framingDistance(radius: number, fovDeg = PORTRAIT_FOV, margin = 
 /** Clave del modelo cacheado: la vida o el avance no la cambian, el tipo, el bando y la variante sí. */
 export function portraitModelKey(info: SelectionInfo): string {
   const variant = info.type === "node" && info.kind === "wood" ? info.id % 3 : 0;
-  return `${info.type}:${info.kind}:${info.owner ?? "n"}:${variant}`;
+  return `${info.type}:${info.kind}:${info.owner ?? "n"}:${variant}:${info.gender ?? ""}`;
 }
 
 const SIDE_COLOR = { player: "#3b82f6", enemy: "#ef4444", nature: "#4a8f3a" } as const;
@@ -165,7 +165,7 @@ export class PortraitView {
   private create(info: SelectionInfo): Model {
     const { mat, units, nodes, buildingGeometry, buildingProxyMaterial } = this.kit;
     if (info.type === "unit") {
-      const rig: UnitRig = units.create(info.kind as UnitKind, (info.owner ?? 0) as 0 | 1, false);
+      const rig: UnitRig = units.create(info.kind as UnitKind, (info.owner ?? 0) as 0 | 1, false, info.gender === "female");
       rig.mark.visible = false;
       if (rig.shadow) rig.shadow.visible = false;
       rig.proxy.visible = false;

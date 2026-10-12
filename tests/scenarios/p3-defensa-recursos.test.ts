@@ -233,11 +233,10 @@ describe("P3-R01 defensa automática", () => {
     expect(raider.hp).toBe(1000 - BALANCE.units.villager.damage);
   });
 
-  it("un aldeano no adquiere enemigos por su cuenta ni acepta órdenes de ataque", () => {
+  it("un aldeano no adquiere enemigos por su cuenta", () => {
     const state = world();
     const idle = addUnit(state, 0, "villager", 20, 20);
     const foe = addUnit(state, 1, "villager", 22, 20);
-    expect(codeOf(send(state, { type: "Attack", entityIds: [idle.id], target: { entityId: foe.id } }).results[0])).not.toBe("ok");
     run(state, 5);
     expect(idle.job).toBeNull();
     expect(foe.hp).toBe(BALANCE.units.villager.hp);

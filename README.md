@@ -24,7 +24,7 @@ Prototipo de estrategia en tiempo real (RTS) que se ejecuta en el navegador. Un 
 ## Resumen
 
 - **Partida 1 contra 1** sobre un mapa de 128x64 celdas con terreno, rocas, bosques y un río de lado a lado con un puente central (6 celdas) como único cruce. Cada bando parte con doce casas y dos torres ya construidas.
-- **Economía:** aldeanos que recolectan comida, madera y piedra, construyen casas, cuarteles y torres, y entrenan unidades con cola de producción y límite de población.
+- **Economía:** aldeanos y aldeanas que recolectan comida, madera y piedra, construyen casas, cuarteles y torres, y entrenan unidades con cola de producción y límite de población.
 - **Combate:** soldados y arqueros con rango, enfriamiento y ataque automático a menos de 6 celdas; las torres disparan flechas. Los centros urbanos (3 000 de vida) y las torres (1 600) resisten el doble que en las primeras etapas. Gana quien destruye el centro urbano rival; el límite es de 30 minutos (36 000 ticks) y, si ninguno cae, hay empate.
 - **IA en Python:** una política sin estado decide hasta 4 órdenes cada segundo. Se ejecuta en un worker aislado y se comunica con el juego mediante un contrato de mensajes versionado (`contracts/worker-v2`). La IA nunca modifica la simulación directamente: sus decisiones se validan y se agendan como órdenes para el siguiente tick.
 - **Núcleo determinista:** la simulación es TypeScript puro, avanza a 20 ticks por segundo y puede reproducirse solo con la semilla y el registro de órdenes.
@@ -125,11 +125,15 @@ Botones superiores de ladrillo, con el botón de pantalla completa a la izquierd
 - **Identidad:** la pestaña se titula «RTS Camilus - Juego experimental» y usa como icono una torre dorada (`public/favicon.svg`, SVG sin recursos externos).
 - **Bienvenida:** aparece en cada carga normal con el objetivo, cinco consejos y los botones «Comenzar» y «Ver ayuda». La partida queda en pausa hasta pulsar uno de ellos (o Intro o Esc) y la IA ya carga mientras tanto. No se omite ni se recuerda; `?welcome=0` y las escenas `?fixture=` no la muestran. La ayuda (H) ahora empieza cerrada.
 - **Vista inicial:** la cámara arranca con zoom 3 centrada en el centro urbano del jugador, también tras reiniciar (zoom máximo 7). Las escenas `?fixture=` conservan la cámara de siempre.
-- **Ataque y alcance:** la ficha de la barra inferior muestra, bajo la vida, el ataque y el alcance de la unidad o el edificio seleccionado si ataca (por ejemplo, el centro urbano: ataque 24, tres flechas de 8, alcance 5).
+- **Ataque y alcance:** la ficha de la barra inferior muestra, bajo la vida, una espada con el ataque y, si dispara a distancia, un arco con flecha con el alcance (por ejemplo, el centro urbano: espada 24 y arco 5). La actividad y la carga se muestran en una sola línea («Inactiva · carga 10 comida») y la ficha no desborda el cuadro.
 
 ![Ficha con ataque y alcance del centro urbano](docs/images/etapa8-ficha-ataque.png)
+- **Aldeanas:** cada bando empieza con cuatro aldeanos, dos hombres y dos mujeres, y cada aldeano que entrena el centro urbano es hombre o mujer al azar (50/50, determinista con la semilla). La aldeana tiene su propio aspecto (toca blanca, corpiño del bando, falda y delantal) y la ficha dice «Aldeana». Las reglas son las mismas; no tienen voz propia.
+
+![Aldeanas junto a aldeanos: toca blanca, corpiño del bando y falda](docs/images/etapa8-aldeanas.png)
+- **Aldeanos que atacan:** pueden atacar si el jugador se lo ordena con el clic derecho sobre un enemigo (el cursor cambia a espada); nunca atacan por su cuenta, salvo la defensa débil de siempre cuando los golpean.
 - **Pantalla completa:** botón y tecla F; el estado del botón sigue al del navegador (si Esc la cierra, se actualiza).
-- **Cursores de acción:** con aldeanos seleccionados, el cursor cambia a hacha sobre un árbol, cesta sobre un arbusto y pico sobre una roca; con militares, a espada sobre un enemigo. Solo aparece si el clic derecho haría esa acción con la selección actual. Son SVG generados por código y no se ven en las capturas.
+- **Cursores de acción:** con aldeanos seleccionados, el cursor cambia a hacha sobre un árbol, cesta sobre un arbusto y pico sobre una roca; con aldeanos o militares seleccionados, a espada sobre un enemigo. Solo aparece si el clic derecho haría esa acción con la selección actual. Son SVG generados por código y no se ven en las capturas.
 - **Botones de ladrillo:** mosaico SVG generado por código, texto crema con contraste mínimo de 4,5:1 y fila que se parte en varias líneas si la ventana es estrecha.
 - **Vida doble:** los centros urbanos pasan de 1 500 a 3 000 y las torres de 800 a 1 600, para ambos bandos.
 
@@ -228,7 +232,7 @@ Medición en un equipo con Ryzen 5 5600H y RTX 3050, Chromium, 1366x768, escena 
 
 En la etapa 7 solo se midió la fluidez de la partida por defecto en el navegador integrado de VS Code (ventana de unos 870x490 px, con IA, 8 s tras cargar): 300 cuadros con mediana de 16,7 ms, p95 de 16,8 ms y máximo de 17,1 ms (60 FPS). No se ha medido a 1920x1080 ni en una partida larga con 36 000 ticks en el navegador.
 
-En simulación sin navegador (horizonte de 36 000 ticks), con la vida doble de la etapa 8: la IA gana al jugador pasivo en el tick 10 168 (6 178 en la etapa 7) y dos IA enfrentadas (semilla 5) llegan al límite y empatan en el tick 36 000 (en la etapa 7 terminaban en el tick 24 596), sin violaciones de reglas. No se comprobó la reproducción de esa partida concreta; la prueba de estabilidad sí reproduce con el mismo hash una partida de 36 000 ticks con centros urbanos indestructibles.
+En simulación sin navegador (horizonte de 36 000 ticks), con la vida doble y cuatro aldeanos iniciales por bando (etapa 8): la IA gana al jugador pasivo en el tick 9 987 (6 178 en la etapa 7) y dos IA enfrentadas (semilla 5) llegan al límite y empatan en el tick 36 000 (en la etapa 7 terminaban en el tick 24 596), sin violaciones de reglas. No se comprobó la reproducción de esa partida concreta; la prueba de estabilidad sí reproduce con el mismo hash una partida de 36 000 ticks con centros urbanos indestructibles.
 
 En la etapa 8 la verificación en el navegador integrado se limitó a lo visible (bienvenida, vista inicial, botones, pantalla completa y cursores de hacha, cesta y pico); el cursor de espada solo se probó con pruebas unitarias y no se midió el rendimiento.
 

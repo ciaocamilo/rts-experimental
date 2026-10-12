@@ -75,7 +75,7 @@ export interface Balance {
 const s = (seconds: number): number => Math.round(seconds * TICKS_PER_SECOND);
 
 export const BALANCE: Balance = {
-  start: { food: 200, wood: 200, stone: 0, villagers: 3, popCapacity: 10 },
+  start: { food: 200, wood: 200, stone: 0, villagers: 4, popCapacity: 10 },
   maxPopulation: 50,
   nodesPerKindPerPlayer: 8,
   woodNodesPerPlayer: 16,

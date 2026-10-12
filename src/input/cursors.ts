@@ -47,7 +47,7 @@ const GATHER_CURSOR = { wood: "chop", food: "forage", stone: "mine" } as const;
 export function cursorFor(action: RightClickAction | null, caps: SelectionCaps): CursorKind | null {
   if (!action) return null;
   if (action.kind === "gather") return caps.villagers && action.node.remaining > 0 ? GATHER_CURSOR[action.node.kind] : null;
-  if (action.kind === "attack") return caps.military && action.target.hp > 0 ? "attack" : null;
+  if (action.kind === "attack") return (caps.military || caps.villagers) && action.target.hp > 0 ? "attack" : null;
   return null;
 }
 
