@@ -1,6 +1,6 @@
 import { BALANCE, type BuildingKind, type UnitKind } from "../content/balance";
 import type { EntityId, GameState } from "../core/types";
-import { describeEntity, type Selection } from "../input/selection";
+import { describeSelection, type Selection, type SelectionInfo, type Side } from "../input/selection";
 
 export interface PanelActions {
   build(kind: BuildingKind): void;
@@ -17,6 +17,35 @@ const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano
 const RESOURCES = ["food", "wood", "stone"] as const;
 type Resource = (typeof RESOURCES)[number];
 type Cost = { food: number; wood: number; stone: number };
+
+/** Símbolo del bando, además del color: anillo (jugador), rombo (enemigo), hoja (naturaleza). */
+const SIDE_SYMBOL: Record<Side, string> = { player: "○", enemy: "◇", nature: "♣" };
+
+/** Color de la barra de vida por umbral, igual que las barras sobre las entidades. */
+export function lifeColor(ratio: number): string {
+  return ratio > 0.5 ? "#4ade80" : ratio > 0.25 ? "#facc15" : "#ef4444";
+}
+
+/** Elementos de la ficha de información; todo el texto entra por `textContent`. */
+interface InfoCard {
+  card: HTMLElement;
+  name: HTMLElement;
+  side: HTMLElement;
+  vital: HTMLElement;
+  vitalFill: HTMLElement;
+  vitalText: HTMLElement;
+  work: HTMLElement;
+  workFill: HTMLElement;
+  lines: HTMLElement;
+  text: HTMLElement;
+}
+
+function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, parent?: HTMLElement): HTMLElementTagNameMap[K] {
+  const node = document.createElement(tag);
+  node.className = className;
+  parent?.append(node);
+  return node;
+}
 
 /** Iconos en línea (24 × 24, `currentColor`); texto estático propio, sin datos del usuario. */
 const ICONS: Record<string, string> = {
@@ -40,7 +69,7 @@ function icon(name: string): HTMLElement {
 /** Texto de un coste para la descripción accesible del botón. */
 function costText(cost: Cost): string {
   const parts: string[] = [];
-  if (cost.food > 0) parts.push(`${cost.food} alimento`);
+  if (cost.food > 0) parts.push(`${cost.food} comida`);
   if (cost.wood > 0) parts.push(`${cost.wood} madera`);
   if (cost.stone > 0) parts.push(`${cost.stone} piedra`);
   return parts.join(" + ") || "gratis";
@@ -54,6 +83,10 @@ function costText(cost: Cost): string {
 export class CommandPanel {
   private signature = "";
   private infoText = "";
+  private infoKey = "";
+  private readonly card: InfoCard | null;
+  /** Se invoca al cambiar la entidad descrita (o con `null` si no hay ninguna) para dibujar su retrato. */
+  onInfo: ((info: SelectionInfo | null) => void) | null = null;
   private readonly progress = new Map<string, HTMLElement>();
   private readonly bars = new Map<string, HTMLElement>();
   private readonly costed: { button: HTMLButtonElement; cost: Cost; short: boolean; chips: Map<Resource, HTMLElement> }[] = [];
@@ -63,6 +96,7 @@ export class CommandPanel {
     private readonly actions: PanelActions,
     private readonly infoRoot: HTMLElement | null = null,
   ) {
+    this.card = infoRoot ? this.buildCard(infoRoot) : null;
     root.addEventListener("click", (e) => {
       const button = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-act]");
       if (!button || button.disabled) return;
@@ -96,12 +130,61 @@ export class CommandPanel {
     this.updateInfo(state, selection);
   }
 
+  private buildCard(infoRoot: HTMLElement): InfoCard {
+    infoRoot.replaceChildren();
+    const card = el("div", "info-card", infoRoot);
+    card.hidden = true;
+    const canvas = el("canvas", "", card);
+    canvas.id = "portrait";
+    canvas.width = canvas.height = 224;
+    canvas.setAttribute("role", "img");
+    canvas.setAttribute("aria-label", "Retrato de la selección");
+    const data = el("div", "info-data", card);
+    const name = el("div", "info-name", data);
+    const side = el("div", "info-side", data);
+    const vital = el("div", "info-vital", data);
+    const vitalFill = el("i", "", el("span", "vbar", vital));
+    const vitalText = el("span", "vtext", vital);
+    const work = el("div", "info-vital work", data);
+    const workFill = el("i", "", el("span", "vbar", work));
+    work.hidden = true;
+    const lines = el("div", "info-lines", data);
+    const text = el("div", "info-text", infoRoot);
+    return { card, name, side, vital, vitalFill, vitalText, work, workFill, lines, text };
+  }
+
   private updateInfo(state: GameState, selection: Selection): void {
-    if (!this.infoRoot) return;
+    const c = this.card;
+    if (!c || !this.infoRoot) return;
+    const id = selection.inspected ?? (selection.units.size === 1 ? [...selection.units][0]! : null);
+    const info = id === null ? null : describeSelection(state, id, HUMAN);
+    if (info) {
+      const key = [info.id, info.name, info.side, info.barLabel, info.ratio.toFixed(3), info.progress?.toFixed(3) ?? "", info.lines.join("|")].join("~");
+      if (key === this.infoKey) {
+        this.onInfo?.(info);
+        return;
+      }
+      this.infoKey = key;
+      this.infoText = "";
+      this.infoRoot.classList.remove("hint");
+      c.card.hidden = false;
+      c.text.textContent = "";
+      c.name.textContent = info.name;
+      c.side.textContent = `${SIDE_SYMBOL[info.side]} ${info.sideLabel}`;
+      c.side.className = `info-side ${info.side}`;
+      const fill = info.barKind === "life" ? lifeColor(info.ratio) : "#c9a85a";
+      c.vitalFill.style.width = `${Math.round(info.ratio * 100)}%`;
+      c.vitalFill.style.background = fill;
+      c.vitalText.textContent = info.barLabel;
+      c.work.hidden = info.progress === null;
+      if (info.progress !== null) c.workFill.style.width = `${Math.round(info.progress * 100)}%`;
+      c.lines.textContent = info.lines.join("\n");
+      c.card.setAttribute("aria-label", `${info.name}, ${info.sideLabel.toLowerCase()}. ${info.barLabel}`);
+      this.onInfo?.(info);
+      return;
+    }
     let text: string;
-    if (selection.inspected !== null) text = describeEntity(state, selection.inspected);
-    else if (selection.units.size === 1) text = describeEntity(state, [...selection.units][0]!);
-    else if (selection.units.size > 1) {
+    if (selection.units.size > 1) {
       const counts = new Map<UnitKind, number>();
       for (const u of state.units) if (selection.units.has(u.id)) counts.set(u.kind, (counts.get(u.kind) ?? 0) + 1);
       const detail = (["villager", "soldier", "archer"] as const).filter((k) => counts.has(k)).map((k) => `${counts.get(k)} ${UNIT_PLURAL[k]}`);
@@ -109,8 +192,11 @@ export class CommandPanel {
     } else text = "Seleccione unidades o un edificio propio";
     if (text === this.infoText) return;
     this.infoText = text;
-    this.infoRoot.textContent = text;
-    this.infoRoot.classList.toggle("hint", selection.inspected === null && selection.units.size === 0);
+    this.infoKey = "";
+    c.card.hidden = true;
+    c.text.textContent = text;
+    this.infoRoot.classList.toggle("hint", selection.units.size === 0);
+    this.onInfo?.(null);
   }
 
   /** Atenúa el botón y enrojece la ficha del recurso que falta, sin reconstruir ni deshabilitar. */

@@ -72,13 +72,13 @@ describe("P6 miniatura y cámara", () => {
     expect(minimapPoint(0, 0, 0, 0, 128, 64)).toBeNull();
   });
 
-  it("centerOn centra y respeta el límite del mapa; el zoom máximo es 4,5", () => {
+  it("centerOn centra y respeta el límite del mapa; el zoom máximo es 5,5", () => {
     const rig = new CameraRig(128, 64);
     rig.centerOn(100, 20);
     expect(rig).toMatchObject({ x: 100, z: 20 });
     rig.centerOn(500, -3);
     expect(rig).toMatchObject({ x: 128, z: 0 });
-    expect(ZOOM_MAX).toBe(4.5);
+    expect(ZOOM_MAX).toBe(5.5);
     rig.zoomBy(-1e6);
     expect(rig.zoom).toBe(ZOOM_MAX);
     rig.zoomBy(1e6);

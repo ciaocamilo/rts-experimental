@@ -1,14 +1,15 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { GameSession } from "../../src/app/session";
+import { MAX_ACTIVE_TICKS } from "../../src/content/balance";
 import { PerfRecorder } from "../../src/diagnostics/recorder";
 import { createFixture } from "../../src/core/fixtures";
 import type { GameState } from "../../src/core/types";
 import { loadPolicyRuntime, replayMatch, runMatch, type PolicyRuntime } from "../helpers/headless-match";
 
-const FULL_MATCH_TICKS = 24_000;
+const FULL_MATCH_TICKS = MAX_ACTIVE_TICKS;
 const HUGE_HP = 1_000_000;
 
-/** Centros urbanos casi indestructibles: la partida llega al límite de 20 minutos con ambos bandos activos. */
+/** Centros urbanos casi indestructibles: la partida llega al límite de 30 minutos con ambos bandos activos. */
 const indestructibleCenters = (state: GameState): void => {
   for (const b of state.buildings) if (b.kind === "townCenter") b.hp = HUGE_HP;
 };
@@ -18,8 +19,8 @@ beforeAll(async () => {
   runtime = await loadPolicyRuntime();
 }, 120_000);
 
-describe("RNF-04 partida de 20 minutos sin degradación", () => {
-  it("dos IA durante 24000 ticks: sin violaciones, resultado único, entidades acotadas y reproducible", () => {
+describe("RNF-04 partida de 30 minutos sin degradación", () => {
+  it("dos IA durante 36000 ticks: sin violaciones, resultado único, entidades acotadas y reproducible", () => {
     const run = runMatch(runtime, { seed: 5, maxTicks: FULL_MATCH_TICKS, ais: [0, 1], setup: indestructibleCenters });
     const state = run.session.state;
     console.info(

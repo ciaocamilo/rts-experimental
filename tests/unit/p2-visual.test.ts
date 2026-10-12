@@ -49,9 +49,9 @@ describe("P2-H05 mapa ampliado", () => {
 
 describe("P2-H06 vegetación decorativa", () => {
   const plan = planScenery(MAP_WIDTH, MAP_DEPTH, MAP_LAYOUT.terrain);
-  const blockedBy = (x: number, z: number): "rock" | "water" | null => {
+  const blockedBy = (x: number, z: number): "rock" | "forest" | "water" | null => {
     for (const t of MAP_LAYOUT.terrain) {
-      if (x >= t.x && x < t.x + t.w && z >= t.z && z < t.z + t.h) return t.kind === "water" ? "water" : "rock";
+      if (x >= t.x && x < t.x + t.w && z >= t.z && z < t.z + t.h) return t.kind === "water" ? "water" : t.kind === "forest" ? "forest" : "rock";
     }
     return null;
   };
@@ -60,8 +60,9 @@ describe("P2-H06 vegetación decorativa", () => {
     const inside = (p: { x: number; z: number }): boolean => p.x >= 0 && p.x <= MAP_WIDTH && p.z >= 0 && p.z <= MAP_DEPTH;
     for (const item of [...plan.trees, ...plan.bushes]) {
       if (inside(item)) {
-        expect(blockedBy(item.x, item.z)).toBe("rock");
-        expect(item.y).toBe(ROCK_HEIGHT);
+        const terrain = blockedBy(item.x, item.z);
+        expect(["rock", "forest"]).toContain(terrain);
+        expect(item.y).toBe(terrain === "forest" ? 0 : ROCK_HEIGHT);
       } else {
         expect(item.y).toBe(0);
       }

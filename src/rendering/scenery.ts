@@ -3,7 +3,7 @@ export interface SceneryRect {
   z: number;
   w: number;
   h: number;
-  kind?: "water" | "bridge";
+  kind?: "water" | "bridge" | "forest";
 }
 
 export interface TreeSpec {
@@ -35,6 +35,9 @@ export interface SceneryPlan {
 /** Altura visual de los bloques de roca; los árboles decorativos crecen sobre ellos. */
 export const ROCK_HEIGHT = 1.2;
 
+/** Árboles por celda de bosque (promedio) con la densidad completa; los bosques crecen a nivel de suelo. */
+export const FOREST_TREES_PER_CELL = 1.2;
+
 /** Generador determinista y propio: la decoración nunca consume la aleatoriedad de la lógica. */
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
@@ -56,9 +59,28 @@ export function planScenery(_width: number, _depth: number, terrain: readonly Sc
   const trees: TreeSpec[] = [];
   const bushes: BushSpec[] = [];
   const variant3 = (): 0 | 1 | 2 => Math.min(2, Math.floor(rng() * 3)) as 0 | 1 | 2;
+  // Flujo aleatorio propio de los bosques: la decoración de las rocas no cambia al añadirlos.
+  const forestRng = mulberry32(seed + 7919);
+  const forestVariant = (): 0 | 1 | 2 => Math.min(2, Math.floor(forestRng() * 3)) as 0 | 1 | 2;
 
   for (const t of terrain) {
     if (t.kind === "water" || t.kind === "bridge") continue;
+    if (t.kind === "forest") {
+      for (let i = 0; i < t.w; i++) {
+        for (let j = 0; j < t.h; j++) {
+          const count = Math.floor(FOREST_TREES_PER_CELL * density + forestRng());
+          for (let k = 0; k < count; k++) {
+            const x = t.x + i + 0.1 + forestRng() * 0.8;
+            const z = t.z + j + 0.1 + forestRng() * 0.8;
+            trees.push({ x, y: 0, z, variant: forestVariant(), scale: 0.85 + forestRng() * 0.7, rot: forestRng() * Math.PI * 2, tone: forestRng() });
+          }
+          if (forestRng() < 0.14 * density) {
+            bushes.push({ x: t.x + i + 0.2 + forestRng() * 0.6, y: 0, z: t.z + j + 0.2 + forestRng() * 0.6, variant: forestRng() < 0.5 ? 0 : 1, scale: 0.7 + forestRng() * 0.5, rot: forestRng() * Math.PI * 2, tone: forestRng() });
+          }
+        }
+      }
+      continue;
+    }
     for (let i = 0; i < t.w; i++) {
       for (let j = 0; j < t.h; j++) {
         const r = rng();

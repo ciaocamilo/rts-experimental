@@ -5,13 +5,13 @@ import { AudioDirector } from "./audio/director";
 import { AudioEngine } from "./audio/engine";
 import { loadMusicInWorker } from "./audio/music-loader";
 import { loadSettings } from "./audio/settings";
-import { BALANCE, TICKS_PER_SECOND, validateBalance } from "./content/balance";
+import { BALANCE, MAX_ACTIVE_TICKS, validateBalance } from "./content/balance";
 import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH, validateMapLayout } from "./content/map";
 import { AUDIO_VERSION, BALANCE_VERSION, GAME_VERSION, GRAPHICS_VERSION, MAP_VERSION } from "./content/versions";
 import { createFixture, type FixtureName } from "./core/fixtures";
 import { hashState } from "./core/hash";
 import { validateInitialReachability } from "./core/map-check";
-import { describeEnd } from "./core/result";
+import { endSummary } from "./core/result";
 import { createInitialState, livingOf, reservedOf } from "./core/state";
 import type { Command } from "./core/types";
 import { PerfRecorder } from "./diagnostics/recorder";
@@ -19,13 +19,16 @@ import { buildReport } from "./diagnostics/report";
 import { CameraRig } from "./input/camera-rig";
 import { InputController } from "./input/controller";
 import { clearSelection, emptySelection, pruneSelection } from "./input/selection";
+import { PortraitView } from "./rendering/portrait";
 import { SceneView } from "./rendering/scene-view";
 import { CommandPanel } from "./ui/command-panel";
+import { applyCastleBar } from "./ui/castle-bar";
+import { EndDialog } from "./ui/end-dialog";
 import { describeResult, REJECT_TEXT, toastKind } from "./ui/messages";
 import { Minimap } from "./ui/minimap";
 import { ToastCenter } from "./ui/toasts";
 
-const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos", "realismo", "rio"];
+const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos", "realismo", "rio", "retratos"];
 
 function supported(): boolean {
   if (typeof Worker === "undefined" || typeof WebAssembly === "undefined") return false;
@@ -64,6 +67,7 @@ function start(): void {
   validateBalance(BALANCE);
   validateMapLayout(MAP_LAYOUT);
   validateInitialReachability(createInitialState(0));
+  applyCastleBar(el("bottom-bar"));
 
   const params = new URLSearchParams(location.search);
   const fixtureParam = params.get("fixture");
@@ -113,6 +117,7 @@ function start(): void {
   // `?audio=0` desactiva todo el audio; sin Web Audio el juego sigue sin sonido.
   const engine = params.get("audio") === "0" ? null : new AudioEngine({ settings: loadSettings(), loadMusic: () => loadMusicInWorker() });
   const audio = engine ? new AudioDirector(engine) : null;
+  if (audio) audio.trees = () => view.sceneryTrees();
   let audioFault = false;
   let audioPaused = false;
   const musicButton = el<HTMLButtonElement>("btn-music");
@@ -203,39 +208,54 @@ function start(): void {
     cancelBuild: (id) => panelOrder({ type: "CancelBuild", entityIds: [id] }),
     stop: (ids) => panelOrder({ type: "Stop", entityIds: ids }),
   }, el("info"));
+  // El retrato es accesorio: si falla, se avisa una vez y la partida sigue.
+  const portrait = new PortraitView(el<HTMLCanvasElement>("portrait"), view.portraitKit());
+  let portraitFault = false;
+  panel.onInfo = (info) => {
+    if (portraitFault) return;
+    try {
+      portrait.show(info);
+    } catch (error) {
+      portraitFault = true;
+      notify("Retrato no disponible");
+      console.warn(error);
+    }
+  };
+  for (const warning of portrait.warnings) notify(warning);
   const minimap = new Minimap(el<HTMLCanvasElement>("minimap"), MAP_WIDTH, MAP_DEPTH, { centerOn: (x, z) => rig.centerOn(x, z) });
 
-  const outcomeText = (): string => {
-    const outcome = session.state.outcome;
-    const end = describeEnd(session.state);
-    if (!outcome || !end) return "";
-    const centers = outcome.mainBuildings
-      .map((b) => `centro ${b.owner === 0 ? "propio" : "rival"} #${b.id}: ${b.destroyed ? "destruido" : "en pie"} (vida ${b.hp}/${b.maxHp})`)
-      .join(" · ");
-    const lost = outcome.casualties;
-    return (
-      `${end.title}\n${end.reason}\n` +
-      `Fin en el tick ${outcome.endTick} · ${centers}\n` +
-      `Bajas propias: ${lost.units[0]} unidades, ${lost.buildings[0]} edificios · rivales: ${lost.units[1]} unidades, ${lost.buildings[1]} edificios\n` +
-      `Pulse «Reiniciar» para jugar de nuevo`
-    );
-  };
+  const resultButton = el<HTMLButtonElement>("btn-result");
+  let endDismissed = false;
+  const endDialog = new EndDialog(el("end-dialog"), {
+    restart: () => restartGame(),
+    dismiss: () => {
+      endDismissed = true;
+      refreshOverlay();
+      resultButton.focus();
+    },
+  });
+  resultButton.addEventListener("click", () => {
+    endDismissed = false;
+    refreshOverlay();
+  });
 
   const refreshOverlay = (): void => {
     const status = ai?.director.status;
-    const ended = outcomeText();
-    const key = `${session.paused}|${status}|${ended}`;
+    const summary = endSummary(session.state);
+    const ended = summary !== null;
+    const key = `${session.paused}|${status}|${summary?.label ?? ""}|${endDismissed}`;
     if (key === overlayKey) return;
     overlayKey = key;
-    const visible = ended !== "" || session.paused;
-    overlay.classList.toggle("visible", visible);
-    if (ended !== "") overlay.textContent = ended;
-    else if (!session.paused) overlay.textContent = "";
+    overlay.classList.toggle("visible", session.paused);
+    resultButton.hidden = !ended;
+    if (summary && !endDismissed) endDialog.show(summary);
+    else endDialog.hide();
+    if (!session.paused) overlay.textContent = "";
     else if (status === "failed") overlay.textContent = `IA Python no disponible: ${ai?.director.message ?? ""}\nSimulación pausada. Pulse «Recuperar IA».`;
     else if (status === "recovering") overlay.textContent = "Recuperando la IA…";
     else if (status === "recovered") overlay.textContent = "IA recuperada — pulse Reanudar";
     else overlay.textContent = "Pausa — pulse Reanudar";
-    pauseButton.disabled = status === "recovering" || ended !== "";
+    pauseButton.disabled = status === "recovering" || ended;
     pauseButton.textContent = status === "failed" ? "Recuperar IA" : status === "recovering" ? "Recuperando…" : session.paused ? "Reanudar" : "Pausar";
   };
 
@@ -289,7 +309,7 @@ function start(): void {
     toasts.update();
     if (logsVisible)
       hud.textContent =
-      `Tick ${s.tick}/${TICKS_PER_SECOND * 1200}  hash ${hashState(s)}\n` +
+      `Tick ${s.tick}/${MAX_ACTIVE_TICKS}  hash ${hashState(s)}\n` +
       `${message}\n` +
       `${aiLine()}\n` +
       `${perfText}\n` +
@@ -311,7 +331,7 @@ function start(): void {
           audioPaused = session.paused;
           engine.setPaused(audioPaused);
         }
-        audio.update(session, view.projector());
+        audio.update(session, view.projector(), Math.min(delta, 250) / 1000);
       } catch (error) {
         audioFault = true;
         if (errors.length < 20) errors.push(`audio: ${error instanceof Error ? error.message : String(error)}`);
@@ -358,7 +378,7 @@ function start(): void {
     }
     refreshOverlay();
   });
-  el("btn-restart").addEventListener("click", () => {
+  const restartGame = (): void => {
     ai?.director.dispose();
     perf = new PerfRecorder();
     errors.length = 0;
@@ -372,8 +392,10 @@ function start(): void {
     pendingOrder = null;
     message = "";
     toasts.clearAll();
+    endDismissed = false;
     refreshOverlay();
-  });
+  };
+  el("btn-restart").addEventListener("click", restartGame);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       session.pause();

@@ -3,6 +3,7 @@ import type { GameState, TerrainRect } from "../core/types";
 
 const GROUND = "#1f3b22";
 const ROCK = "#7d7d7d";
+const FOREST = "#0f2d17";
 const WATER = "#2d6aa6";
 const BRIDGE = "#8a5a2b";
 const OWN = "#4aa8ff";
@@ -155,8 +156,8 @@ export class Minimap {
     const sz = this.layer.height / this.mapDepth;
     ctx.fillStyle = GROUND;
     ctx.fillRect(0, 0, this.layer.width, this.layer.height);
-    for (const kind of [undefined, "water", "bridge"] as const) {
-      ctx.fillStyle = kind === "water" ? WATER : kind === "bridge" ? BRIDGE : ROCK;
+    for (const kind of [undefined, "forest", "water", "bridge"] as const) {
+      ctx.fillStyle = kind === "water" ? WATER : kind === "bridge" ? BRIDGE : kind === "forest" ? FOREST : ROCK;
       for (const t of terrain) if (t.kind === kind) ctx.fillRect(t.x * sx, t.z * sz, t.w * sx, t.h * sz);
     }
   }

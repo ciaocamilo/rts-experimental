@@ -3,7 +3,8 @@
 export const TICKS_PER_SECOND = 20;
 export const TICK_MS = 1000 / TICKS_PER_SECOND;
 export const MAX_CATCHUP_STEPS = 5;
-export const MAX_ACTIVE_TICKS = 24_000;
+// P7: 30 minutos × 60 s × 20 ticks.
+export const MAX_ACTIVE_TICKS = 36_000;
 
 export type UnitKind = "villager" | "soldier" | "archer";
 export type BuildingKind = "townCenter" | "house" | "barracks" | "tower";

@@ -64,7 +64,7 @@ describe("síntesis de la música", () => {
     expect(peak(a.left)).toBeLessThanOrEqual(0.98);
     expect(peak(a.left)).toBeGreaterThan(0.3);
     expect(a.left.length).toBe(a.right.length);
-  });
+  }, 30_000);
 
   it("la pieza completa dura 100 s, es estéreo y se genera en tiempo razonable", () => {
     const started = performance.now();

@@ -34,9 +34,9 @@ const base = {
     observation_tick: 140,
     player_id: 1,
     seed: 1,
-    game_version: "p6.0.0",
-    map_version: "map-0.4 (128x64, río y puente)",
-    balance_version: "balance-0.3",
+    game_version: "p7.0.0",
+    map_version: "map-0.5 (128x64, río, bosques)",
+    balance_version: "balance-0.4",
     players: [
       { id: 0, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
       { id: 1, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
