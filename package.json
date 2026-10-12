@@ -2,6 +2,7 @@
   "name": "rts-experimental",
   "version": "0.0.1",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "description": "RTS experimental, SDD v0.3. Incremento P0-A.",
   "scripts": {

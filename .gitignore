@@ -1,8 +1,9 @@
-node_modules/
+﻿node_modules/
 dist/
 *.log
 public/vendor/
-RTS_SDD_v0.3.md
-SDD_Etapa_3_Defensa_Recursos.md
 __pycache__/
 *.pyc
+# Especificaciones SDD: solo locales
+RTS_SDD_*.md
+SDD_Etapa_*.md
