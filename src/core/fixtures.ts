@@ -3,7 +3,7 @@ import { BALANCE } from "../content/balance";
 import { addBuilding, addTerrain, addUnit, createEmptyState, createInitialState } from "./state";
 import type { Command, EntityId, GameState, PlayerId } from "./types";
 
-export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa";
+export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa" | "sonidos";
 
 export interface Fixture {
   state: GameState;
@@ -73,10 +73,122 @@ function createTargetScene(): Fixture {
   return { state, commands, groups: [] };
 }
 
+export type FinalOption = "victoria" | "derrota";
+
+function command(partial: Omit<Command, "id" | "seq" | "tick">): Command {
+  seq += 1;
+  return { id: `fx-${seq}`, seq, tick: 0, ...partial };
+}
+
+/**
+ * Banco de pruebas de P4 para oír todos los efectos sin esperar a una partida (SDD de la etapa 4, §4.10).
+ * Con `final` la escena se reduce a un centro urbano con vida mínima junto a un atacante.
+ */
+function createSoundScene(final?: FinalOption): Fixture {
+  const state = createInitialState(1);
+  const commands: Command[] = [];
+  const tc = (owner: PlayerId) => state.buildings.find((b) => b.owner === owner && b.kind === "townCenter")!;
+
+  if (final) {
+    const doomed = tc(final === "victoria" ? 1 : 0);
+    doomed.hp = 5;
+    const attacker = final === "victoria" ? addUnit(state, 0, "soldier", doomed.cell.x - 1.5, doomed.cell.z + 2) : addUnit(state, 1, "soldier", doomed.cell.x + 5.5, doomed.cell.z + 2);
+    commands.push(command({ player: attacker.owner, type: "Attack", entityIds: [attacker.id], target: { entityId: doomed.id } }));
+    return { state, commands, groups: [] };
+  }
+
+  for (const p of state.players) {
+    p.food = 2000;
+    p.wood = 2000;
+    p.popCapacity = BALANCE.maxPopulation;
+  }
+  // Los «sacos» aguantan sin morir para que los efectos continúen mientras se escucha.
+  const dummy = (owner: PlayerId, kind: "soldier" | "villager" | "archer", x: number, z: number, hp = 5000) => {
+    const u = addUnit(state, owner, kind, x, z);
+    u.hp = hp;
+    return u;
+  };
+  const attack = (attacker: { id: EntityId; owner: PlayerId }, targetId: EntityId): void => {
+    commands.push(command({ player: attacker.owner, type: "Attack", entityIds: [attacker.id], target: { entityId: targetId } }));
+  };
+
+  // Combate cuerpo a cuerpo y a distancia entre bandos.
+  dummy(0, "soldier", 22, 20, 400);
+  dummy(1, "soldier", 22.8, 20, 400);
+  dummy(0, "archer", 26, 20, 400);
+  dummy(1, "archer", 30.4, 20, 400);
+
+  // Torres de cada bando con un aldeano rival a su alcance.
+  addBuilding(state, 0, "tower", 22, 27);
+  addBuilding(state, 1, "tower", 27, 27);
+  dummy(1, "villager", 23, 32.5);
+  dummy(0, "villager", 28, 32.5);
+
+  // Centro urbano rival armado con un soldado propio a su alcance; el propio con un rival junto a él.
+  addBuilding(state, 1, "townCenter", 44, 22);
+  dummy(0, "soldier", 45.5, 28.5);
+  dummy(1, "soldier", 13.5, 28.5);
+
+  // Fuego: casa propia al 40 % y casa rival más dañada.
+  addBuilding(state, 0, "house", 36, 27).hp = 120;
+  addBuilding(state, 1, "house", 40, 27).hp = 100;
+
+  // Campana y derrumbes pequeños: un soldado rival ataca una casa propia y uno propio, una rival.
+  const ownHouse = addBuilding(state, 0, "house", 38, 35);
+  ownHouse.hp = 60;
+  attack(dummy(1, "soldier", 41.5, 36.5), ownHouse.id);
+  const rivalHouse = addBuilding(state, 1, "house", 44, 35);
+  rivalHouse.hp = 60;
+  attack(dummy(0, "soldier", 47.5, 36.5), rivalHouse.id);
+
+  // Derrumbe grande: cuartel propio con poca vida atacado por un rival.
+  const ownBarracks = addBuilding(state, 0, "barracks", 28, 43);
+  ownBarracks.hp = 80;
+  attack(dummy(1, "soldier", 27.5, 49), ownBarracks.id);
+
+  // Producción: el cuartel y el centro urbano propios suenan; los del rival callan.
+  const trainer = addBuilding(state, 0, "barracks", 20, 42);
+  const rivalTrainer = addBuilding(state, 1, "barracks", 36, 44);
+  commands.push(command({ player: 0, type: "Train", entityIds: [trainer.id], kind: "soldier" }));
+  commands.push(command({ player: 1, type: "Train", entityIds: [rivalTrainer.id], kind: "soldier" }));
+  commands.push(command({ player: 0, type: "Train", entityIds: [tc(0).id], kind: "villager" }));
+  commands.push(command({ player: 1, type: "Train", entityIds: [tc(1).id], kind: "villager" }));
+
+  // Trabajos: construcción, tala, minería y recolección de alimento de cada bando.
+  const nodeAt = (kind: "wood" | "stone" | "food", x: number, z: number) => state.resourceNodes.find((n) => n.kind === kind && n.cell.x === x && n.cell.z === z)!;
+  for (const owner of [0, 1] as const) {
+    const side = owner === 0 ? 0 : 1;
+    const builder = dummy(owner, "villager", 31 + side * 4, 34.5);
+    commands.push(command({ player: owner, type: "Build", entityIds: [builder.id], kind: "house", target: { x: 30 + side * 4, z: 36 } }));
+    const wood = dummy(owner, "villager", 18.5, 37 + side);
+    commands.push(command({ player: owner, type: "Gather", entityIds: [wood.id], target: { entityId: nodeAt("wood", 16, 37 + side).id } }));
+    const stone = dummy(owner, "villager", 18.5, 46 + side);
+    commands.push(command({ player: owner, type: "Gather", entityIds: [stone.id], target: { entityId: nodeAt("stone", 16, 46 + side).id } }));
+    const food = dummy(owner, "villager", 18.5, 22 + side);
+    commands.push(command({ player: owner, type: "Gather", entityIds: [food.id], target: { entityId: nodeAt("food", 15, 22 + side).id } }));
+  }
+
+  // Un aldeano de cada bando se defiende de un soldado.
+  const farmer0 = dummy(0, "villager", 24, 38, 400);
+  const farmer1 = dummy(1, "villager", 24, 39.5, 400);
+  attack(dummy(1, "soldier", 24.8, 38), farmer0.id);
+  attack(dummy(0, "soldier", 24.8, 39.5), farmer1.id);
+
+  // Gritos de muerte: un militar y un aldeano de cada bando con una vida mínima junto a un enemigo.
+  dummy(0, "soldier", 41, 44, 400);
+  dummy(1, "villager", 41.8, 44, 6);
+  dummy(1, "soldier", 41, 45.6, 12);
+  dummy(1, "soldier", 45, 44, 400);
+  dummy(0, "villager", 45.8, 44, 6);
+  dummy(0, "archer", 45, 45.6, 12);
+  return { state, commands, groups: [] };
+}
+
 /** Escenarios de P0-B (§6): corredor de 3 celdas, cruce de grupos y carga de 100 unidades. */
-export function createFixture(name: FixtureName): Fixture {
+export function createFixture(name: FixtureName, options: { final?: FinalOption } = {}): Fixture {
   seq = 0;
   if (name === "objetivo") return createTargetScene();
+  if (name === "sonidos") return createSoundScene(options.final);
   if (name === "defensa") {
     // Banco de pruebas manual de P3 (sin IA) junto a la cámara inicial: torre que dispara, unidades tras un cuartel y un edificio que cae.
     const state = createInitialState(1);

@@ -1,9 +1,13 @@
 import { AIDirector } from "./ai-client/director";
 import { WorkerAIProvider, type WorkerLike } from "./ai-client/provider";
 import { GameSession } from "./app/session";
+import { AudioDirector } from "./audio/director";
+import { AudioEngine } from "./audio/engine";
+import { loadMusicInWorker } from "./audio/music-loader";
+import { loadSettings } from "./audio/settings";
 import { BALANCE, TICKS_PER_SECOND, validateBalance } from "./content/balance";
 import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH, validateMapLayout } from "./content/map";
-import { BALANCE_VERSION, GAME_VERSION, MAP_VERSION } from "./content/versions";
+import { AUDIO_VERSION, BALANCE_VERSION, GAME_VERSION, MAP_VERSION } from "./content/versions";
 import { createFixture, type FixtureName } from "./core/fixtures";
 import { hashState } from "./core/hash";
 import { validateInitialReachability } from "./core/map-check";
@@ -19,7 +23,7 @@ import { SceneView } from "./rendering/scene-view";
 import { CommandPanel } from "./ui/command-panel";
 import { describeResult } from "./ui/messages";
 
-const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa"];
+const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos"];
 
 function supported(): boolean {
   if (typeof Worker === "undefined" || typeof WebAssembly === "undefined") return false;
@@ -66,7 +70,9 @@ function start(): void {
   let perf = new PerfRecorder();
   const errors: string[] = [];
   const newSession = (): GameSession => {
-    const created = new GameSession(1, fixtureName ? createFixture(fixtureName) : undefined);
+    const finalParam = params.get("final");
+    const final = finalParam === "victoria" || finalParam === "derrota" ? finalParam : undefined;
+    const created = new GameSession(1, fixtureName ? createFixture(fixtureName, { final }) : undefined);
     created.tickObserver = (ms) => perf.recordTick(ms);
     return created;
   };
@@ -88,6 +94,54 @@ function start(): void {
   let overlayKey = "";
   let perfText = "";
   let perfAt = -Infinity;
+
+  // `?audio=0` desactiva todo el audio; sin Web Audio el juego sigue sin sonido.
+  const engine = params.get("audio") === "0" ? null : new AudioEngine({ settings: loadSettings(), loadMusic: () => loadMusicInWorker() });
+  const audio = engine ? new AudioDirector(engine) : null;
+  let audioFault = false;
+  let audioPaused = false;
+  const musicButton = el<HTMLButtonElement>("btn-music");
+  const sfxButton = el<HTMLButtonElement>("btn-sfx");
+  const refreshAudioButtons = (): void => {
+    if (!engine) return;
+    const { settings } = engine;
+    musicButton.textContent = `Música: ${settings.music && !settings.muted ? "sí" : "no"}`;
+    sfxButton.textContent = `Efectos: ${settings.sfx && !settings.muted ? "sí" : "no"}`;
+  };
+  if (engine) {
+    refreshAudioButtons();
+    // Los navegadores solo permiten audio tras un gesto del usuario.
+    const unlock = (): void => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+      void engine.unlock();
+    };
+    window.addEventListener("pointerdown", unlock);
+    window.addEventListener("keydown", unlock);
+    musicButton.addEventListener("click", () => {
+      engine.setMusic(!engine.settings.music);
+      refreshAudioButtons();
+    });
+    sfxButton.addEventListener("click", () => {
+      engine.setSfx(!engine.settings.sfx);
+      refreshAudioButtons();
+    });
+    window.addEventListener("keydown", (event) => {
+      if ((event.key === "m" || event.key === "M") && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        engine.toggleMuted();
+        refreshAudioButtons();
+      }
+    });
+  } else {
+    musicButton.style.display = "none";
+    sfxButton.style.display = "none";
+  }
+  const audioLine = (): string =>
+    !engine
+      ? "Audio: desactivado (?audio=0)"
+      : audioFault
+        ? "Audio: error, desactivado"
+        : `Audio: ${engine.status} · voces ${engine.activeVoices} · descartados ${engine.droppedVoices} · fuego ${engine.fireLoops} · música ${engine.music}`;
 
   const controller = new InputController(
     el<HTMLCanvasElement>("view"),
@@ -212,15 +266,29 @@ function start(): void {
       `${message}\n` +
       `${aiLine()}\n` +
       `${perfText}\n` +
+      `${audioLine()}\n` +
       `Rutas en cola ${s.pathQueue.length} · sobrecargas ${session.overloadEvents}` +
       `${fixtureName ? ` · fixture ${fixtureName}` : ""}${errors.length > 0 ? ` · errores ${errors.length}` : ""}\n` +
-      `v${GAME_VERSION} · ${MAP_VERSION} · ${BALANCE_VERSION} · semilla ${s.seed}\n` +
+      `v${GAME_VERSION} · ${MAP_VERSION} · ${BALANCE_VERSION} · ${AUDIO_VERSION} · semilla ${s.seed}\n` +
       `H: ayuda · Esc: cancelar/limpiar selección`;
 
     panel.refresh(s, selection, controller.placing, session.paused);
 
     view.setSelection(selection.units, selection.inspected);
     view.sync(s, { frozen: session.paused || s.matchStatus === "ended", paused: session.paused, strikes: session.strikeLog, destroyed: session.destroyedLog });
+    if (audio && engine && !audioFault) {
+      // Un fallo del audio nunca detiene ni pausa la partida.
+      try {
+        if (session.paused !== audioPaused) {
+          audioPaused = session.paused;
+          engine.setPaused(audioPaused);
+        }
+        audio.update(session, view.projector());
+      } catch (error) {
+        audioFault = true;
+        if (errors.length < 20) errors.push(`audio: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
     view.render();
   };
 
@@ -267,6 +335,7 @@ function start(): void {
     errors.length = 0;
     session = newSession();
     view.reset();
+    audio?.reset();
     ai = aiEnabled ? createAI(session) : null;
     ai?.director.start();
     clearSelection(selection);

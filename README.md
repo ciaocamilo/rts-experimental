@@ -48,6 +48,7 @@ Novedades de la etapa: edificios y personajes procedurales por rol, animaciones 
 | Construir | Seleccionar aldeanos y usar el panel inferior |
 | Entrenar | Clic en un edificio propio |
 | Ayuda | Tecla H o botón «Ayuda» |
+| Audio | Tecla M silencia o reactiva todo; los botones «Música» y «Efectos» activan cada uno por separado (se recuerdan en el navegador) |
 
 ## Puesta en marcha
 
@@ -68,6 +69,8 @@ Parámetros de URL útiles:
 | `?graphics=low` | Modo gráfico reducido: sin antialias, sombras ni agua animada, con menos decoración y flechas simples |
 | `?fixture=corridor20`, `crossing`, `crowd100`, `skirmish` | Escenas de prueba de navegación y combate, sin IA |
 | `?fixture=objetivo` | Escena de carga con IA: 100 unidades, 20 edificios y combate |
+| `?audio=0` | Desactiva todo el audio |
+| `?fixture=sonidos&ai=0` | Escena breve para oír todos los efectos; añade `&final=victoria` o `&final=derrota` para oír los sonidos de fin de partida |
 
 ## Comandos
 
@@ -92,6 +95,7 @@ src/
   rendering/    Escena Three.js
   input/        Cámara y control de ratón y teclado
   ui/           Panel de órdenes y mensajes
+  audio/        Efectos y música sintetizados con Web Audio (sin archivos de audio); solo lee los eventos de la simulación
   diagnostics/  Métricas de rendimiento e informe exportable
 python/policy/  Política de la IA (policy-0.2)
 contracts/      Esquemas y fixtures del contrato del worker
@@ -121,12 +125,12 @@ Medición en un equipo con Ryzen 5 5600H y RTX 3050, Chromium, 1366x768, escena 
 
 Las mediciones de rendimiento son anteriores a la etapa 2 y no se han repetido con el nuevo aspecto.
 
-Pruebas: 241 de TypeScript y 44 de Python.
+Pruebas: 319 de TypeScript y 54 de Python.
 
 ## Limitaciones conocidas
 
 - Solo se ha probado en Chromium; Firefox queda pendiente.
-- No hay audio.
+- El audio es procedural y su mezcla está pendiente de la valoración auditiva del autor; el navegador solo lo activa tras el primer clic o tecla.
 - Existe un único nivel de IA; no se ha medido la dificultad ni la diversión.
 - La escena `objetivo` pierde unidades durante el combate, así que los p95 cubren toda la medición y no solo el pico de 100 unidades.
 - Fuera de alcance por ahora: mantener posición, mover atacando, niebla de guerra y minimapa. Cada uno requiere su propia especificación.

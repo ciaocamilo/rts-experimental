@@ -58,6 +58,9 @@ export function stepSimulation(state: GameState, commands: readonly Command[] = 
       results: commands.map((c) => reject(c, "MATCH_ENDED")),
       strikes: [],
       destroyed: [],
+      deaths: [],
+      spawns: [],
+      works: [],
     };
   }
 
@@ -77,15 +80,15 @@ export function stepSimulation(state: GameState, commands: readonly Command[] = 
 
   processPathQueue(state, grid);
   moveUnits(state, grid);
-  updateJobs(state, grid);
-  updateProduction(state, grid);
+  const works = updateJobs(state, grid);
+  const spawns = updateProduction(state, grid);
   const strikes = updateCombat(state, grid);
   // La instantánea de los edificios principales se toma antes de retirar entidades, con la vida que causa el fin de partida.
   const mainBuildings = snapshotMainBuildings(state);
-  const { lostCenters, destroyed } = removeDead(state);
+  const { lostCenters, destroyed, deaths } = removeDead(state);
   refreshCapacity(state);
 
   state.tick += 1;
   resolveMatch(state, lostCenters, mainBuildings);
-  return { tick: state.tick, results, strikes, destroyed };
+  return { tick: state.tick, results, strikes, destroyed, deaths, spawns, works };
 }

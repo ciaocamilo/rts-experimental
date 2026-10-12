@@ -2,11 +2,15 @@ import { FixedStepper } from "../core/fixed-step";
 import type { Fixture } from "../core/fixtures";
 import { createInitialState } from "../core/state";
 import { stepSimulation } from "../core/simulation";
-import type { BuildingDestroyedEvent, Command, CommandResult, GameState, StrikeEvent } from "../core/types";
+import type { BuildingDestroyedEvent, Command, CommandResult, DeathEvent, GameState, SpawnEvent, StrikeEvent, WorkEvent } from "../core/types";
 
 /** Se conservan solo los ataques recientes: la vista los consume en el mismo cuadro. */
 const STRIKE_LOG_LIMIT = 256;
 const DESTROYED_LOG_LIMIT = 32;
+const AUDIO_LOG_LIMIT = 64;
+
+/** Evento con identificador único y creciente dentro de la sesión. */
+export type Logged<T> = T & { seq: number };
 
 export interface StrikeRecord extends StrikeEvent {
   /** Identificador único y creciente dentro de la sesión. */
@@ -37,8 +41,15 @@ export class GameSession {
   readonly strikeLog: StrikeRecord[] = [];
   /** Edificios retirados del estado; solo sirven al colapso visual y no forman parte de la lógica. */
   readonly destroyedLog: DestroyedRecord[] = [];
+  /** Eventos para el audio; no forman parte del estado ni del hash. */
+  readonly deathLog: Logged<DeathEvent>[] = [];
+  readonly spawnLog: Logged<SpawnEvent>[] = [];
+  readonly workLog: Logged<WorkEvent>[] = [];
   private strikeSeq = 0;
   private destroyedSeq = 0;
+  private deathSeq = 0;
+  private spawnSeq = 0;
+  private workSeq = 0;
 
   private readonly stepper = new FixedStepper();
   private pending: Command[] = [];
@@ -88,12 +99,18 @@ export class GameSession {
     const commands = this.pending;
     this.pending = [];
     const started = this.tickObserver ? performance.now() : 0;
-    const { tick, results, strikes, destroyed } = stepSimulation(this.state, commands);
+    const { tick, results, strikes, destroyed, deaths, spawns, works } = stepSimulation(this.state, commands);
     this.tickObserver?.(performance.now() - started);
     for (const strike of strikes) this.strikeLog.push({ ...strike, id: ++this.strikeSeq });
     if (this.strikeLog.length > STRIKE_LOG_LIMIT) this.strikeLog.splice(0, this.strikeLog.length - STRIKE_LOG_LIMIT);
     for (const event of destroyed) this.destroyedLog.push({ ...event, seq: ++this.destroyedSeq });
     if (this.destroyedLog.length > DESTROYED_LOG_LIMIT) this.destroyedLog.splice(0, this.destroyedLog.length - DESTROYED_LOG_LIMIT);
+    for (const event of deaths) this.deathLog.push({ ...event, seq: ++this.deathSeq });
+    for (const event of spawns) this.spawnLog.push({ ...event, seq: ++this.spawnSeq });
+    for (const event of works) this.workLog.push({ ...event, seq: ++this.workSeq });
+    for (const log of [this.deathLog, this.spawnLog, this.workLog]) {
+      if (log.length > AUDIO_LOG_LIMIT) log.splice(0, log.length - AUDIO_LOG_LIMIT);
+    }
     for (const command of commands) {
       const result = results.find((r) => r.commandId === command.id);
       if (result) this.commandLog.push({ appliedTick: tick, command, result });

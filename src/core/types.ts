@@ -231,6 +231,40 @@ export interface StepResult {
   strikes: StrikeEvent[];
   /** Edificios que dejaron el estado lógico en este tick; solo los consume la vista (colapso visual). */
   destroyed: BuildingDestroyedEvent[];
+  /** Eventos de salida para el audio; no forman parte del estado ni del hash. */
+  deaths: DeathEvent[];
+  spawns: SpawnEvent[];
+  works: WorkEvent[];
+}
+
+/** Unidad retirada por vida cero, en su posición final. */
+export interface DeathEvent {
+  tick: number;
+  id: EntityId;
+  owner: PlayerId;
+  kind: UnitKind;
+  pos: Vec2;
+}
+
+/** Unidad entrenada que acaba de entrar al estado. */
+export interface SpawnEvent {
+  tick: number;
+  buildingId: EntityId;
+  unitId: EntityId;
+  owner: PlayerId;
+  kind: UnitKind;
+  pos: Vec2;
+}
+
+export type WorkKind = "build" | "wood" | "stone" | "food";
+
+/** Un golpe de trabajo efectivo: obra cada 10 ticks o un recurso recolectado. */
+export interface WorkEvent {
+  tick: number;
+  unitId: EntityId;
+  owner: PlayerId;
+  kind: WorkKind;
+  pos: Vec2;
 }
 
 /** Instantánea de un edificio retirado por vida cero. */
@@ -251,6 +285,7 @@ export interface StrikeEvent {
   /** `"tower"` para disparos de torre: usan el mismo arma (flecha) que el arquero. */
   attackerKind: UnitKind | "tower";
   targetId: EntityId;
+  targetOwner: PlayerId;
   from: Vec2;
   to: Vec2;
 }

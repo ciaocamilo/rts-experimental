@@ -747,6 +747,16 @@ export class SceneView {
     return { x: rect.left + ((v.x + 1) / 2) * rect.width, y: rect.top + ((1 - v.y) / 2) * rect.height };
   }
 
+  /** Función que proyecta un punto del suelo a coordenadas normalizadas de pantalla (−1 a 1); se pide una vez por cuadro. */
+  projector(): (x: number, z: number) => { x: number; y: number } {
+    this.applyRig();
+    const v = new THREE.Vector3();
+    return (x, z) => {
+      v.set(x, 0, z).project(this.camera);
+      return { x: v.x, y: v.y };
+    };
+  }
+
   render(): void {
     const now = performance.now();
     const dt = this.lastRender === null ? 0 : Math.min(0.1, (now - this.lastRender) / 1000);
