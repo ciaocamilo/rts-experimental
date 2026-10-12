@@ -84,8 +84,8 @@ export const BALANCE: Balance = {
   economy: { harvestIntervalTicks: 20, carryCapacity: 10, queueLimit: 5, cancelRefundRatio: 0.75, siteInitialHpRatio: 0.1 },
   combat: { acquireRange: 6, leashRange: 8 },
   units: {
-    // El aldeano solo golpea en defensa propia (cuerpo a cuerpo, débil); nunca adquiere ni recibe órdenes de ataque.
-    villager: { cost: { food: 50, wood: 0, stone: 0 }, trainTicks: s(10), hp: 40, speedCellsPerSec: 2.5, damage: 3, attackIntervalTicks: s(1.5), range: 0.5, radius: 0.3 },
+    // El aldeano golpea cuerpo a cuerpo (débil) en defensa propia o por orden expresa; nunca adquiere objetivos solo.
+    villager: { cost: { food: 50, wood: 0, stone: 0 }, trainTicks: s(10), hp: 40, speedCellsPerSec: 2.5, damage: 5, attackIntervalTicks: s(1.5), range: 0.5, radius: 0.3 },
     soldier: { cost: { food: 60, wood: 20, stone: 0 }, trainTicks: s(12), hp: 100, speedCellsPerSec: 2.5, damage: 10, attackIntervalTicks: s(1), range: 0.5, radius: 0.3 },
     archer: { cost: { food: 40, wood: 50, stone: 0 }, trainTicks: s(15), hp: 60, speedCellsPerSec: 2.5, damage: 8, attackIntervalTicks: s(1.5), range: 5, radius: 0.3 },
   },

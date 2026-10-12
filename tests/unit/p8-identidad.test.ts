@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { CUES } from "../../src/audio/voices";
 import { BALANCE } from "../../src/content/balance";
 import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH, homeView } from "../../src/content/map";
 import { BALANCE_VERSION, GAME_CREDIT, GAME_NAME, GAME_SUBTITLE } from "../../src/content/versions";
@@ -36,7 +37,7 @@ function contrast(a: string, b: string, factorA = 1): number {
 
 describe("P8 vida de centros urbanos y torres", () => {
   it("el balance duplica la vida y el estado inicial la refleja en ambos bandos", () => {
-    expect(BALANCE_VERSION).toBe("balance-0.6");
+    expect(BALANCE_VERSION).toBe("balance-0.7");
     expect(BALANCE.buildings.townCenter.hp).toBe(3000);
     expect(BALANCE.buildings.tower.hp).toBe(1600);
     const state = createInitialState(1);
@@ -48,6 +49,19 @@ describe("P8 vida de centros urbanos y torres", () => {
       for (const b of centers) expect(b.hp).toBe(3000);
       for (const b of towers) expect(b.hp).toBe(1600);
     }
+  });
+});
+
+describe("P8 aldeano: daño y sonidos", () => {
+  it("el aldeano golpea con 5 y sigue siendo el más débil de los combatientes", () => {
+    expect(BALANCE.units.villager.damage).toBe(5);
+    expect(BALANCE.units.villager.damage).toBeLessThan(BALANCE.units.archer.damage);
+    expect(BALANCE.units.villager.damage).toBeLessThan(BALANCE.units.soldier.damage);
+  });
+
+  it("el puñetazo y la creación de unidades se oyen más fuerte que antes", () => {
+    expect(CUES.blow.gain).toBeGreaterThan(0.6);
+    expect(CUES.door.gain).toBeGreaterThanOrEqual(1.3);
   });
 });
 
@@ -87,7 +101,7 @@ describe("P8 ataque y alcance en la ficha", () => {
 
   it("las unidades muestran el ataque y el alcance de su balance", () => {
     const villager = state.units.find((u) => u.kind === "villager")!;
-    expect(info(villager.id).combat).toEqual({ attack: 3, range: null });
+    expect(info(villager.id).combat).toEqual({ attack: BALANCE.units.villager.damage, range: null });
     const soldier = { ...villager, id: 9001, kind: "soldier" as const };
     const archer = { ...villager, id: 9002, kind: "archer" as const };
     const armed = { ...state, units: [...state.units, soldier, archer] } as GameState;

@@ -100,6 +100,16 @@ describe("banco de efectos", () => {
     expect(seconds("fire")).toBeGreaterThanOrEqual(5.5);
   });
 
+  it("el puñetazo del aldeano tiene un soplo breve y el impacto fuerte justo después, sin cola larga", () => {
+    const sr = bank.blow.sampleRate;
+    for (const v of bank.blow.variants) {
+      expect(v.length / sr).toBeLessThanOrEqual(0.35);
+      const window = (from: number, to: number): number => peak(v.subarray(Math.round(from * sr), Math.round(to * sr)));
+      expect(window(0.04, 0.12)).toBeGreaterThan(window(0, 0.04) * 1.5);
+      expect(window(0.2, 0.3)).toBeLessThan(window(0.04, 0.12) * 0.3);
+    }
+  });
+
   it("la memoria total del banco queda por debajo de 7,5 MB (presupuesto de P6)", () => {
     let bytes = 0;
     for (const id of Object.keys(CUES) as CueId[]) for (const v of bank[id].variants) bytes += v.byteLength;

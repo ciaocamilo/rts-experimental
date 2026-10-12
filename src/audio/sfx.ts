@@ -115,15 +115,19 @@ function arrowHit(variant: number, rng: Rng): Float32Array {
   addInto(out, bandNoise(rng, n, sr, 1800, 1, 0.003), 0, 0.4);
   return finish(out, sr);
 }
-/** Golpe sordo del aldeano: carne y tela con un cuerpo de madera, sin resonancia metálica. */
+/** Puñetazo del aldeano: soplo breve del brazo, impacto seco de carne con cuerpo grave y sin resonancia metálica. */
 function blow(variant: number, rng: Rng): Float32Array {
   const sr = HI;
   const out = makeBuffer(0.3, sr);
   const n = out.length;
-  addInto(out, thump(170 - variant * 25, 90, 0.2, sr, 0.05), 0, 1);
-  addInto(out, lowNoise(rng, n, sr, 700, 0.02), 0, 0.7);
-  addInto(out, bandNoise(rng, n, sr, 1500, 1, 0.005), 0, 0.2);
-  addInto(out, modalBank([140 - variant * 12, 260, 410], [0.4, 0.25, 0.15], [0.05, 0.035, 0.025], 0.3, sr), 0, 0.5);
+  const hit = Math.round(0.045 * sr);
+  const air = filterSweep("bandpass", whiteNoise(rng, samples(0.06, sr)), sr, (t) => 700 + 1800 * Math.min(1, t / 0.05), 1.2);
+  addInto(out, multiply(air, pluckEnv(air.length, sr, 0.03, 0.02)), 0, 0.5);
+  addInto(out, thump(150 - variant * 18, 55, 0.2, sr, 0.045), hit, 1);
+  addInto(out, lowNoise(rng, n - hit, sr, 1100, 0.012), hit, 0.8);
+  addInto(out, bandNoise(rng, n - hit, sr, 2200 + 300 * variant, 1.2, 0.004), hit, 0.45);
+  addInto(out, modalBank([110 - variant * 8, 210, 330], [0.4, 0.25, 0.12], [0.05, 0.035, 0.025], 0.2, sr), hit, 0.45);
+  softClip(out, 1.3);
   return finish(out, sr);
 }
 
