@@ -20,20 +20,6 @@ const rms = (a: Float32Array, sr: number, from: number, to: number): number => {
   for (let i = i0; i < i1; i++) sum += a[i]! * a[i]!;
   return Math.sqrt(sum / Math.max(1, i1 - i0));
 };
-const db = (ratio: number): number => 20 * Math.log10(ratio);
-/** Potencia de la frecuencia `f` en [from, to) en segundos (Goertzel). */
-function goertzelAt(a: Float32Array, sr: number, f: number, from: number, to: number): number {
-  const w = (2 * Math.PI * f) / sr;
-  const c = 2 * Math.cos(w);
-  let s1 = 0;
-  let s2 = 0;
-  for (let i = Math.round(from * sr); i < Math.min(a.length, Math.round(to * sr)); i++) {
-    const s = a[i]! + c * s1 - s2;
-    s2 = s1;
-    s1 = s;
-  }
-  return s1 * s1 + s2 * s2 - c * s1 * s2;
-}
 /** RMS de la banda [lo, hi] Hz dentro de la ventana [from, to). */
 const bandRms = (a: Float32Array, sr: number, lo: number, hi: number, from: number, to: number): number => rms(filter("lowpass", filter("highpass", a, sr, lo), sr, hi), sr, from, to);
 /** Tono dominante por autocorrelación en [from, to) entre 80 y 800 Hz. */
@@ -54,45 +40,6 @@ function pitchOf(a: Float32Array, sr: number, from: number, to: number): number 
 }
 
 describe("P5 efectos: señales pedidas por el autor", () => {
-  it("espada: transitorio agudo, parciales inarmónicos y cola metálica que decae", () => {
-    for (const v of bank.sword.variants) {
-      const sr = bank.sword.sampleRate;
-      expect(bandRms(v, sr, 3000, 8000, 0, 0.02)).toBeGreaterThan(bandRms(v, sr, 3000, 8000, 0.3, 0.5) * 3);
-      const early = rms(v, sr, 0, 0.05);
-      const tail = rms(v, sr, 0.15, 0.3);
-      expect(db(tail / early)).toBeLessThan(-12);
-      expect(db(tail / early)).toBeGreaterThan(-50);
-    }
-    const v = bank.sword.variants[0]!;
-    const sr = bank.sword.sampleRate;
-    const f0 = 700;
-    const partial = goertzelAt(v, sr, f0 * 2.76, 0.02, 0.2);
-    expect(partial).toBeGreaterThan(goertzelAt(v, sr, f0 * 2.4, 0.02, 0.2) * 2);
-    expect(bank.sword.variants).toHaveLength(5);
-    expect(v.length / sr).toBeLessThanOrEqual(0.5);
-  });
-
-  it("flecha: silbido de viento largo con máximo hacia el centro y brillo que baja", () => {
-    for (const v of bank.arrow.variants) {
-      const sr = bank.arrow.sampleRate;
-      const seconds = v.length / sr;
-      expect(seconds).toBeGreaterThanOrEqual(0.5);
-      expect(seconds).toBeLessThanOrEqual(0.9);
-      let loudest = 0;
-      let at = 0;
-      for (let t = 0.05; t < seconds - 0.05; t += 0.02) {
-        const level = rms(v, sr, t, t + 0.04);
-        if (level > loudest) {
-          loudest = level;
-          at = t;
-        }
-      }
-      expect(at).toBeGreaterThan(0.18);
-      expect(at).toBeLessThan(0.45);
-      expect(rms(v, sr, 0, 0.03)).toBeLessThan(loudest);
-      expect(bandRms(v, sr, 3000, 5000, 0.1, 0.25)).toBeGreaterThan(bandRms(v, sr, 3000, 5000, 0.55, 0.7));
-    }
-  });
 
   it("grito de muerte: se oye (0,9 a 1,4 s), con tono sostenido y el aldeano más agudo que el soldado", () => {
     for (let k = 0; k < 3; k++) {

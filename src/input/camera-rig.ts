@@ -1,5 +1,5 @@
 export const ZOOM_MIN = 0.6;
-export const ZOOM_MAX = 3;
+export const ZOOM_MAX = 4.5;
 const PAN_SPEED = 30; // celdas/s con zoom 1
 
 export interface PanKeys {
@@ -46,6 +46,13 @@ export class CameraRig {
 
   zoomBy(wheelDeltaY: number): void {
     this.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, this.zoom * Math.exp(-wheelDeltaY * 0.001)));
+  }
+
+  /** Centra la cámara en un punto del mapa (limitado al mapa). */
+  centerOn(x: number, z: number): void {
+    this.x = x;
+    this.z = z;
+    this.clamp();
   }
 
   clamp(): void {

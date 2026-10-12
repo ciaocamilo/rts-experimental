@@ -6,7 +6,8 @@ Prototipo de estrategia en tiempo real (RTS) que se ejecuta en el navegador. Un 
 
 ## Resumen
 
-- **Partida 1 contra 1** sobre un mapa de 128x64 celdas con terreno, agua y rocas que forman pasos estrechos y un paso central.
+- **Partida 1 contra 1** sobre un mapa de 128x64 celdas con terreno, rocas y un río de lado a lado con un puente central (6 celdas) como único cruce. Cada bando parte con seis casas y dos torres ya construidas.
+- **Interfaz (etapa 6):** barra inferior con recursos, información de la selección, botones con icono y coste, y miniatura del mapa en tiempo real (clic o arrastre para mover la cámara); avisos temporales en pantalla; registros técnicos ocultos por defecto (tecla L o botón «Registros»); fuera del mapa todo es negro y hay más zoom.
 - **Aspecto (etapa 2):** edificios medievales (centro urbano, casa, cuartel), personajes humanoides por rol con animaciones de trabajo y combate, flechas cosméticas, vegetación y agua animada. Todo es procedural (sin recursos externos) y no altera las reglas.
 - **Barras de vida:** unidades y edificios de ambos bandos (incluidas las obras) muestran barra solo cuando 0 < vida < máxima.
 - **Daño visible:** los edificios completos muestran una llama más al bajar al 90 %, 75 %, 50 %, 25 % y 5 % de vida; las unidades caen al morir y su cuerpo desaparece a los 5 s. Es solo aspecto: no cambia las reglas.
@@ -22,7 +23,7 @@ Prototipo de estrategia en tiempo real (RTS) que se ejecuta en el navegador. Un 
 |---|---|
 | ![Multitud de 100 unidades](docs/images/multitud-100.png) | ![Escaramuza](docs/images/escaramuza.png) |
 
-Los bandos se distinguen por color y por una marca: disco blanco para el jugador (azul) y rombo oscuro para el rival (rojo).
+Los bandos se distinguen por color y por una marca de contorno: anillo blanco para el jugador (azul) y rombo oscuro hueco para el rival (rojo).
 
 ### Etapa 2: mejoras visuales
 
@@ -42,7 +43,8 @@ Novedades de la etapa: edificios y personajes procedurales por rol, animaciones 
 
 | Acción | Entrada |
 |---|---|
-| Cámara | WASD o flechas, o cursor en el borde de la pantalla (24 px, 1,5 veces más rápido); rueda para acercar o alejar |
+| Cámara | WASD o flechas, o cursor en el borde de la pantalla (24 px, 1,5 veces más rápido); rueda para acercar o alejar (hasta 4,5 veces); clic o arrastre en la miniatura |
+| Registros técnicos | Tecla L o botón «Registros» |
 | Seleccionar | Clic o arrastre; Shift suma o quita; Esc limpia |
 | Mover, recolectar, atacar, reanudar obra | Clic derecho según el objetivo |
 | Construir | Seleccionar aldeanos y usar el panel inferior |
@@ -69,10 +71,11 @@ Parámetros de URL útiles:
 | `?graphics=low` | Modo gráfico reducido (aspecto de P4): sin antialias, sombras, agua animada ni partículas, con menos decoración y flechas simples |
 | `?shadows=0` | Desactiva solo las sombras proyectadas del modo gráfico alto |
 | `?fixture=realismo&ai=0` | Escena para juzgar el realismo de P5: edificios en llamas, derrumbes de casa, cuartel y torre, unidades y agua al sur |
+| `?fixture=rio&ai=0` | Escena de P6: dos grupos de 20 unidades se cruzan por el puente y tres aldeanos intentan construir sobre el puente, junto a él y en la orilla |
 | `?fixture=corridor20`, `crossing`, `crowd100`, `skirmish` | Escenas de prueba de navegación y combate, sin IA |
 | `?fixture=objetivo` | Escena de carga con IA: 100 unidades, 20 edificios y combate |
 | `?audio=0` | Desactiva todo el audio |
-| `?fixture=sonidos&ai=0` | Escena breve para oír todos los efectos; añade `&final=victoria` o `&final=derrota` para oír los sonidos de fin de partida |
+| `?fixture=sonidos&ai=0` | Escena breve para oír todos los efectos (martillo, espada, flecha e impacto de flecha incluidos); añade `&final=victoria` o `&final=derrota` para oír los sonidos de fin de partida |
 
 ## Comandos
 
@@ -96,10 +99,10 @@ src/
   app/          Sesión de juego y bucle de ticks
   rendering/    Escena Three.js
   input/        Cámara y control de ratón y teclado
-  ui/           Panel de órdenes y mensajes
+  ui/           Panel de órdenes, avisos temporales y miniatura
   audio/        Efectos y música sintetizados con Web Audio (sin archivos de audio); solo lee los eventos de la simulación
   diagnostics/  Métricas de rendimiento e informe exportable
-python/policy/  Política de la IA (policy-0.2)
+python/policy/  Política de la IA (policy-0.4)
 contracts/      Esquemas y fixtures del contrato del worker
 tests/          Pruebas unitarias, de integración y de escenarios
 ```
@@ -127,7 +130,7 @@ Medición en un equipo con Ryzen 5 5600H y RTX 3050, Chromium, 1366x768, escena 
 
 Las mediciones de rendimiento son anteriores a la etapa 2 y no se han repetido con el nuevo aspecto.
 
-Pruebas: 319 de TypeScript y 54 de Python.
+Pruebas: 369 de TypeScript y 59 de Python.
 
 ## Limitaciones conocidas
 
@@ -135,4 +138,4 @@ Pruebas: 319 de TypeScript y 54 de Python.
 - El audio es procedural y su mezcla está pendiente de la valoración auditiva del autor; el navegador solo lo activa tras el primer clic o tecla.
 - Existe un único nivel de IA; no se ha medido la dificultad ni la diversión.
 - La escena `objetivo` pierde unidades durante el combate, así que los p95 cubren toda la medición y no solo el pico de 100 unidades.
-- Fuera de alcance por ahora: mantener posición, mover atacando, niebla de guerra y minimapa. Cada uno requiere su propia especificación.
+- Fuera de alcance por ahora: mantener posición, mover atacando y niebla de guerra. Cada uno requiere su propia especificación.

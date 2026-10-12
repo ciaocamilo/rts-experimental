@@ -18,12 +18,14 @@ import { PerfRecorder } from "./diagnostics/recorder";
 import { buildReport } from "./diagnostics/report";
 import { CameraRig } from "./input/camera-rig";
 import { InputController } from "./input/controller";
-import { clearSelection, describeEntity, emptySelection, pruneSelection } from "./input/selection";
+import { clearSelection, emptySelection, pruneSelection } from "./input/selection";
 import { SceneView } from "./rendering/scene-view";
 import { CommandPanel } from "./ui/command-panel";
-import { describeResult } from "./ui/messages";
+import { describeResult, REJECT_TEXT, toastKind } from "./ui/messages";
+import { Minimap } from "./ui/minimap";
+import { ToastCenter } from "./ui/toasts";
 
-const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos", "realismo"];
+const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos", "realismo", "rio"];
 
 function supported(): boolean {
   if (typeof Worker === "undefined" || typeof WebAssembly === "undefined") return false;
@@ -83,6 +85,19 @@ function start(): void {
   const view = new SceneView(el<HTMLCanvasElement>("view"), MAP_WIDTH, MAP_DEPTH, rig, quality, params.get("shadows") !== "0");
   const hud = el("hud");
   const overlay = el("overlay");
+  const toasts = new ToastCenter(el("toasts"));
+  const resourceBar = { food: el("res-food"), wood: el("res-wood"), stone: el("res-stone"), pop: el("res-pop") };
+  const setText = (node: HTMLElement, text: string): void => {
+    if (node.textContent !== text) node.textContent = text;
+  };
+  const logsButton = el<HTMLButtonElement>("btn-logs");
+  // Los registros arrancan ocultos en cada carga; el estado no se guarda.
+  let logsVisible = false;
+  const setLogs = (visible: boolean): void => {
+    logsVisible = visible;
+    hud.classList.toggle("visible", visible);
+    logsButton.setAttribute("aria-pressed", String(visible));
+  };
   const pauseButton = el<HTMLButtonElement>("btn-pause");
   const selection = emptySelection();
   let session = newSession();
@@ -143,6 +158,12 @@ function start(): void {
         ? "Audio: error, desactivado"
         : `Audio: ${engine.status} · voces ${engine.activeVoices} · descartados ${engine.droppedVoices} · fuego ${engine.fireLoops} · música ${engine.music}`;
 
+  /** Aviso temporal en pantalla; el último texto también queda en el panel de registros. */
+  function notify(text: string): void {
+    message = text;
+    toasts.show(text, toastKind(text));
+  }
+
   const controller = new InputController(
     el<HTMLCanvasElement>("view"),
     view,
@@ -150,9 +171,9 @@ function start(): void {
     {
       getSession: () => session,
       selection,
-      message: (text) => {
-        message = text;
-      },
+      notify,
+      sticky: (id, text) => toasts.showSticky(id, text),
+      clearSticky: (id) => toasts.clear(id),
       onOrder: (id) => {
         pendingOrder = id;
         message = "Orden enviada…";
@@ -164,19 +185,25 @@ function start(): void {
   /** Orden desde el panel: mismo canal y mensajes que las órdenes del ratón. */
   const panelOrder = (partial: Pick<Command, "type" | "entityIds" | "target" | "kind">): void => {
     if (session.paused) {
-      message = "En pausa: reanude para dar órdenes";
+      notify("En pausa: reanude para dar órdenes");
       return;
     }
     pendingOrder = session.issue({ ...partial, player: 0 });
     message = "Orden enviada…";
   };
   const panel = new CommandPanel(el("panel"), {
-    build: (kind) => controller.beginPlacement(kind),
+    build: (kind) => {
+      const { cost } = BALANCE.buildings[kind];
+      const p = session.state.players[0];
+      if (!session.paused && (p.food < cost.food || p.wood < cost.wood || p.stone < cost.stone)) return notify(`Orden rechazada: ${REJECT_TEXT.INSUFFICIENT_RESOURCES}`);
+      controller.beginPlacement(kind);
+    },
     train: (id, kind) => panelOrder({ type: "Train", entityIds: [id], kind }),
     cancelTraining: (id, item) => panelOrder({ type: "CancelTraining", entityIds: [id], target: { entityId: item } }),
     cancelBuild: (id) => panelOrder({ type: "CancelBuild", entityIds: [id] }),
     stop: (ids) => panelOrder({ type: "Stop", entityIds: ids }),
-  });
+  }, el("info"));
+  const minimap = new Minimap(el<HTMLCanvasElement>("minimap"), MAP_WIDTH, MAP_DEPTH, { centerOn: (x, z) => rig.centerOn(x, z) });
 
   const outcomeText = (): string => {
     const outcome = session.state.outcome;
@@ -248,21 +275,21 @@ function start(): void {
     if (pendingOrder !== null) {
       const entry = [...session.commandLog].reverse().find((e) => e.command.id === pendingOrder);
       if (entry) {
-        message = describeResult(entry.result, entry.command.type);
+        notify(describeResult(entry.result, entry.command.type));
         pendingOrder = null;
       }
     }
 
     const p = s.players[0];
-    const selected = selection.units.size;
-    const inspected = selection.inspected !== null ? describeEntity(s, selection.inspected) : "";
-    const first = selected === 1 ? describeEntity(s, [...selection.units][0]!) : "";
-    const living = livingOf(s, 0);
     const reserved = reservedOf(s, 0);
-    hud.textContent =
+    setText(resourceBar.food, String(p.food));
+    setText(resourceBar.wood, String(p.wood));
+    setText(resourceBar.stone, String(p.stone));
+    setText(resourceBar.pop, `${livingOf(s, 0)}${reserved > 0 ? ` (+${reserved})` : ""} / ${p.popCapacity}`);
+    toasts.update();
+    if (logsVisible)
+      hud.textContent =
       `Tick ${s.tick}/${TICKS_PER_SECOND * 1200}  hash ${hashState(s)}\n` +
-      `Jugador: alimento ${p.food}  madera ${p.wood}  piedra ${p.stone}  población ${living}${reserved > 0 ? ` (+${reserved} en cola)` : ""}/${p.popCapacity}\n` +
-      `Selección: ${selected} unidad(es) ${first}${inspected ? `  Inspección: ${inspected}` : ""}\n` +
       `${message}\n` +
       `${aiLine()}\n` +
       `${perfText}\n` +
@@ -275,6 +302,7 @@ function start(): void {
     panel.refresh(s, selection, controller.placing, session.paused);
 
     view.setSelection(selection.units, selection.inspected);
+    minimap.draw(s, view.viewFootprint());
     view.sync(s, { frozen: session.paused || s.matchStatus === "ended", paused: session.paused, strikes: session.strikeLog, destroyed: session.destroyedLog });
     if (audio && engine && !audioFault) {
       // Un fallo del audio nunca detiene ni pausa la partida.
@@ -300,6 +328,7 @@ function start(): void {
       session.pause();
       ai?.director.suspend();
       message = `Error inesperado: ${text}. Partida pausada; puede reiniciar.`;
+      toasts.show(message, "error");
       refreshOverlay();
     }
   };
@@ -342,6 +371,7 @@ function start(): void {
     controller.cancelPlacement();
     pendingOrder = null;
     message = "";
+    toasts.clearAll();
     refreshOverlay();
   });
   document.addEventListener("visibilitychange", () => {
@@ -352,6 +382,7 @@ function start(): void {
     }
   });
   window.addEventListener("resize", () => view.resize());
+  setLogs(false);
 
   const help = el("help");
   const toggleHelp = (): void => {
@@ -359,8 +390,11 @@ function start(): void {
   };
   el("btn-help").addEventListener("click", toggleHelp);
   el("help-close").addEventListener("click", toggleHelp);
+  logsButton.addEventListener("click", () => setLogs(!logsVisible));
   window.addEventListener("keydown", (event) => {
-    if ((event.key === "h" || event.key === "H") && !event.ctrlKey && !event.metaKey && !event.altKey) toggleHelp();
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.key === "h" || event.key === "H") toggleHelp();
+    else if (event.key === "l" || event.key === "L") setLogs(!logsVisible);
   });
 
   el("btn-export").addEventListener("click", () => {
@@ -378,7 +412,7 @@ function start(): void {
     link.download = `rts-diagnostico-tick${session.state.tick}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    message = "Diagnóstico exportado";
+    notify("Diagnóstico exportado");
   });
 
   window.addEventListener("error", (event) => fail(event.error ?? event.message));

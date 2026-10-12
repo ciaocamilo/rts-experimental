@@ -95,10 +95,31 @@ export class Materials {
     this.dryBush = l(0x6b5a3a);
     this.team = [l(OWNER_COLORS[0]), l(OWNER_COLORS[1])];
     this.flag = [l(OWNER_COLORS[0], undefined, { side: THREE.DoubleSide }), l(OWNER_COLORS[1], undefined, { side: THREE.DoubleSide })];
-    // Marca independiente del color (RF-10): disco blanco para el jugador, rombo oscuro para el rival.
+    // Marca independiente del color (RF-10): anillo blanco para el jugador, rombo hueco oscuro para el rival.
     this.mark = [a.basic({ color: 0xffffff }), a.basic({ color: 0x111111 })];
     this.shadow = a.basic({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });
   }
+}
+
+/** Grosor del contorno de las marcas: 25 % del radio exterior, nunca menor de 0,05. */
+function markThickness(outer: number): number {
+  return Math.max(0.05, outer * 0.25);
+}
+
+/** Anillo plano (solo contorno) de radio exterior `outer`, tumbado sobre el suelo. */
+export function ringMarkGeometry(outer: number): THREE.BufferGeometry {
+  return new THREE.RingGeometry(outer - markThickness(outer), outer, 20).rotateX(-Math.PI / 2);
+}
+
+/** Rombo plano hueco de semidiagonal `outer`; el grosor se mide perpendicular a los lados. */
+export function rhombusMarkGeometry(outer: number): THREE.BufferGeometry {
+  const inner = outer - markThickness(outer) * Math.SQRT2;
+  const shape = new THREE.Shape();
+  shape.moveTo(outer, 0).lineTo(0, outer).lineTo(-outer, 0).lineTo(0, -outer).closePath();
+  const hole = new THREE.Path();
+  hole.moveTo(inner, 0).lineTo(0, -inner).lineTo(-inner, 0).lineTo(0, inner).closePath();
+  shape.holes.push(hole);
+  return new THREE.ShapeGeometry(shape).rotateX(-Math.PI / 2);
 }
 
 /** Caja con UV proporcionales a su tamaño para que las texturas repetidas no se estiren. */

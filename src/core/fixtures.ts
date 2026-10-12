@@ -3,7 +3,7 @@ import { BALANCE } from "../content/balance";
 import { addBuilding, addTerrain, addUnit, createEmptyState, createInitialState } from "./state";
 import type { Command, EntityId, GameState, PlayerId } from "./types";
 
-export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa" | "sonidos" | "realismo";
+export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa" | "sonidos" | "realismo" | "rio";
 
 export interface Fixture {
   state: GameState;
@@ -35,7 +35,7 @@ function gather(id: EntityId, nodeId: EntityId, player: PlayerId): Command {
 
 /** Escena objetivo de RNF-01/02: 100 unidades, 20 edificios, 40 militares combatiendo, 20 aldeanos recolectando y 40 en marcha. */
 function createTargetScene(): Fixture {
-  const state = createInitialState(1);
+  const state = createInitialState(1, false);
   const commands: Command[] = [];
   const nodesOf = (kind: "food" | "wood", owner: PlayerId) =>
     state.resourceNodes.filter((n) => n.kind === kind && (owner === 0 ? n.cell.x < MAP_WIDTH / 2 : n.cell.x >= MAP_WIDTH / 2));
@@ -85,7 +85,7 @@ function command(partial: Omit<Command, "id" | "seq" | "tick">): Command {
  * Con `final` la escena se reduce a un centro urbano con vida mínima junto a un atacante.
  */
 function createSoundScene(final?: FinalOption): Fixture {
-  const state = createInitialState(1);
+  const state = createInitialState(1, false);
   const commands: Command[] = [];
   const tc = (owner: PlayerId) => state.buildings.find((b) => b.owner === owner && b.kind === "townCenter")!;
 
@@ -189,7 +189,7 @@ function createSoundScene(final?: FinalOption): Fixture {
  * derrumbes (casa, cuartel y torre) y un grupo de unidades junto a la cámara inicial; el agua queda al borde inferior.
  */
 function createRealismScene(): Fixture {
-  const state = createInitialState(1);
+  const state = createInitialState(1, false);
   const commands: Command[] = [];
   const burning = (kind: "house" | "barracks" | "tower", x: number, z: number, ratio: number): void => {
     const b = addBuilding(state, 0, kind, x, z);
@@ -222,15 +222,38 @@ function createRealismScene(): Fixture {
   return { state, commands, groups: [] };
 }
 
+/**
+ * Banco de pruebas de P6 para el río y el puente: dos grupos de 20 unidades se cruzan por el puente y tres aldeanos
+ * intentan construir sobre el puente (rechazado), junto a él en el agua (rechazado) y en la orilla pegada a la rampa (aceptado).
+ */
+function createRiverScene(): Fixture {
+  const state = createInitialState(1, false);
+  const west = block(state, 5, 20, 50, 29.2);
+  const east: EntityId[] = [];
+  for (let i = 0; i < 20; i++) east.push(addUnit(state, 0, "soldier", 78 - (i % 5) * 0.8, 29.2 + Math.floor(i / 5) * 0.8).id);
+  const commands = [move(west, 76, 32), move(east, 52, 32)];
+  const builders: [number, number][] = [
+    [62, 31],
+    [62, 26],
+    [59, 31],
+  ];
+  builders.forEach(([x, z], i) => {
+    const villager = addUnit(state, 0, "villager", 56, 37 + i);
+    commands.push(command({ player: 0, type: "Build", entityIds: [villager.id], kind: "house", target: { x, z } }));
+  });
+  return { state, commands, groups: [west, east] };
+}
+
 /** Escenarios de P0-B (§6): corredor de 3 celdas, cruce de grupos y carga de 100 unidades. */
 export function createFixture(name: FixtureName, options: { final?: FinalOption } = {}): Fixture {
   seq = 0;
   if (name === "objetivo") return createTargetScene();
+  if (name === "rio") return createRiverScene();
   if (name === "realismo") return createRealismScene();
   if (name === "sonidos") return createSoundScene(options.final);
   if (name === "defensa") {
     // Banco de pruebas manual de P3 (sin IA) junto a la cámara inicial: torre que dispara, unidades tras un cuartel y un edificio que cae.
-    const state = createInitialState(1);
+    const state = createInitialState(1, false);
     addBuilding(state, 0, "tower", 24, 24);
     addBuilding(state, 0, "barracks", 22, 34);
     const front = addUnit(state, 0, "soldier", 23.5, 32.4);

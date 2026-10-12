@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { BuildingKind } from "../content/balance";
 import type { AssetLibrary } from "./assets";
 import { mergeParts, type Part } from "./merge";
-import { gableRoof, type Materials, texBox, VISUAL } from "./models";
+import { gableRoof, type Materials, rhombusMarkGeometry, ringMarkGeometry, texBox, VISUAL } from "./models";
 
 export interface BuildingRig {
   root: THREE.Group;
@@ -210,8 +210,8 @@ function build(kind: BuildingKind, owner: 0 | 1, mat: Materials, cache: Geometry
   roof.position.y = foundationTop + wallsHeight;
   scaffold.visible = false;
 
-  // Marca de bando independiente del color: disco blanco (jugador) o rombo oscuro (rival).
-  const markGeo = cache.get(owner === 0 ? "bm:disc" : "bm:rhombus", () => (owner === 0 ? new THREE.CylinderGeometry(0.28, 0.28, 0.03, 14) : new THREE.BoxGeometry(0.42, 0.03, 0.42).rotateY(Math.PI / 4)));
+  // Marca de bando independiente del color: anillo blanco (jugador) o rombo hueco oscuro (rival).
+  const markGeo = cache.get(owner === 0 ? "bm:ring" : "bm:rhombus", () => (owner === 0 ? ringMarkGeometry(0.28) : rhombusMarkGeometry(0.297)));
   const mark = new THREE.Mesh(markGeo, mat.mark[owner]);
   mark.position.set(footprint * 0.45 - 0.25, 0.02, footprint * 0.45 + 0.1);
   mark.scale.setScalar(footprint >= 4 ? 1.4 : 1);

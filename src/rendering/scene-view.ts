@@ -13,6 +13,7 @@ import { buildBushGeometries, buildTreeGeometries, Materials, VISUAL } from "./m
 import { NodeFactory, type NodeRig, setNodeSpent } from "./nodes";
 import { computePose, deathPose, deathState, type WorkKind } from "./pose";
 import { TerrainView } from "./terrain-view";
+import { type BridgeRect, walkHeight } from "./bridge";
 import { applyDeath, applyPose, UnitFactory, type UnitRig } from "./units";
 
 const CAMERA_OFFSET = new THREE.Vector3(60, 70, 60);
@@ -163,6 +164,7 @@ export class SceneView {
   private mapDepth: number;
   private markerStart = -Infinity;
   private terrainKey = "";
+  private bridges: BridgeRect[] = [];
   private selected: ReadonlySet<number> = new Set();
   private inspected: number | null = null;
   private animTime = 0;
@@ -179,7 +181,7 @@ export class SceneView {
     this.quality = quality;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: quality === "high", stencil: true });
     this.renderer.setPixelRatio(1);
-    this.scene.background = new THREE.Color(0x203420);
+    this.scene.background = new THREE.Color(0x000000);
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 700);
 
     this.lighting = new Lighting(this.renderer, this.scene, quality, shadows, mapWidth, mapDepth);
@@ -232,8 +234,8 @@ export class SceneView {
   }
 
   resize(): void {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const w = this.canvas.clientWidth || window.innerWidth;
+    const h = this.canvas.clientHeight || window.innerHeight;
     this.renderer.setSize(w, h, false);
     const aspect = w / h;
     const half = this.viewHeight / 2;
@@ -332,6 +334,7 @@ export class SceneView {
     const key = `${state.mapWidth}x${state.mapDepth}:${state.terrain.length}`;
     if (key === this.terrainKey) return;
     this.terrainKey = key;
+    this.bridges = state.terrain.filter((t) => t.kind === "bridge");
     this.terrain.build(state.mapWidth, state.mapDepth, state.terrain);
   }
 
@@ -510,7 +513,7 @@ export class SceneView {
       }
       ring.material = id === this.inspected ? this.inspectMaterial : this.ringMaterial;
       ring.scale.set(entry.ringScale, 1, entry.ringScale);
-      ring.position.set(entry.root.position.x, 0.06, entry.root.position.z);
+      ring.position.set(entry.root.position.x, 0.06 + entry.root.position.y, entry.root.position.z);
     }
   }
 
@@ -541,7 +544,7 @@ export class SceneView {
         this.bars.set(id, bar);
       }
       bar.group.visible = true;
-      bar.group.position.set(entry.root.position.x, entry.barY, entry.root.position.z);
+      bar.group.position.set(entry.root.position.x, entry.barY + entry.root.position.y, entry.root.position.z);
       bar.group.quaternion.copy(this.camera.quaternion);
       bar.group.scale.set(entry.barWidth, 1, 1);
       bar.fill.material = state.ratio > 0.5 ? this.barFills[0] : state.ratio > 0.25 ? this.barFills[1] : this.barFills[2];
@@ -565,7 +568,7 @@ export class SceneView {
         entry.pos.x += dx * follow;
         entry.pos.z += dz * follow;
       }
-      entry.root.position.set(entry.pos.x, 0, entry.pos.z);
+      entry.root.position.set(entry.pos.x, walkHeight(entry.pos.x, entry.pos.z, this.bridges), entry.pos.z);
       let delta = entry.heading - entry.yaw;
       delta = Math.atan2(Math.sin(delta), Math.cos(delta));
       entry.yaw += delta * turn;
@@ -759,6 +762,18 @@ export class SceneView {
     return { x: point.x, z: point.z };
   }
 
+  /** Las cuatro esquinas de la vista proyectadas sobre el suelo (y = 0), en orden horario desde arriba a la izquierda. */
+  viewFootprint(): { x: number; z: number }[] {
+    this.applyRig();
+    const out: { x: number; z: number }[] = [];
+    for (const [nx, ny] of [[-1, 1], [1, 1], [1, -1], [-1, -1]] as const) {
+      this.raycaster.setFromCamera(new THREE.Vector2(nx, ny), this.camera);
+      const p = this.raycaster.ray.intersectPlane(this.groundPlane, new THREE.Vector3());
+      if (p) out.push({ x: p.x, z: p.z });
+    }
+    return out;
+  }
+
   /** Posición en píxeles de cliente de un punto del mundo. */
   screenPosition(x: number, y: number, z: number): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
@@ -788,7 +803,7 @@ export class SceneView {
     this.animateBodies();
     this.animateCollapses(this.fxPaused ? 0 : dt);
     this.collapseFx?.update(this.fxPaused ? 0 : dt);
-    PARTICLE_SCALE.value = window.innerHeight / (this.viewHeight / this.rig.zoom);
+    PARTICLE_SCALE.value = (this.canvas.clientHeight || window.innerHeight) / (this.viewHeight / this.rig.zoom);
     this.animateFlames();
     this.arrows.update(this.animTime);
     this.terrain.update(this.animTime);

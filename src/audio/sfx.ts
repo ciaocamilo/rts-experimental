@@ -2,6 +2,7 @@ import {
   addInto,
   brownNoise,
   chirp,
+  combFilter,
   createRng,
   expEnv,
   fadeEdges,
@@ -14,6 +15,7 @@ import {
   modalBank,
   multiply,
   normalize,
+  pluckedString,
   pluckEnv,
   reverb,
   samples,
@@ -44,47 +46,75 @@ const smooth = (x: number): number => {
   return u * u * (3 - 2 * u);
 };
 
-/** Choque de espadas: transitorio agudo, resonancia metálica inarmónica doble y "shing" de rozamiento. */
+/** Parciales de dos hojas entre 1 y 9 kHz: barra libre (1; 2,76; 5,40; 8,93…) y placa (1,59; 3,16; 4,93; 6,70…). */
+const BAR_RATIOS = [1, 1.38, 1.83, 2.76, 3.34, 4.1, 5.4, 6.35, 7.4, 8.93];
+const PLATE_RATIOS = [1.12, 1.59, 2.2, 3.16, 3.9, 4.93, 5.8, 6.7, 7.6, 8.5];
+
+/** Tiempo de caída T60 de un parcial: 0,35 s en 1 kHz y 0,04 s en 9 kHz. */
+const bladeT60 = (f: number): number => 0.35 * Math.pow(0.04 / 0.35, Math.min(1, Math.max(0, (f - 1000) / 8000)));
+
+/** Una hoja: parciales inarmónicos cuya amplitud sube y cuyo decaimiento baja con la frecuencia. */
+function blade(base: number, ratios: readonly number[], seconds: number, sr: number): Float32Array {
+  const freqs = ratios.map((r) => base * r);
+  const amps = freqs.map((f) => 0.2 + 0.8 * Math.min(1, Math.max(0, (f - 1000) / 8000)));
+  const taus = freqs.map((f) => bladeT60(f) / 6.91);
+  return modalBank(freqs, amps, taus, seconds, sr);
+}
+
+/**
+ * Choque de espadas: transitorio de banda ancha, dos hojas inarmónicas desafinadas entre sí, "shing" de rozamiento
+ * con rizado de peine, golpe sordo de la guarda y, en las variantes impares, un segundo microimpacto.
+ */
 function sword(variant: number, rng: Rng): Float32Array {
   const sr = HI;
-  const seconds = 0.5;
+  const seconds = 0.7;
   const out = makeBuffer(seconds, sr);
   const n = out.length;
-  addInto(out, highNoise(rng, n, sr, 3000, 0.003), 0, 1);
-  const f0 = 700 + variant * 175;
-  const ratios = [1, 2.76, 5.4, 8.93];
-  const amps = [0.5, 0.55, 0.4, 0.25];
-  const taus = [0.1, 0.06, 0.04, 0.025];
-  addInto(out, modalBank(ratios.map((r) => f0 * r), amps, taus, seconds, sr), 0, 1);
-  addInto(out, modalBank(ratios.map((r) => f0 * 1.034 * r), amps, taus.map((t) => t * 0.8), seconds, sr), Math.round(0.004 * sr), 0.55);
-  const shing = multiply(filterSweep("bandpass", whiteNoise(rng, n), sr, (t) => 2000 + 4000 * Math.min(1, t / 0.12), 1.5), pluckEnv(n, sr, 0.01, 0.05));
-  addInto(out, shing, 0, 0.7);
-  addInto(out, thump(180 - variant * 10, 90, 0.1, sr, 0.03), 0, 0.6);
-  softClip(out, 1.4);
+  addInto(out, bandNoise(rng, n, sr, 5500, 0.5, 0.0012), 0, 2.5);
+  const base = 900 + 14 * variant;
+  addInto(out, blade(base, BAR_RATIOS, seconds, sr), 0, 0.16);
+  addInto(out, blade(base + rng.range(6, 30), PLATE_RATIOS, seconds, sr), 0, 0.12);
+  const length = samples(0.15, sr);
+  const rub = filterSweep("bandpass", whiteNoise(rng, length), sr, (t) => 2000 + 4000 * Math.min(1, t / 0.12), 1.5);
+  const shing = multiply(combFilter(rub, sr, 0.0003 + 0.00003 * variant, 0.8), pluckEnv(length, sr, 0.01, 0.04));
+  addInto(out, shing, 0, 1);
+  addInto(out, thump(200 - 12 * variant, 95, 0.08, sr, 0.01), 0, 0.6);
+  addInto(out, modalBank([500 + 55 * variant], [1], [0.005], 0.04, sr), 0, 0.4);
+  if (variant % 2 === 1) addInto(out, fadeEdges(out.slice(0, samples(0.12, sr)), 0, Math.round(0.03 * sr)), Math.round((0.012 + 0.007 * (variant >> 1)) * sr), Math.sqrt(0.45));
+  softClip(out, 1.3);
   return finish(out, sr);
 }
 
-/** Flecha en vuelo: silbido de viento que sube y baja con el paso, vibración de la pluma y chasquido de cuerda. */
+/** Disparo de flecha: cuerda amortiguada que baja de tono, golpe del brazo y un "fiit" breve de banda estrecha. */
 function arrow(variant: number, rng: Rng): Float32Array {
   const sr = HI;
-  const seconds = 0.75;
+  const seconds = 0.4;
   const out = makeBuffer(seconds, sr);
   const n = out.length;
-  const pass = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const u = Math.min(1, i / sr / seconds);
-    pass[i] = Math.pow(Math.sin(Math.PI * Math.pow(u, 0.75)), 1.6);
-  }
-  const whoosh = multiply(filterSweep("bandpass", whiteNoise(rng, n), sr, (t) => (3800 + 300 * variant) * Math.pow(0.32, Math.min(1, t / seconds)), 0.7), pass);
-  addInto(out, whoosh, 0, 1);
-  addInto(out, multiply(filter("lowpass", whiteNoise(rng, n), sr, 600), pass), 0, 0.7);
-  const flutter = multiply(filter("highpass", whiteNoise(rng, n), sr, 2500), pass);
-  for (let i = 0; i < n; i++) flutter[i]! *= 0.7 + 0.3 * Math.sin(2 * Math.PI * (55 + 8 * variant) * (i / sr));
-  addInto(out, flutter, 0, 0.35);
-  addInto(out, multiply(sine(140 * (1 + 0.12 * variant), 0.05, sr), expEnv(samples(0.05, sr), sr, 0.02)), 0, 0.5);
+  const k = variant;
+  const string = pluckedString([140 + 10 * k, 190 + 10 * k, 240 + 4 * k], [1, 0.6, 0.4], [0.035, 0.03, 0.025], 0.05, 0.06 + 0.012 * k, seconds, sr);
+  addInto(out, normalize(string, 1), 0, 1);
+  addInto(out, highNoise(rng, n, sr, 3000, 0.0008), 0, 0.5);
+  addInto(out, thump(110, 90, 0.06, sr, 0.01), 0, 0.6);
+  const duration = 0.12 + 0.026 * k;
+  const centre = 2200 + 200 * k;
+  const fiit = multiply(filterSweep("bandpass", whiteNoise(rng, n), sr, (t) => centre * (1 - 0.12 * Math.min(1, t / duration)), 8), pluckEnv(n, sr, 0.01, duration / 2.5));
+  addInto(out, normalize(fiit, 1), 0, 0.3);
   return finish(out, sr);
 }
 
+/** Impacto de flecha: madera seca con un golpe corto de cuerpo. */
+function arrowHit(variant: number, rng: Rng): Float32Array {
+  const sr = HI;
+  const seconds = 0.18;
+  const out = makeBuffer(seconds, sr);
+  const n = out.length;
+  const base = 400 + 60 * variant;
+  addInto(out, modalBank([base, base * 1.2, base * 1.34], [1, 0.6, 0.4], [0.02, 0.015, 0.012], seconds, sr), 0, 0.8);
+  addInto(out, thump(140, 100, 0.06, sr, 0.015), 0, 0.7);
+  addInto(out, bandNoise(rng, n, sr, 1800, 1, 0.003), 0, 0.4);
+  return finish(out, sr);
+}
 /** Golpe sordo del aldeano: carne y tela con un cuerpo de madera, sin resonancia metálica. */
 function blow(variant: number, rng: Rng): Float32Array {
   const sr = HI;
@@ -146,14 +176,32 @@ function bell(): Float32Array {
   return finish(out, sr);
 }
 
+/** Un golpe de martillo sobre madera: contacto, tabla con modos inarmónicos, cabeza metálica y cuerpo sordo. */
+function woodHit(variant: number, rng: Rng, sr: number, seconds: number): Float32Array {
+  const out = makeBuffer(seconds, sr);
+  const n = out.length;
+  const tone = 1 + rng.range(-0.08, 0.08);
+  addInto(out, highNoise(rng, n, sr, 3500, 0.0012), 0, 3);
+  const base = (285 + 9 * variant) * tone;
+  addInto(out, modalBank([1, 1.47, 2.09, 2.86, 3.6].map((r) => base * r), [0.5, 0.45, 0.38, 0.3, 0.25], [0.05, 0.04, 0.035, 0.03, 0.025], seconds, sr), 0, 0.5);
+  const head = (2500 + 120 * variant) * tone;
+  addInto(out, modalBank([head, head * 1.35], [1, 0.8], [0.015, 0.012], seconds, sr), 0, 1);
+  addInto(out, bandNoise(rng, n, sr, 3000, 0.5, 0.006), 0, 2.2);
+  addInto(out, thump(160 * tone, 95, 0.12, sr, 0.018), 0, 0.25);
+  return out;
+}
+
+/** Martillazo: seis variantes, dos golpes firmes, dos con un rebote suave y dos con doble golpe rápido. */
 function hammer(variant: number, rng: Rng): Float32Array {
   const sr = HI;
-  const out = makeBuffer(0.3, sr);
-  const n = out.length;
-  addInto(out, thump(1000 + variant * 110, 700, 0.25, sr, 0.03), 0, 0.8);
-  addInto(out, thump(900 + variant * 90, 650, 0.2, sr, 0.02), Math.round(0.06 * sr), 0.4);
-  addInto(out, bandNoise(rng, n, sr, 1800, 1.5, 0.008), 0, 0.6);
-  addInto(out, modalBank([180, 310, 520], [0.5, 0.35, 0.2], [0.06, 0.04, 0.03], 0.3, sr), 0, 0.5);
+  const seconds = 0.45;
+  const out = makeBuffer(seconds, sr);
+  addInto(out, woodHit(variant, rng, sr, seconds), 0, 1);
+  if (variant >= 2) {
+    const double = variant >= 4;
+    const at = double ? rng.range(0.11, 0.15) : rng.range(0.07, 0.11);
+    addInto(out, woodHit(variant, rng, sr, seconds), Math.round(at * sr), Math.sqrt(double ? 0.8 : 0.35));
+  }
   return finish(out, sr);
 }
 
@@ -352,6 +400,7 @@ export function buildSfxBank(seed = 1): SfxBank {
   return {
     sword: entry(HI, variantsOf(CUES.sword.variants, sword, seed + 1)),
     arrow: entry(HI, variantsOf(CUES.arrow.variants, arrow, seed + 2)),
+    arrowHit: entry(HI, variantsOf(CUES.arrowHit.variants, arrowHit, seed + 13)),
     blow: entry(HI, variantsOf(CUES.blow.variants, blow, seed + 3)),
     death: entry(LO, variantsOf(CUES.death.variants, death, seed + 4)),
     bell: entry(HI, [bell()]),

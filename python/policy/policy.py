@@ -1,4 +1,4 @@
-"""Política estratégica policy-0.3 (P3).
+"""Política estratégica policy-0.4 (P6).
 
 Función pura y sin estado: la misma observación produce los mismos comandos. No usa reloj ni azar.
 Prioridades, de mayor a menor: defender, reasignar aldeanos, casa, aldeanos, cuartel, torre, militares, ataque.
@@ -8,12 +8,16 @@ varios comandos del mismo lote no gastan dos veces lo mismo. Como máximo se emi
 Novedades de P3: recoge piedra y construye torres; solo ordena recolectar nodos a los que las unidades
 pueden llegar (así no repite órdenes que el núcleo rechazará con UNREACHABLE); y no saca de su defensa
 automática a los militares que ya están peleando (`defending`).
+
+Novedades de P6: el objetivo principal sigue siendo el centro urbano, pero la expedición ataca una torre
+enemiga completa que «vea» (a VISION_RADIUS celdas o menos de algún militar) si está más cerca del grupo
+que el centro urbano (motivo ATTACK_TOWER).
 """
 
 import math
 from collections import deque
 
-VERSION = "policy-0.3"
+VERSION = "policy-0.4"
 
 MAX_COMMANDS = 4
 MAX_ENTITIES = 100
@@ -23,7 +27,8 @@ FOOD_SHARE_PERCENT = 60
 MIN_VILLAGERS_FOR_BARRACKS = 6
 MIN_VILLAGERS_FOR_TOWER = 8
 STONE_WORKERS = 2
-MAX_TOWERS = 2
+MAX_TOWERS = 4
+VISION_RADIUS = 14
 HOUSE_FREE_SLOTS = 2
 VILLAGER_QUEUE_MAX = 1
 MILITARY_QUEUE_MAX = 1
@@ -241,6 +246,7 @@ def _attack(plan, military, enemy_units, enemy_buildings):
         return
     group = (sum(m["x"] for m in military) / len(military), sum(m["z"] for m in military) / len(military))
     foes = [e for e in enemy_units if e["kind"] in _MILITARY and _dist((e["x"], e["z"]), group) <= ENGAGE_RADIUS]
+    reason = "ATTACK"
     if foes:
         target = min(foes, key=lambda e: (_dist((e["x"], e["z"]), group), e["id"]))
     else:
@@ -253,11 +259,23 @@ def _attack(plan, military, enemy_units, enemy_buildings):
         if target is None:
             rest = sorted(enemy_units, key=lambda e: (_dist((e["x"], e["z"]), group), e["id"]))
             target = rest[0] if rest else None
+        seen = [
+            b
+            for b in enemy_buildings
+            if b["kind"] == "tower"
+            and b["complete"]
+            and min(_dist((m["x"], m["z"]), _center(b, plan.rules)) for m in military) <= VISION_RADIUS
+        ]
+        if seen and centers:
+            tower = min(seen, key=lambda b: (_dist(_center(b, plan.rules), group), b["id"]))
+            if _dist(_center(tower, plan.rules), group) < _dist(_center(centers[0], plan.rules), group):
+                target = tower
+                reason = "ATTACK_TOWER"
     if target is None:
         return
     ids = [m["id"] for m in military if m["target_id"] != target["id"]][:MAX_ENTITIES]
     if ids:
-        plan.emit({"type": "Attack", "entity_ids": ids, "payload": {"target_id": target["id"]}}, "ATTACK")
+        plan.emit({"type": "Attack", "entity_ids": ids, "payload": {"target_id": target["id"]}}, reason)
 
 
 def _assign_gatherers(plan, villagers, idle, nodes, tc_center, builders_busy, origin, stone_wanted):

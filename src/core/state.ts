@@ -59,7 +59,7 @@ export function createEmptyState(seed: number, mapWidth: number = MAP_WIDTH, map
   };
 }
 
-export function createInitialState(seed: number): GameState {
+export function createInitialState(seed: number, startBuildings = true): GameState {
   const state = createEmptyState(seed, MAP_LAYOUT.width, MAP_LAYOUT.depth);
   state.terrain = MAP_LAYOUT.terrain.map((t) => ({ ...t }));
 
@@ -73,6 +73,13 @@ export function createInitialState(seed: number): GameState {
 
   for (const node of MAP_LAYOUT.nodes) {
     addNode(state, node.kind, node.cell.x, node.cell.z, BALANCE.nodeAmount);
+  }
+
+  // Edificios iniciales de la etapa 6: se crean al final para conservar los ids de unidades y nodos.
+  // Los bancos de pruebas diseñados sobre el escenario anterior los omiten (`startBuildings = false`).
+  if (startBuildings) {
+    for (const b of MAP_LAYOUT.startBuildings) addBuilding(state, b.owner, b.kind, b.cell.x, b.cell.z);
+    for (const owner of [0, 1] as const satisfies readonly PlayerId[]) state.players[owner].popCapacity = capacityOf(state, owner);
   }
 
   return state;

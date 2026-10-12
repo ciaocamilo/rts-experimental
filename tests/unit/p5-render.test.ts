@@ -84,7 +84,7 @@ describe("P5 fixture y versiones", () => {
   });
 
   it("anuncia las versiones de la etapa", () => {
-    expect(GAME_VERSION).toBe("p5.0.0");
-    expect(GRAPHICS_VERSION).toBe("gfx-0.2");
+    expect(GAME_VERSION).toBe("p6.0.0");
+    expect(GRAPHICS_VERSION).toBe("gfx-0.3");
   });
 });

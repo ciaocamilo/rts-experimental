@@ -132,6 +132,11 @@ export class CueTranslator {
       out.push(request);
     };
     const visible = (p: { x: number; z: number }): boolean => onScreen(project(p.x, p.z));
+    /** Disparo (panorama del origen, con barrido hacia el blanco para el "fiit") e impacto diferido, que solo suena si el blanco está en pantalla. */
+    const shoot = (s: StrikeEvent, variant: number, delay: number): void => {
+      emit("arrow", s.from, variant, delay, s.to);
+      if (visible(s.to)) emit("arrowHit", s.to, this.choose("arrowHit", CUES.arrowHit.variants), delay + flightSeconds(Math.hypot(s.to.x - s.from.x, s.to.z - s.from.z)));
+    };
 
     // Ataques: la campana no depende de la vista; el efecto de combate sí.
     let bell = false;
@@ -146,13 +151,14 @@ export class CueTranslator {
           salvo = { index: 0, base: this.rng.int(CUES.arrow.variants), visible: visible(s.from) };
           salvos.set(key, salvo);
         }
-        if (salvo.visible) emit("arrow", s.from, (salvo.base + salvo.index) % CUES.arrow.variants, salvo.index * SALVO_GAP, s.to);
+        if (salvo.visible) shoot(s, (salvo.base + salvo.index) % CUES.arrow.variants, salvo.index * SALVO_GAP);
         salvo.index += 1;
         continue;
       }
       if (!visible(s.from)) continue;
       const cue: CueId = s.attackerKind === "soldier" ? "sword" : s.attackerKind === "archer" ? "arrow" : "blow";
-      emit(cue, s.from, this.choose(cue, CUES[cue].variants), 0, cue === "arrow" ? s.to : undefined);
+      if (cue === "arrow") shoot(s, this.choose(cue, CUES[cue].variants), 0);
+      else emit(cue, s.from, this.choose(cue, CUES[cue].variants));
     }
     if (frame.strikes.length > 0) this.cursors.strike = Math.max(this.cursors.strike, frame.strikes[frame.strikes.length - 1]!.id);
     if (bell) emit("bell", null, 0);

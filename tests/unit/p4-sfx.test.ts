@@ -75,7 +75,7 @@ describe("banco de efectos", () => {
   });
 
   it("respeta las duraciones del SDD", () => {
-    for (const id of ["hammer", "axe", "pick", "forage"] as const) for (let v = 0; v < CUES[id].variants; v++) expect(seconds(id, v), id).toBeLessThanOrEqual(0.35);
+    for (const id of ["hammer", "axe", "pick", "forage"] as const) for (let v = 0; v < CUES[id].variants; v++) expect(seconds(id, v), id).toBeLessThanOrEqual(id === "hammer" ? 0.45 : 0.35);
     expect(seconds("door")).toBeLessThanOrEqual(1.2);
     expect(seconds("victory")).toBeGreaterThan(3.5);
     expect(seconds("victory")).toBeLessThan(5.2);

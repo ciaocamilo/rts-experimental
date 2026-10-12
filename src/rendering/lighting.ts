@@ -5,10 +5,10 @@ import { SUN_POSITION } from "./water-material";
 /** Inclinación de la cámara: la vista cubre en el suelo 1/sin(39,5°) veces su altura. */
 const GROUND_STRETCH = 1.57;
 const SHADOW_MAP = 2048;
-const CLOUD_SIZE = 420;
+const CLOUD_TILE = 130;
 const CLOUD_OPACITY = 0.1;
 
-function cloudTexture(): THREE.CanvasTexture {
+function cloudTexture(mapWidth: number, mapDepth: number): THREE.CanvasTexture {
   const size = 256;
   const el = document.createElement("canvas");
   el.width = el.height = size;
@@ -34,7 +34,7 @@ function cloudTexture(): THREE.CanvasTexture {
   }
   const tex = new THREE.CanvasTexture(el);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(CLOUD_SIZE / 130, CLOUD_SIZE / 130);
+  tex.repeat.set(mapWidth / CLOUD_TILE, mapDepth / CLOUD_TILE);
   return tex;
 }
 
@@ -102,9 +102,9 @@ export class Lighting {
       this.sun.castShadow = true;
     }
 
-    this.cloudMap = cloudTexture();
+    this.cloudMap = cloudTexture(mapWidth, mapDepth);
     const material = new THREE.MeshBasicMaterial({ map: this.cloudMap, transparent: true, opacity: CLOUD_OPACITY, depthWrite: false, toneMapped: false });
-    const geometry = new THREE.PlaneGeometry(CLOUD_SIZE, CLOUD_SIZE).rotateX(-Math.PI / 2);
+    const geometry = new THREE.PlaneGeometry(mapWidth, mapDepth).rotateX(-Math.PI / 2);
     this.cloud = new THREE.Mesh(geometry, material);
     this.cloud.position.set(mapWidth / 2, 0.02, mapDepth / 2);
     this.cloud.renderOrder = 1;
