@@ -5,7 +5,7 @@ import { previewPlacement } from "../core/placement";
 import type { Command } from "../core/types";
 import type { SceneView } from "../rendering/scene-view";
 import { REJECT_TEXT } from "../ui/messages";
-import { type CameraRig, EDGE_SPEED_FACTOR, edgePan, type PanKeys } from "./camera-rig";
+import { type CameraRig, EDGE_MARGIN_PX, EDGE_SPEED_FACTOR, edgePan, type PanKeys } from "./camera-rig";
 import { type CursorKind, cursorCss, cursorFor, resolveRightClick, selectionCaps } from "./cursors";
 import { boxSelect, clearSelection, clickSelect, type Selection } from "./selection";
 
@@ -191,11 +191,13 @@ export class InputController {
     this.edge = { up: false, down: false, left: false, right: false };
   }
 
-  /** Solo el ratón sobre el canvas desplaza; sobre la interfaz (paneles, botones, ayuda) se detiene. */
+  /** El ratón desplaza sobre el canvas y sobre la barra inferior; hacia abajo solo en el borde de la pantalla, no en el del escenario. */
   private onEdge(e: PointerEvent): void {
-    if (e.pointerType !== "mouse" || e.target !== this.canvas) return this.clearEdge();
+    const overBar = e.target instanceof Element && e.target.closest("#bottom-bar") !== null;
+    if (e.pointerType !== "mouse" || (e.target !== this.canvas && !overBar)) return this.clearEdge();
     const r = this.canvas.getBoundingClientRect();
-    this.edge = edgePan(e.clientX - r.left, e.clientY - r.top, r.width, r.height);
+    const pan = edgePan(e.clientX - r.left, e.clientY - r.top, r.width, r.height, EDGE_MARGIN_PX, window.innerHeight - r.top);
+    this.edge = overBar ? { up: false, down: pan.down, left: false, right: false } : pan;
   }
 
   private onKey(e: KeyboardEvent, down: boolean): void {

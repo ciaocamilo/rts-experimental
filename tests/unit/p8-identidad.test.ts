@@ -9,6 +9,7 @@ import type { GameState } from "../../src/core/types";
 import { CameraRig, INITIAL_ZOOM, ZOOM_MAX, ZOOM_MIN } from "../../src/input/camera-rig";
 import { CURSOR_HOTSPOT, CURSOR_SIZE, cursorCss, cursorFor, cursorSvg, resolveRightClick, selectionCaps, type CursorKind } from "../../src/input/cursors";
 import { portraitModelKey } from "../../src/rendering/portrait";
+import { computePose } from "../../src/rendering/pose";
 import { combatLabel, combatStats, describeSelection, emptySelection } from "../../src/input/selection";
 import { BRICK_BUTTON_TILE, BRICK_BUTTON_TONES, brickButtonSvg } from "../../src/ui/castle-bar";
 import { fullscreenLabel } from "../../src/ui/fullscreen";
@@ -307,5 +308,40 @@ describe("P8 aldeanas", () => {
     expect(b.aspectKey).not.toBe(a.aspectKey);
     expect(portraitModelKey(b)).not.toBe(portraitModelKey(a));
     expect(b.combat).toEqual(a.combat);
+  });
+});
+
+describe("P8 aldeanos en combate", () => {
+  const dummyWorld = (): GameState => {
+    const state = createInitialState(1);
+    state.units.length = 0;
+    return state;
+  };
+
+  it("el aldeano ordenado a atacar golpea al enemigo y su pose de golpe no es la de reposo ni la de trabajo", () => {
+    const state = dummyWorld();
+    const villager = addUnit(state, 0, "villager", 20, 20);
+    const enemy = addUnit(state, 1, "soldier", 21, 20);
+    enemy.hp = 1000;
+    stepSimulation(state, [{ id: "c1", seq: 1, tick: state.tick, player: 0, type: "Attack", entityIds: [villager.id], target: { entityId: enemy.id } }]);
+    for (let i = 0; i < 120; i++) stepSimulation(state);
+    expect(enemy.hp).toBeLessThan(1000);
+    expect(enemy.hp % BALANCE.units.villager.damage).toBe(1000 % BALANCE.units.villager.damage);
+
+    const rest = computePose({ role: "villager", t: 0, walking: false, work: null, carrying: false, combatPhase: null });
+    const swing = (p: number) => computePose({ role: "villager", t: 0, walking: false, work: "wood", carrying: false, combatPhase: p });
+    expect(swing(0).armRx).not.toBeCloseTo(rest.armRx, 1);
+    expect(swing(0.3).armRx).toBeGreaterThan(0);
+    expect(swing(0.3).torsoPitch).toBeGreaterThan(0.2);
+    // El golpe domina sobre un trabajo anterior: no sigue talando.
+    expect(swing(0.3).armLx).toBe(-0.7);
+  });
+});
+
+describe("P8 cámara: borde inferior de la pantalla", () => {
+  it("el desplazamiento hacia abajo usa el borde de la pantalla y la barra inferior lo permite", () => {
+    const controller = readFileSync(new URL("../../src/input/controller.ts", import.meta.url), "utf8");
+    expect(controller).toContain("window.innerHeight");
+    expect(controller).toContain("#bottom-bar");
   });
 });

@@ -269,7 +269,7 @@ export function removeDead(state: GameState): DeadResult {
     for (const u of state.units) {
       if (u.hp > 0) continue;
       state.losses.units[u.owner] += 1;
-      deaths.push({ tick: state.tick + 1, id: u.id, owner: u.owner, kind: u.kind, pos: { x: u.pos.x, z: u.pos.z } });
+      deaths.push({ tick: state.tick + 1, id: u.id, owner: u.owner, kind: u.kind, gender: u.gender, pos: { x: u.pos.x, z: u.pos.z } });
     }
     state.units = state.units.filter((u) => u.hp > 0);
   }

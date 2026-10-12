@@ -246,6 +246,7 @@ export interface DeathEvent {
   id: EntityId;
   owner: PlayerId;
   kind: UnitKind;
+  gender: Gender;
   pos: Vec2;
 }
 

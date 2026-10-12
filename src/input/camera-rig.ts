@@ -17,10 +17,13 @@ export const EDGE_MARGIN_PX = 24;
 /** Multiplicador de velocidad del desplazamiento por borde respecto al teclado. */
 export const EDGE_SPEED_FACTOR = 1.5;
 
-/** Direcciones de desplazamiento para un cursor en (x, y) dentro de una vista de width por height. */
-export function edgePan(x: number, y: number, width: number, height: number, margin: number = EDGE_MARGIN_PX): PanKeys {
-  if (x < 0 || y < 0 || x > width || y > height) return { up: false, down: false, left: false, right: false };
-  return { up: y <= margin, down: y >= height - margin, left: x <= margin, right: x >= width - margin };
+/**
+ * Direcciones de desplazamiento para un cursor en (x, y) dentro de una vista de width por height.
+ * `screenHeight` es el alto hasta el borde inferior de la pantalla (mayor que `height` si hay una barra debajo): el desplazamiento hacia abajo se mide contra él.
+ */
+export function edgePan(x: number, y: number, width: number, height: number, margin: number = EDGE_MARGIN_PX, screenHeight: number = height): PanKeys {
+  if (x < 0 || y < 0 || x > width || y > screenHeight) return { up: false, down: false, left: false, right: false };
+  return { up: y <= margin, down: y >= screenHeight - margin, left: x <= margin, right: x >= width - margin };
 }
 
 /** Estado de cámara sobre el plano XZ; la cámara no abandona el mapa (RF-02). */

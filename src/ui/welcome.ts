@@ -15,10 +15,10 @@ export function welcomeContent(): WelcomeContent {
   return {
     title: GAME_NAME,
     subtitle: GAME_SUBTITLE,
-    goal: "Destruya el centro urbano rival antes de que caiga el suyo. Partida máxima: 30 minutos.",
+    goal: "Destruye el centro urbano rival antes de que caiga el tuyo. Tiempo límite de la partida: 30 minutos.",
     tips: [
-      "Recolecte: seleccione aldeanos y haga clic derecho sobre un árbol, un arbusto o una roca.",
-      "Construya y entrene desde la barra inferior; la población máxima es 50.",
+      "Recolecta recursos: seleccione aldeanos y haga clic derecho sobre un árbol, un arbusto o una roca.",
+      "Construye y entrena desde la barra inferior; la población máxima es 50.",
       "Los centros urbanos y las torres disparan solos; los militares libres atacan a menos de 6 celdas.",
       "Cámara: WASD, el borde de la pantalla o la miniatura; la rueda acerca y aleja.",
       "Atajos: H ayuda, F pantalla completa, M silencio.",

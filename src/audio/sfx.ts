@@ -127,20 +127,21 @@ function blow(variant: number, rng: Rng): Float32Array {
   return finish(out, sr);
 }
 
-/** Grito de muerte: fuente glotal con contorno de tono, formantes /a/ a /o/, soplo y jadeo final; el aldeano es más agudo. */
+/** Grito de muerte: fuente glotal con contorno de tono, formantes /a/ a /o/, soplo y jadeo final; el aldeano es más agudo y la aldeana (variantes 6 a 8) casi una octava sobre el soldado. */
 function death(variant: number, rng: Rng): Float32Array {
   const sr = LO;
+  const female = variant >= 6;
   const villager = variant < 3;
   const k = variant % 3;
   const seconds = 0.95 + 0.18 * k;
   const n = samples(seconds, sr);
-  const base = (villager ? 1.3 : 1) * (130 + 20 * k);
+  const base = female ? 2.05 * (140 + 18 * k) : (villager ? 1.3 : 1) * (130 + 20 * k);
   const f0At = (t: number): number => {
-    const rise = 1 + 0.9 * smooth(t / 0.15);
+    const rise = 1 + (female ? 0.7 : 0.9) * smooth(t / (female ? 0.12 : 0.15));
     const fall = 1 - 0.5 * Math.pow(Math.max(0, (t - 0.25) / (seconds - 0.25)), 1.2);
     return base * rise * fall * (1 + 0.03 * Math.sin(2 * Math.PI * 6.5 * t) * Math.min(1, t / 0.3));
   };
-  const shift = villager ? 1.12 : 1;
+  const shift = female ? 1.2 : villager ? 1.12 : 1;
   const formantsAt = (t: number): readonly number[] => {
     const m = smooth((t - 0.1) / 0.5);
     return [(700 - 250 * m) * shift, (1100 - 300 * m) * shift, 2500 * shift];
