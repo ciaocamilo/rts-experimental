@@ -1,10 +1,42 @@
 import * as THREE from "three";
 import type { TerrainRect } from "../core/types";
 import type { AssetLibrary } from "./assets";
-import { type Materials, texBox, texPlane, type TreeGeometry } from "./models";
-import { type BushSpec, planScenery, ROCK_HEIGHT, type SceneryPlan, type TreeSpec } from "./scenery";
+import { type Materials, texPlane, type TreeGeometry } from "./models";
+import { type BushSpec, mulberry32, planScenery, ROCK_HEIGHT, type SceneryPlan, type TreeSpec } from "./scenery";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { BushGeometry } from "./models";
 import { buildWaterGeometry, cornerRadius, waterSeed, type WaterLayer } from "./water";
+import { WaterMaterial } from "./water-material";
+import { applyWind, WIND } from "./wind";
+
+/** Máximo de mechones de hierba instanciados y margen respecto a roca y agua (P5-H08). */
+const MAX_TUFTS = 6000;
+const TUFT_ROCK_MARGIN = 0.15;
+const TUFT_WATER_MARGIN = 1.1;
+
+/** Roca con la cara superior irregular: solo baja la cresta (nunca sube) y no toca el rectángulo lógico. */
+function roughRock(w: number, h: number, d: number, density: number, seed: number): THREE.BoxGeometry {
+  const sx = Math.max(1, Math.ceil(w * 1.5));
+  const sz = Math.max(1, Math.ceil(d * 1.5));
+  const g = new THREE.BoxGeometry(w, h, d, sx, 2, sz);
+  const uv = g.getAttribute("uv") as THREE.BufferAttribute;
+  const pos = g.getAttribute("position") as THREE.BufferAttribute;
+  const counts = [(sz + 1) * 3, (sz + 1) * 3, (sx + 1) * (sz + 1), (sx + 1) * (sz + 1), (sx + 1) * 3, (sx + 1) * 3];
+  const dims: [number, number][] = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
+  let offset = 0;
+  counts.forEach((count, face) => {
+    const [du, dv] = dims[face]!;
+    for (let i = 0; i < count; i++) uv.setXY(offset + i, uv.getX(offset + i) * du * density, uv.getY(offset + i) * dv * density);
+    offset += count;
+  });
+  for (let i = 0; i < pos.count; i++) {
+    if (pos.getY(i) < h / 2 - 1e-4) continue;
+    const n = Math.sin((pos.getX(i) + seed) * 12.9898 + (pos.getZ(i) + seed * 0.7) * 78.233) * 43758.5453;
+    pos.setY(i, h / 2 - (n - Math.floor(n)) * 0.14);
+  }
+  g.computeVertexNormals();
+  return g;
+}
 
 /**
  * La cámara puede centrarse en el borde del mapa con el zoom mínimo (vista de ~113 unidades de alto y, en pantallas anchas,
@@ -31,9 +63,13 @@ export class TerrainView {
   private owned: { dispose(): void }[] = [];
   private plan: SceneryPlan = { trees: [], bushes: [] };
   private readonly groundMaterial: THREE.MeshLambertMaterial;
+  private readonly tuftMaterial: THREE.MeshLambertMaterial;
+  private readonly aoMaterial: THREE.MeshBasicMaterial;
   private readonly toneMaterial: THREE.MeshBasicMaterial;
   private readonly shoreMaterial: THREE.MeshLambertMaterial;
   private readonly waterMaterial: THREE.MeshPhongMaterial;
+  private readonly shaderWater: WaterMaterial | null;
+  private readonly waterMeshes: THREE.Mesh[] = [];
   private readonly rippleMaterial: THREE.MeshBasicMaterial;
   private readonly rockMaterials: THREE.Material[];
   private readonly waterMap: THREE.Texture;
@@ -47,7 +83,10 @@ export class TerrainView {
     private readonly bushes: readonly [BushGeometry, BushGeometry],
   ) {
     this.animateWater = assets.quality === "high";
-    this.groundMaterial = assets.lambert({ map: assets.textures.grass });
+    this.groundMaterial = assets.lambert({ map: assets.textures.grass, ...(assets.quality === "high" ? { bumpMap: assets.textures.grass, bumpScale: 0.9 } : {}) });
+    this.tuftMaterial = assets.lambert({ map: assets.textures.tuft, alphaTest: 0.45, side: THREE.DoubleSide });
+    applyWind(this.tuftMaterial, 0.3, "tuft");
+    this.aoMaterial = assets.basic({ map: assets.textures.contact, transparent: true, depthWrite: false, toneMapped: false });
     this.toneMaterial = assets.basic({ map: assets.textures.tone, transparent: true, depthWrite: false });
     this.shoreMaterial = assets.lambert({ vertexColors: true, transparent: true, depthWrite: false });
     this.waterMap = assets.textures.water;
@@ -56,6 +95,7 @@ export class TerrainView {
       new THREE.MeshPhongMaterial({ map: this.waterMap, vertexColors: true, transparent: true, depthWrite: false, specular: 0x6f8fa8, shininess: 55 }),
     );
     this.rippleMaterial = assets.basic({ map: this.rippleMap, vertexColors: true, transparent: true, depthWrite: false, opacity: 0.55 });
+    this.shaderWater = assets.quality === "high" ? assets.track(new WaterMaterial(assets)) : null;
     this.rockMaterials = [mat.stone, mat.stone, mat.moss, mat.stone, mat.stone, mat.stone];
   }
 
@@ -71,6 +111,7 @@ export class TerrainView {
   private clear(): void {
     for (const r of this.owned) r.dispose();
     this.owned = [];
+    this.waterMeshes.length = 0;
     this.group.clear();
   }
 
@@ -80,6 +121,7 @@ export class TerrainView {
     const gd = depth + GROUND_MARGIN * 2;
     const ground = new THREE.Mesh(this.own(texPlane(gw, gd, 0.2).rotateX(-Math.PI / 2).translate(width / 2, 0, depth / 2)), this.groundMaterial);
     ground.matrixAutoUpdate = false;
+    ground.receiveShadow = true;
     this.group.add(ground);
 
     if (this.assets.quality === "high") {
@@ -95,13 +137,74 @@ export class TerrainView {
 
     this.plan = planScenery(width, depth, terrain);
     this.addTrees(this.plan.trees);
-    if (this.assets.quality === "high") this.addBushes(this.plan.bushes);
+    if (this.assets.quality === "high") {
+      this.addBushes(this.plan.bushes);
+      this.addGrass(width, depth, terrain);
+      this.addTreeShade(this.plan.trees);
+    }
+  }
+
+  /** Mechones de hierba que se balancean con el viento; nunca sobre roca ni dentro del agua. */
+  private addGrass(width: number, depth: number, terrain: readonly TerrainRect[]): void {
+    const rng = mulberry32(8841);
+    const blocked = (x: number, z: number): boolean =>
+      terrain.some((t) => {
+        const m = t.kind === "water" ? TUFT_WATER_MARGIN : TUFT_ROCK_MARGIN;
+        return x > t.x - m && x < t.x + t.w + m && z > t.z - m && z < t.z + t.h + m;
+      });
+    const spots: { x: number; z: number; s: number; rot: number; tone: number }[] = [];
+    for (let i = 0; i < MAX_TUFTS * 1.4 && spots.length < MAX_TUFTS; i++) {
+      const x = rng() * width;
+      const z = rng() * depth;
+      const s = 0.7 + rng() * 0.7;
+      const rot = rng() * Math.PI;
+      const tone = rng();
+      if (!blocked(x, z)) spots.push({ x, z, s, rot, tone });
+    }
+    const w = 0.55;
+    const h = 0.42;
+    const plane = new THREE.PlaneGeometry(w, h).translate(0, h / 2, 0);
+    const crossed = this.own(mergeGeometries([plane, plane.clone().rotateY(Math.PI / 2)])!);
+    plane.dispose();
+    const mesh = this.own(new THREE.InstancedMesh(crossed, this.tuftMaterial, spots.length));
+    const dummy = new THREE.Object3D();
+    const color = new THREE.Color();
+    spots.forEach((p, i) => {
+      dummy.position.set(p.x, 0, p.z);
+      dummy.rotation.set(0, p.rot, 0);
+      dummy.scale.setScalar(p.s);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      mesh.setColorAt(i, color.setScalar(0.7 + 0.5 * p.tone));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    this.group.add(mesh);
+  }
+
+  /** Sombra de contacto bajo cada árbol: un disco oscuro suave instanciado. */
+  private addTreeShade(specs: readonly TreeSpec[]): void {
+    if (specs.length === 0) return;
+    const geometry = this.own(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2));
+    const mesh = this.own(new THREE.InstancedMesh(geometry, this.aoMaterial, specs.length));
+    const dummy = new THREE.Object3D();
+    specs.forEach((s, i) => {
+      dummy.position.set(s.x, s.y + 0.02, s.z);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.setScalar(1.5 * s.scale);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.renderOrder = 1;
+    this.group.add(mesh);
   }
 
   private addRock(t: TerrainRect): void {
-    const geometry = this.own(texBox(t.w, ROCK_HEIGHT, t.h, 0.6));
+    const geometry = this.own(roughRock(t.w, ROCK_HEIGHT, t.h, 0.6, t.x * 3 + t.z));
     const rock = new THREE.Mesh(geometry, this.rockMaterials);
     rock.position.set(t.x + t.w / 2, ROCK_HEIGHT / 2, t.z + t.h / 2);
+    rock.castShadow = rock.receiveShadow = true;
     this.group.add(rock);
   }
 
@@ -115,11 +218,12 @@ export class TerrainView {
     shore.position.set(origin.x, 0.012, origin.z);
     shore.renderOrder = 1;
     const waterGeometry = this.own(buildWaterGeometry(t.w, t.h, seed, scale(WATER_LAYERS), origin, 0.12));
-    const water = new THREE.Mesh(waterGeometry, this.waterMaterial);
+    const water = new THREE.Mesh(waterGeometry, this.shaderWater ?? this.waterMaterial);
     water.position.set(origin.x, 0.05, origin.z);
     water.renderOrder = 2;
+    this.waterMeshes.push(water);
     this.group.add(shore, water);
-    if (this.animateWater) {
+    if (this.animateWater && !this.shaderWater) {
       const ripples = new THREE.Mesh(this.own(buildWaterGeometry(t.w, t.h, seed, scale(WATER_LAYERS), origin, 0.21)), this.rippleMaterial);
       ripples.position.set(origin.x, 0.058, origin.z);
       ripples.renderOrder = 3;
@@ -148,6 +252,8 @@ export class TerrainView {
       });
       trunk.instanceMatrix.needsUpdate = true;
       crown.instanceMatrix.needsUpdate = true;
+      trunk.castShadow = crown.castShadow = true;
+      crown.receiveShadow = true;
       this.group.add(trunk, crown);
     }
   }
@@ -172,9 +278,17 @@ export class TerrainView {
     }
   }
 
+  /** Si el shader del agua no compila, vuelve al material de P4 (con las ondas animadas). */
+  useFallbackWater(): void {
+    if (!this.shaderWater) return;
+    for (const mesh of this.waterMeshes) mesh.material = this.waterMaterial;
+  }
+
   /** Corriente suave del agua; con tiempo congelado la superficie se detiene. */
   update(animTime: number): void {
     if (!this.animateWater) return;
+    WIND.value = animTime;
+    this.shaderWater?.setTime(animTime);
     this.waterMap.offset.set(animTime * 0.012, animTime * 0.006);
     this.rippleMap.offset.set(-animTime * 0.02, animTime * 0.014);
   }

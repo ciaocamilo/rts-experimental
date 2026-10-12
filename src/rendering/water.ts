@@ -79,20 +79,23 @@ export function buildWaterGeometry(w: number, h: number, seed: number, layers: r
   const positions: number[] = [];
   const colors: number[] = [];
   const uvs: number[] = [];
-  const push = (x: number, z: number, layer: WaterLayer): void => {
+  const depths: number[] = [];
+  const push = (x: number, z: number, layer: WaterLayer, depth: number): void => {
     positions.push(x, 0, z);
     colors.push(layer.shade[0], layer.shade[1], layer.shade[2], layer.alpha);
     uvs.push((uvOrigin.x + x) * uvScale, (uvOrigin.z + z) * uvScale);
+    depths.push(depth);
   };
-  for (const layer of layers) {
+  const span = Math.max(1, layers.length - 1);
+  layers.forEach((layer, k) => {
     for (let i = 0; i < n; i++) {
       const p = rim[i]!;
       const d = inset[i]! + layer.offset;
-      push(p.x + p.nx * d, p.z + p.nz * d, layer);
+      push(p.x + p.nx * d, p.z + p.nz * d, layer, k / span);
     }
-  }
+  });
   const last = layers[layers.length - 1]!;
-  push(0, 0, last);
+  push(0, 0, last, 1);
   const center = layers.length * n;
 
   const indices: number[] = [];
@@ -118,6 +121,7 @@ export function buildWaterGeometry(w: number, h: number, seed: number, layers: r
   g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   g.setAttribute("color", new THREE.Float32BufferAttribute(colors, 4));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  g.setAttribute("depth", new THREE.Float32BufferAttribute(depths, 1));
   g.setIndex(indices);
   g.computeVertexNormals();
   return g;

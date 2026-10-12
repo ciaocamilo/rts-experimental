@@ -194,8 +194,8 @@ describe("P4 CueTranslator", () => {
     const mk = (seq: number, kind: DeathEvent["kind"], pos = IN): DeathEvent & { seq: number } => ({ seq, tick: 1, id: seq, owner: seq % 2 === 0 ? 0 : 1, kind, pos });
     const out = t.process(frame(world(), { deaths: [mk(1, "villager"), mk(2, "soldier"), mk(3, "archer", OUT)] }));
     expect(out.map((c) => c.cue)).toEqual(["death", "death"]);
-    expect(out[0]!.variant).toBeLessThan(2);
-    expect(out[1]!.variant).toBeGreaterThanOrEqual(2);
+    expect(out[0]!.variant).toBeLessThan(3);
+    expect(out[1]!.variant).toBeGreaterThanOrEqual(3);
   });
 
   it("la puerta solo suena para el jugador y con el edificio en pantalla", () => {
@@ -230,7 +230,7 @@ describe("P4 CueTranslator", () => {
       seq, tick: 1, id: seq, owner: 1, kind, cell: { x, z: 18 }, complete,
     });
     const out = t.process(frame(world(), { destroyed: [ev(1, "house", true), ev(2, "barracks", true), ev(3, "barracks", false), ev(4, "townCenter", true), ev(5, "house", true, 190)] }));
-    expect(out.map((c) => c.variant)).toEqual([0, 1, 0, 1]);
+    expect(out.map((c) => c.variant % 2)).toEqual([0, 1, 0, 1]);
     expect(out.every((c) => c.cue === "collapse")).toBe(true);
   });
 

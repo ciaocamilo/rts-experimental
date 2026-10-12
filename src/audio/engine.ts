@@ -3,6 +3,7 @@ import { VoiceGate, type CueId } from "./voices";
 import { DEFAULT_SETTINGS, saveSettings, type AudioSettings } from "./settings";
 import type { MusicTrack } from "./music";
 import { buildSfxBank, type SfxBank } from "./sfx";
+import { createRng, impulseResponse } from "./dsp";
 
 /** Subconjunto de la Web Audio API que usa el motor; permite probarlo con un contexto falso. */
 export interface ParamLike {
@@ -26,6 +27,13 @@ export interface BufferLike {
   readonly duration: number;
   getChannelData(channel: number): Float32Array;
 }
+export interface FilterNodeLike extends NodeLike {
+  type: string;
+  frequency: ParamLike;
+}
+export interface ConvolverLike extends NodeLike {
+  buffer: BufferLike | null;
+}
 export interface SourceLike extends NodeLike {
   buffer: BufferLike | null;
   loop: boolean;
@@ -43,6 +51,9 @@ export interface ContextLike {
   createBufferSource(): SourceLike;
   createBuffer(channels: number, length: number, sampleRate: number): BufferLike;
   createDynamicsCompressor(): NodeLike;
+  /** Opcionales: sin ellos el motor suena igual pero sin reverberación ni filtro por distancia. */
+  createConvolver?(): ConvolverLike;
+  createBiquadFilter?(): FilterNodeLike;
   resume(): Promise<void>;
   suspend(): Promise<void>;
 }
@@ -50,12 +61,17 @@ export interface ContextLike {
 export type AudioStatus = "activo" | "bloqueado" | "silenciado" | "no disponible";
 export type MusicStatus = "desactivada" | "pendiente" | "lista" | "fallida";
 
-export const SFX_LEVEL = 0.8;
-export const MUSIC_LEVEL = 0.22;
+export const SFX_LEVEL = 0.5;
+export const MUSIC_LEVEL = 0.55;
 export const MUSIC_FADE_IN = 3;
 /** Fracción del nivel musical durante la fanfarria y al terminar la partida. */
 export const JINGLE_DUCK = 0.1;
 export const AFTER_END_LEVEL = 0.3;
+/** Ducking de la música con campana y derrumbe grande: nivel, segundos sostenido y de recuperación. */
+export const DUCK_LEVEL = 0.6;
+export const DUCK_HOLD = 0.5;
+export const DUCK_RECOVERY = 1;
+export const REVERB_SECONDS = 1.4;
 const FIRE_FADE = 0.2;
 const FIRE_FADE_FAST = 0.1;
 
@@ -98,6 +114,7 @@ export class AudioEngine {
   private sfxBus: GainLike | null = null;
   private musicBus: GainLike | null = null;
   private master: GainLike | null = null;
+  private reverbIn: GainLike | null = null;
   private playing = new Map<number, Playing>();
   private fire = new Map<number, FireVoice>();
   private musicLevel = 1;
@@ -161,6 +178,7 @@ export class AudioEngine {
       this.musicBus.gain.value = MUSIC_LEVEL;
       this.master.gain.value = 1;
       this.ctx = ctx;
+      this.buildReverb(ctx);
       await ctx.resume().catch(() => undefined);
 
       this.bank = (this.options.buildBank ?? buildSfxBank)();
@@ -181,6 +199,26 @@ export class AudioEngine {
     } catch {
       this.unavailable = true;
       this.ctx = null;
+    }
+  }
+
+  /** Envío de reverberación compartido; si el contexto no lo soporta, los efectos suenan secos. */
+  private buildReverb(ctx: ContextLike): void {
+    if (!ctx.createConvolver || !this.sfxBus) return;
+    try {
+      const sr = 22050;
+      const [left, right] = impulseResponse(REVERB_SECONDS, sr, createRng(77));
+      const buffer = ctx.createBuffer(2, left.length, sr);
+      buffer.getChannelData(0).set(left);
+      buffer.getChannelData(1).set(right);
+      const convolver = ctx.createConvolver();
+      convolver.buffer = buffer;
+      const input = ctx.createGain();
+      input.connect(convolver);
+      convolver.connect(this.sfxBus);
+      this.reverbIn = input;
+    } catch {
+      this.reverbIn = null;
     }
   }
 
@@ -237,26 +275,53 @@ export class AudioEngine {
     const gain = ctx.createGain();
     gain.gain.value = request.gain;
     const nodes: NodeLike[] = [gain];
+    let tail: NodeLike = gain;
     source.connect(gain);
-    if (request.pan !== 0) {
+    if (request.lowpass && request.lowpass > 0 && ctx.createBiquadFilter) {
+      const low = ctx.createBiquadFilter();
+      low.type = "lowpass";
+      low.frequency.value = request.lowpass;
+      tail.connect(low);
+      nodes.push(low);
+      tail = low;
+    }
+    const start = ctx.currentTime + request.delay;
+    if (request.wet && request.wet > 0 && this.reverbIn) {
+      const send = ctx.createGain();
+      send.gain.value = request.wet;
+      tail.connect(send);
+      send.connect(this.reverbIn);
+      nodes.push(send);
+    }
+    if (request.pan !== 0 || request.panTo !== undefined) {
       const pan = ctx.createStereoPanner();
-      pan.pan.value = request.pan;
-      gain.connect(pan);
+      pan.pan.setValueAtTime(request.pan, start);
+      if (request.panTo !== undefined) pan.pan.linearRampToValueAtTime(request.panTo, start + (request.panDuration ?? duration));
+      tail.connect(pan);
       pan.connect(this.sfxBus);
       nodes.push(pan);
     } else {
-      gain.connect(this.sfxBus);
+      tail.connect(this.sfxBus);
     }
     source.onended = () => {
       this.playing.delete(id);
       source.disconnect();
       for (const node of nodes) node.disconnect();
     };
-    const start = ctx.currentTime + request.delay;
     source.start(start);
     this.playing.set(id, { source, nodes });
 
     if (request.cue === "victory" || request.cue === "defeat") this.duckMusic(start, duration);
+    else if (request.duck) this.briefDuck(start);
+  }
+
+  /** Baja la música un momento para que la campana y los derrumbes grandes se distingan. */
+  private briefDuck(start: number): void {
+    const bus = this.musicBus;
+    if (!bus || this.musicLevel < 1) return;
+    const base = this.musicTarget();
+    bus.gain.setTargetAtTime(base * DUCK_LEVEL, start, 0.05);
+    bus.gain.setTargetAtTime(base, start + DUCK_HOLD, DUCK_RECOVERY / 3);
   }
 
   private duckMusic(start: number, duration: number): void {

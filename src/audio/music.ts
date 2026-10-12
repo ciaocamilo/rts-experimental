@@ -1,4 +1,4 @@
-import { addInto, createRng, makeLoop, peakOf, samples, scale, reverb } from "./dsp";
+﻿import { addInto, createRng, fdnReverb, humanize, makeLoop, peakOf, samples, scale } from "./dsp";
 import { drone, flute, lute, psaltery, tabor } from "./instruments";
 
 export interface MusicTrack {
@@ -7,7 +7,7 @@ export interface MusicTrack {
   sampleRate: number;
 }
 
-export const MUSIC_SAMPLE_RATE = 22050;
+export const MUSIC_SAMPLE_RATE = 32000;
 /** Negra con puntillo = 72; compás de 6/8 (seis corcheas). */
 export const EIGHTH = 60 / 72 / 3;
 export const BAR_SECONDS = EIGHTH * 6;
@@ -164,12 +164,12 @@ export function renderMusic(seed = 7, maxBars = TOTAL_BARS): MusicTrack {
 
   for (const n of notes) {
     const inst = n.track === "flute" ? flute : n.track === "lute" ? lute : n.track === "psaltery" ? psaltery : drone;
-    mixIn(inst(hz(n.midi), n.seconds, sr, rng), n.at, n.gain * (n.track === "drone" ? 1 : 0.8), PAN[n.track]);
+    const h = humanize(rng, n.at, n.gain * (n.track === "drone" ? 1 : 0.8), 0.012, 0.08, 4);
+    mixIn(inst(hz(n.midi) * Math.pow(2, h.cents / 1200), n.seconds, sr, rng, n.gain), h.at, h.gain, PAN[n.track]);
   }
   for (const h of hits) mixIn(tabor(sr, rng, h.soft), h.at, h.gain, 0.15);
 
-  const wetL = reverb(dryL, sr, 0.18, 0, tail);
-  const wetR = reverb(dryR, sr, 0.18, 23, tail);
+  const [wetL, wetR] = fdnReverb(dryL, dryR, sr, 0.28, 1.8, tail);
   const overlap = samples(tail + 2, sr);
   let left = makeLoop(wetL, Math.min(overlap, wetL.length - 1));
   let right = makeLoop(wetR, Math.min(overlap, wetR.length - 1));
