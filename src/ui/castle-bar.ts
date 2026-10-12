@@ -48,3 +48,26 @@ export function applyCastleBar(root: HTMLElement): void {
   root.style.setProperty("--cren", svgUrl(crenelSvg()));
   root.style.setProperty("--tower", svgUrl(towerSvg()));
 }
+
+/** Ocho tonos de arcilla; el texto crema de los botones mantiene contraste ≥ 4,5:1 sobre todos (incluido el aclarado al pasar el ratón). */
+export const BRICK_BUTTON_TONES = ["#843f2b", "#884330", "#8c4530", "#80402b", "#864230", "#8e4630", "#7c3c28", "#8a4833"] as const;
+export const BRICK_BUTTON_TILE = { width: 96, height: 48 } as const;
+
+/** Teselas de 96 × 48 px: dos hiladas de ladrillos de 46 × 22 con junta de mortero y media hilada de desfase. */
+export function brickButtonSvg(): string {
+  let rects = `<rect width='${BRICK_BUTTON_TILE.width}' height='${BRICK_BUTTON_TILE.height}' fill='#2c1f19'/>`;
+  for (let row = 0; row < 2; row++) {
+    for (let col = -1; col < 3; col++) {
+      const x = col * 48 + (row === 1 ? 24 : 0) + 1;
+      const y = row * 24 + 1;
+      const tone = BRICK_BUTTON_TONES[(row * 3 + (col + 1) * 5 + 2) % BRICK_BUTTON_TONES.length]!;
+      rects += `<rect x='${x}' y='${y}' width='46' height='22' rx='1' fill='${tone}'/><rect x='${x}' y='${y}' width='46' height='1' fill='#ffffff' fill-opacity='.12'/><rect x='${x}' y='${y + 21}' width='46' height='1' fill='#000000' fill-opacity='.2'/>`;
+    }
+  }
+  return `<svg xmlns='http://www.w3.org/2000/svg' width='${BRICK_BUTTON_TILE.width}' height='${BRICK_BUTTON_TILE.height}'>${rects}</svg>`;
+}
+
+/** Publica el ladrillo de los botones superiores como `--brick-btn`. */
+export function applyBrickButtons(controls: HTMLElement): void {
+  controls.style.setProperty("--brick-btn", svgUrl(brickButtonSvg()));
+}

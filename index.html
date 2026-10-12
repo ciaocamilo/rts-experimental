@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RTS Camilus</title>
+    <title>RTS Camilus - Juego experimental</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#14171a" />
     <style>
       :root { --bar-h: 172px; --brand-h: 22px; --portrait: 112px; }
       @media (max-height: 599px) { :root { --bar-h: 138px; --portrait: 84px; } }
@@ -21,9 +23,20 @@
       .res.pop i { background: #4aa8ff; }
       #hud { position: fixed; top: 46px; left: 8px; z-index: 2; display: none; max-height: calc(100vh - var(--bar-h) - 60px); overflow: hidden; padding: 6px 10px; background: rgba(0,0,0,.7); border-radius: 4px; pointer-events: none; white-space: pre; }
       #hud.visible { display: block; }
-      #controls { position: fixed; top: 8px; right: 8px; z-index: 2; display: flex; gap: 6px; }
-      #controls button { font: inherit; padding: 4px 10px; }
-      #controls button[aria-pressed="true"] { outline: 2px solid #4ade80; }
+      #controls { position: fixed; top: 8px; right: 8px; z-index: 2; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: calc(100vw - 470px); }
+      @media (max-width: 719px) { #controls { max-width: calc(100vw - 270px); } }
+      /* Botones de ladrillo: el mosaico lo genera applyBrickButtons (src/ui/castle-bar.ts) y el color liso es la reserva. Texto crema con contraste >= 4,5:1. */
+      #controls button { font: 700 13px/1.1 system-ui, sans-serif; letter-spacing: .02em; padding: 6px 11px; color: #f6e7c8; text-shadow: 0 1px 0 rgba(0,0,0,.75); cursor: pointer; background: var(--brick-btn, none) 0 0 / 96px 48px #843f2b; border: 2px solid #3b2a22; border-radius: 3px; box-shadow: inset 1px 1px 0 rgba(255,255,255,.22), inset -1px -1px 0 rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.6); }
+      #controls button:hover:not(:disabled) { filter: brightness(1.08); }
+      #controls button:active:not(:disabled) { box-shadow: inset -1px -1px 0 rgba(255,255,255,.18), inset 1px 1px 0 rgba(0,0,0,.55); transform: translateY(1px); }
+      #controls button:disabled { opacity: .55; cursor: default; }
+      #controls button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+      #controls button[aria-pressed="true"] { outline: 2px solid #d9b45a; border-color: #d9b45a; }
+      #controls button[aria-pressed="true"]:focus-visible { outline-color: #fff; }
+      #controls button svg { display: block; }
+      #btn-fullscreen { padding: 6px 8px; }
+      #btn-fullscreen[hidden] { display: none; }
+      @media (prefers-contrast: more) { #controls button { background: #6b2f1f; color: #fff; } }
 
       #toasts { position: fixed; top: 46px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(520px, calc(100vw - 16px)); pointer-events: none; }
       .toast { max-width: 100%; box-sizing: border-box; padding: 6px 14px; border-radius: 6px; border: 1px solid #555; background: rgba(20,20,20,.9); color: #eee; text-align: center; animation: toast-in .12s ease-out; transition: opacity .3s ease, transform .3s ease; }
@@ -105,6 +118,22 @@
       @keyframes end-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
       @media (prefers-reduced-motion: reduce) { #end-dialog .end-card { animation: none; } }
       @media (max-height: 599px) { #end-dialog .end-crest { height: 48px; } #end-dialog .end-crest svg { height: 48px; width: auto; } #end-dialog .end-title { font-size: 26px; } #end-dialog .end-stats { margin-bottom: 10px; } #end-dialog { padding: 6px; } #end-dialog .end-card { padding: 10px 20px 12px; } #end-dialog .end-reason { margin: 2px 0 8px; font-size: 14px; } #end-dialog .end-stats { gap: 2px 14px; padding: 6px 12px; font-size: 12px; } #end-dialog .end-actions button { min-height: 34px; } }
+      #welcome { position: fixed; inset: 0; z-index: 7; display: flex; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box; background: rgba(4,6,8,.72); outline: none; }
+      #welcome[hidden] { display: none; }
+      #welcome .welcome-card { width: min(520px, 100%); max-height: 100%; overflow: auto; box-sizing: border-box; padding: 18px 24px 16px; text-align: center; color: #eef0f2; background: linear-gradient(#30363c, #1b1f23); border: 3px solid #d9b45a; border-radius: 10px; box-shadow: 0 0 0 2px #0b0d0f, 0 10px 36px rgba(0,0,0,.7), inset 0 0 0 2px rgba(255,255,255,.08); animation: end-in .28s ease-out; }
+      #welcome .welcome-crest { height: 56px; margin: 0 auto 4px; }
+      #welcome .welcome-title { margin: 0; font: 700 34px/1.1 Georgia, "Times New Roman", serif; letter-spacing: .08em; text-transform: uppercase; color: #f1d27a; }
+      #welcome .welcome-subtitle { margin: 2px 0 10px; font: italic 15px Georgia, "Times New Roman", serif; color: #cfd4d8; }
+      #welcome .welcome-goal { margin: 0 0 10px; font-size: 15px; color: #e4e8eb; }
+      #welcome .welcome-tips { margin: 0 0 14px; padding: 10px 14px 10px 30px; text-align: left; font-size: 13px; line-height: 1.4; color: #2a2116; background: linear-gradient(#eadfbd, #d6c59a); border: 1px solid #8a7440; border-radius: 6px; }
+      #welcome .welcome-tips li + li { margin-top: 3px; }
+      #welcome .welcome-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+      #welcome .welcome-actions button { font: inherit; font-weight: 600; min-height: 40px; padding: 6px 20px; color: #f1f1f1; cursor: pointer; background: linear-gradient(#4a5159, #2b3036); border: 1px solid #1a1d20; border-top-color: #7b858f; border-radius: 6px; }
+      #welcome .welcome-actions button.primary { color: #2a2116; background: linear-gradient(#f1d27a, #c9a24a); border-color: #6e5522; }
+      #welcome .welcome-actions button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+      #welcome .welcome-credit { margin: 12px 0 0; font-size: 11px; color: #b4bcc3; }
+      @media (prefers-reduced-motion: reduce) { #welcome .welcome-card { animation: none; } }
+      @media (max-height: 599px) { #welcome { padding: 6px; } #welcome .welcome-card { padding: 8px 18px 8px; } #welcome .welcome-crest { height: 36px; } #welcome .welcome-crest svg { height: 36px; width: auto; } #welcome .welcome-title { font-size: 24px; } #welcome .welcome-subtitle { margin-bottom: 4px; } #welcome .welcome-goal { margin-bottom: 6px; font-size: 13px; } #welcome .welcome-tips { margin-bottom: 8px; padding: 6px 12px 6px 26px; font-size: 12px; line-height: 1.3; } #welcome .welcome-actions button { min-height: 32px; } #welcome .welcome-credit { margin-top: 6px; } }
       #help { position: fixed; top: 44px; right: 8px; z-index: 3; display: none; width: 340px; max-height: calc(100vh - var(--bar-h) - 60px); overflow-y: auto; box-sizing: border-box; padding: 8px 12px; background: rgba(0,0,0,.82); border: 1px solid #555; border-radius: 4px; font-size: 13px; line-height: 1.35; }
       #help.visible { display: block; }
       #help h2 { margin: 0 0 4px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
@@ -125,6 +154,7 @@
     <div id="hud"></div>
     <div id="toasts"></div>
     <div id="controls">
+      <button id="btn-fullscreen" type="button" aria-pressed="false" aria-label="Pantalla completa (F)" title="Pantalla completa (F)"></button>
       <button id="btn-result" type="button" hidden>Resultado</button>
       <button id="btn-pause" type="button">Pausar</button>
       <button id="btn-restart" type="button">Reiniciar</button>
@@ -134,16 +164,16 @@
       <button id="btn-help" type="button">Ayuda (H)</button>
       <button id="btn-export" type="button">Exportar diagnóstico</button>
     </div>
-    <div id="help" class="visible">
+    <div id="help">
       <h2>Ayuda <button id="help-close" type="button">Cerrar</button></h2>
       <p style="margin:0 0 4px">Destruya el centro urbano rival antes de perder el propio. Partida máxima: 30 minutos (si ningún centro cae, es empate). «RTS Camilus» es un nombre provisional.</p>
       <ul>
-        <li><b>Cámara:</b> WASD o flechas, o lleve el cursor al borde de la vista; rueda para acercar o alejar (hasta 5,5×). Clic o arrastre en la miniatura (abajo a la derecha) para saltar a otro punto del mapa.</li>
+        <li><b>Cámara:</b> WASD o flechas, o lleve el cursor al borde de la vista; rueda para acercar o alejar (hasta 5,5×). La partida empieza con la vista acercada sobre su ciudad. Clic o arrastre en la miniatura (abajo a la derecha) para saltar a otro punto del mapa. F activa o quita la pantalla completa.</li>
         <li><b>Selección:</b> clic o arrastre (solo unidades propias); Shift suma o quita; Esc limpia. La barra inferior muestra un retrato de lo seleccionado con su nombre, su bando (jugador, enemigo o naturaleza) y su barra de vida o de recurso restante.</li>
-        <li><b>Clic derecho:</b> suelo = mover; recurso = recolectar (aldeanos); enemigo = atacar (militares); obra propia = reanudar.</li>
+        <li><b>Clic derecho:</b> suelo = mover; recurso = recolectar (aldeanos); enemigo = atacar (militares); obra propia = reanudar. El cursor anuncia la acción: hacha sobre un árbol, cesta sobre un arbusto, pico sobre una roca y espada sobre un enemigo (solo si la selección puede hacerlo).</li>
         <li><b>Construir:</b> con aldeanos seleccionados use la barra inferior (casa 50 madera, cuartel 150 madera, torre 300 piedra) y confirme con clic izquierdo. Si falta un recurso, su cifra se pone en rojo.</li>
         <li><b>Producir:</b> clic en un edificio propio para entrenar y ver o cancelar la cola.</li>
-        <li><b>Combate:</b> los militares libres atacan solos a menos de 6 celdas y se defienden si los hieren; las torres completas disparan solas.</li>
+        <li><b>Combate:</b> los militares libres atacan solos a menos de 6 celdas y se defienden si los hieren; las torres completas disparan solas. Los centros urbanos y las torres de ambos bandos tienen el doble de vida.</li>
         <li><b>Mapa:</b> un río separa las bases; solo se cruza por el puente central. Hay bosques en los bordes y arbustos, árboles y rocas con comida, madera y piedra. Cada bando empieza con 12 casas y 2 torres; se oyen aves de fondo.</li>
         <li><b>Fin de partida:</b> una ventana muestra el resultado, la duración y las bajas; «Ver el campo» la cierra y el botón Resultado la vuelve a abrir.</li>
         <li><b>Avisos:</b> los rechazos y confirmaciones aparecen arriba al centro unos segundos.</li>
@@ -161,6 +191,7 @@
     </div>
     <div id="overlay"></div>
     <div id="end-dialog" tabindex="-1" hidden></div>
+    <div id="welcome" tabindex="-1" hidden></div>
     <div id="drag-box"></div>
     <div id="bottom-bar">
       <div id="info" class="hint">Seleccione unidades o un edificio propio</div>

@@ -91,11 +91,12 @@ export const BALANCE: Balance = {
   },
   buildings: {
     // El centro urbano dispara como la torre, pero con 3 flechas por disparo (triple daño).
-    townCenter: { cost: { food: 0, wood: 0, stone: 0 }, buildTicks: 0, hp: 1500, footprint: 4, housing: 0, constructible: false, trains: ["villager"], weapon: "archer", arrows: 3 },
+    // P8: centro urbano y torre tienen el doble de vida que en P7 (1500 y 800).
+    townCenter: { cost: { food: 0, wood: 0, stone: 0 }, buildTicks: 0, hp: 3000, footprint: 4, housing: 0, constructible: false, trains: ["villager"], weapon: "archer", arrows: 3 },
     house: { cost: { food: 0, wood: 50, stone: 0 }, buildTicks: s(15), hp: 300, footprint: 2, housing: 5, constructible: true, trains: [], weapon: null },
     barracks: { cost: { food: 0, wood: 150, stone: 0 }, buildTicks: s(25), hp: 600, footprint: 3, housing: 0, constructible: true, trains: ["soldier", "archer"], weapon: null },
     // P3: la torre usa el daño, la cadencia y el alcance del arquero (`weapon`); sin alcance mínimo.
-    tower: { cost: { food: 0, wood: 0, stone: 300 }, buildTicks: s(30), hp: 800, footprint: 2, housing: 0, constructible: true, trains: [], weapon: "archer" },
+    tower: { cost: { food: 0, wood: 0, stone: 300 }, buildTicks: s(30), hp: 1600, footprint: 2, housing: 0, constructible: true, trains: [], weapon: "archer" },
   },
 };
 

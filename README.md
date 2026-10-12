@@ -25,12 +25,12 @@ Prototipo de estrategia en tiempo real (RTS) que se ejecuta en el navegador. Un 
 
 - **Partida 1 contra 1** sobre un mapa de 128x64 celdas con terreno, rocas, bosques y un río de lado a lado con un puente central (6 celdas) como único cruce. Cada bando parte con doce casas y dos torres ya construidas.
 - **Economía:** aldeanos que recolectan comida, madera y piedra, construyen casas, cuarteles y torres, y entrenan unidades con cola de producción y límite de población.
-- **Combate:** soldados y arqueros con rango, enfriamiento y ataque automático a menos de 6 celdas; las torres disparan flechas. Gana quien destruye el centro urbano rival; el límite es de 30 minutos (36 000 ticks) y, si ninguno cae, hay empate.
+- **Combate:** soldados y arqueros con rango, enfriamiento y ataque automático a menos de 6 celdas; las torres disparan flechas. Los centros urbanos (3 000 de vida) y las torres (1 600) resisten el doble que en las primeras etapas. Gana quien destruye el centro urbano rival; el límite es de 30 minutos (36 000 ticks) y, si ninguno cae, hay empate.
 - **IA en Python:** una política sin estado decide hasta 4 órdenes cada segundo. Se ejecuta en un worker aislado y se comunica con el juego mediante un contrato de mensajes versionado (`contracts/worker-v2`). La IA nunca modifica la simulación directamente: sus decisiones se validan y se agendan como órdenes para el siguiente tick.
 - **Núcleo determinista:** la simulación es TypeScript puro, avanza a 20 ticks por segundo y puede reproducirse solo con la semilla y el registro de órdenes.
 - **Aspecto procedural:** edificios medievales y personajes humanoides por rol, agua con shader, iluminación con sombras, fuego y humo por daño, derrumbes con escombros, hierba y bosques con viento. No hay recursos gráficos externos.
 - **Sonido procedural:** efectos, aves de fondo y música sintetizados con Web Audio (sin archivos de audio).
-- **Interfaz:** barra inferior de castillo con recursos (Comida, Madera, Piedra y Población), retrato 3D de la selección con nombre, bando y barra de vida, botones con icono y coste, miniatura del mapa en tiempo real y avisos temporales. Ventana final con el resultado de la partida.
+- **Interfaz:** barra inferior de castillo con recursos (Comida, Madera, Piedra y Población), retrato 3D de la selección con nombre, bando y barra de vida, botones con icono y coste, miniatura del mapa en tiempo real y avisos temporales. Botones superiores de ladrillo con pantalla completa, ventana de bienvenida al cargar, cursores que anuncian la acción del clic derecho y ventana final con el resultado de la partida.
 - **Diagnóstico:** el HUD muestra FPS, tiempo de cuadro y de tick; el botón «Exportar diagnóstico» descarga un JSON con versiones, rendimiento, intercambios con la IA y órdenes aplicadas.
 
 ![Partida por defecto: aldea inicial con el centro urbano seleccionado, río con puente y bosques](docs/images/partida-actual.png)
@@ -52,6 +52,7 @@ El proyecto se construye con **desarrollo guiado por especificaciones (SDD, Spec
 | 5 | Realismo sonoro y visual (luz, sombras, humo, derrumbes) |
 | 6 | Interfaz, río con puente, aldea inicial y ajustes de sonido |
 | 7 | Bosques, aves, retratos de selección, 12 casas por bando, partida de 30 minutos, ventana final y barra de castillo |
+| 8 | Identidad y pantalla: favicon y título de pestaña, bienvenida, pantalla completa, vista inicial sobre la ciudad, cursores de acción, botones de ladrillo y doble vida en centros urbanos y torres |
 
 Las etapas 3 y 4 no tienen captura propia: la defensa (torres con flechas) se ve en la imagen de portada y el sonido no se puede mostrar en imágenes. Las capturas de las etapas 0 a 2 conservan el aspecto de aquel momento para mostrar la evolución.
 
@@ -109,10 +110,31 @@ Indicador de recursos con nombre:
 
 ![Indicador de recursos](docs/images/etapa7-recursos.png)
 
+### Etapa 8: identidad, pantalla y cursores
+
+Capturas a unos 1290x530 px (navegador integrado de VS Code).
+
+| Ventana de bienvenida | Vista inicial sobre la ciudad del jugador |
+|---|---|
+| ![Ventana de bienvenida](docs/images/etapa8-bienvenida.png) | ![Vista inicial con zoom sobre la ciudad](docs/images/etapa8-ciudad-inicial.png) |
+
+Botones superiores de ladrillo, con el botón de pantalla completa a la izquierda:
+
+![Botones superiores de ladrillo](docs/images/etapa8-botones-ladrillo.png)
+
+- **Identidad:** la pestaña se titula «RTS Camilus - Juego experimental» y usa como icono una torre dorada (`public/favicon.svg`, SVG sin recursos externos).
+- **Bienvenida:** aparece en cada carga normal con el objetivo, cinco consejos y los botones «Comenzar» y «Ver ayuda». La partida queda en pausa hasta pulsar uno de ellos (o Intro o Esc) y la IA ya carga mientras tanto. No se omite ni se recuerda; `?welcome=0` y las escenas `?fixture=` no la muestran. La ayuda (H) ahora empieza cerrada.
+- **Vista inicial:** la cámara arranca con zoom 2,2 centrada en el centro urbano del jugador, también tras reiniciar. Las escenas `?fixture=` conservan la cámara de siempre.
+- **Pantalla completa:** botón y tecla F; el estado del botón sigue al del navegador (si Esc la cierra, se actualiza).
+- **Cursores de acción:** con aldeanos seleccionados, el cursor cambia a hacha sobre un árbol, cesta sobre un arbusto y pico sobre una roca; con militares, a espada sobre un enemigo. Solo aparece si el clic derecho haría esa acción con la selección actual. Son SVG generados por código y no se ven en las capturas.
+- **Botones de ladrillo:** mosaico SVG generado por código, texto crema con contraste mínimo de 4,5:1 y fila que se parte en varias líneas si la ventana es estrecha.
+- **Vida doble:** los centros urbanos pasan de 1 500 a 3 000 y las torres de 800 a 1 600, para ambos bandos.
+
 ## Controles
 
 | Acción | Entrada |
 |---|---|
+| Pantalla completa | Tecla F o botón con icono de esquinas |
 | Cámara | WASD o flechas, o cursor en el borde de la pantalla (24 px, 1,5 veces más rápido); rueda para acercar o alejar (hasta 5,5 veces); clic o arrastre en la miniatura |
 | Registros técnicos | Tecla L o botón «Registros» |
 | Seleccionar | Clic o arrastre; Shift suma o quita; Esc limpia (el clic en un edificio, enemigo o recurso solo muestra su retrato e información) |
@@ -139,6 +161,7 @@ Parámetros de URL útiles:
 | Parámetro | Efecto |
 |---|---|
 | `?ai=0` | Desactiva la IA |
+| `?welcome=0` | Omite la ventana de bienvenida |
 | `?audio=0` | Desactiva todo el audio |
 | `?graphics=low` | Modo gráfico reducido (aspecto de la etapa 4): sin antialias, sombras, agua animada ni partículas, con menos decoración y flechas simples |
 | `?shadows=0` | Desactiva solo las sombras proyectadas del modo gráfico alto |
@@ -170,8 +193,8 @@ src/
   ai-worker/    Worker que carga Pyodide y ejecuta la política
   app/          Sesión de juego y bucle de ticks
   rendering/    Escena Three.js; portrait.ts dibuja el retrato de la selección en un segundo renderizador
-  input/        Cámara, selección (describeSelection) y control de ratón y teclado
-  ui/           Panel de órdenes con tarjeta de selección, avisos temporales, miniatura, ventana final (end-dialog.ts) y barra de castillo (castle-bar.ts)
+  input/        Cámara, selección (describeSelection), cursores de acción (cursors.ts) y control de ratón y teclado
+  ui/           Panel de órdenes con tarjeta de selección, avisos temporales, miniatura, ventana final (end-dialog.ts), bienvenida (welcome.ts), pantalla completa (fullscreen.ts), barra de castillo y botones de ladrillo (castle-bar.ts)
   audio/        Efectos, aves de fondo (ambient.ts) y música sintetizados con Web Audio; solo lee los eventos de la simulación
   diagnostics/  Métricas de rendimiento e informe exportable
 python/policy/  Política de la IA (policy-0.4)
@@ -185,9 +208,9 @@ Pila tecnológica: Vite 6, TypeScript 7 (modo estricto), Three.js 0.186, Pyodide
 
 ## Estado y mediciones
 
-Incrementos completados: etapas 0 y 1 (base, navegación, IA en worker, economía, combate, rival completo y estabilización) y etapas 2 a 7 (mejoras visuales, defensa y recursos, sonido, realismo audiovisual, interfaz y mundo, bosques, retratos y castillo).
+Incrementos completados: etapas 0 y 1 (base, navegación, IA en worker, economía, combate, rival completo y estabilización) y etapas 2 a 8 (mejoras visuales, defensa y recursos, sonido, realismo audiovisual, interfaz y mundo, bosques, retratos y castillo, identidad y pantalla).
 
-Pruebas: 415 de TypeScript y 59 de Python.
+Pruebas: 431 de TypeScript y 59 de Python.
 
 Medición en un equipo con Ryzen 5 5600H y RTX 3050, Chromium, 1366x768, escena `objetivo` durante unos 6 minutos (anterior a la etapa 2 y no repetida con el aspecto actual):
 
@@ -202,7 +225,9 @@ Medición en un equipo con Ryzen 5 5600H y RTX 3050, Chromium, 1366x768, escena 
 
 En la etapa 7 solo se midió la fluidez de la partida por defecto en el navegador integrado de VS Code (ventana de unos 870x490 px, con IA, 8 s tras cargar): 300 cuadros con mediana de 16,7 ms, p95 de 16,8 ms y máximo de 17,1 ms (60 FPS). No se ha medido a 1920x1080 ni en una partida larga con 36 000 ticks en el navegador.
 
-En simulación sin navegador (horizonte de 36 000 ticks): la IA gana al jugador pasivo en el tick 6 178 y dos IA enfrentadas terminan en el tick 24 596, sin violaciones de reglas y con el mismo hash al reproducir las órdenes.
+En simulación sin navegador (horizonte de 36 000 ticks), con la vida doble de la etapa 8: la IA gana al jugador pasivo en el tick 10 168 (6 178 en la etapa 7) y dos IA enfrentadas (semilla 5) llegan al límite y empatan en el tick 36 000 (en la etapa 7 terminaban en el tick 24 596), sin violaciones de reglas. No se comprobó la reproducción de esa partida concreta; la prueba de estabilidad sí reproduce con el mismo hash una partida de 36 000 ticks con centros urbanos indestructibles.
+
+En la etapa 8 la verificación en el navegador integrado se limitó a lo visible (bienvenida, vista inicial, botones, pantalla completa y cursores de hacha, cesta y pico); el cursor de espada solo se probó con pruebas unitarias y no se midió el rendimiento.
 
 ## Limitaciones conocidas
 

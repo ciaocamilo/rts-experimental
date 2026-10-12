@@ -139,6 +139,12 @@ function build(): MapLayout {
 
 export const MAP_LAYOUT: MapLayout = build();
 
+/** Centro del centro urbano del jugador 0: punto de partida de la cámara. */
+export function homeView(layout: MapLayout): Pos {
+  const tc = layout.townCenters[0];
+  return { x: tc.x + TC / 2, z: tc.z + TC / 2 };
+}
+
 // La alcanzabilidad (§4.1) requiere navegación y se valida en core/map-check.
 export function validateMapLayout(layout: MapLayout): void {
   const occupied = new Set<string>();

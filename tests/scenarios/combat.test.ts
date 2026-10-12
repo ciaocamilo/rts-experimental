@@ -298,7 +298,7 @@ describe("T-09 resultado y pausa (RF-11)", () => {
     send(state, attack([s], center.id));
     expect(state.matchStatus).toBe("ended");
     expect(state.outcome).toMatchObject({ winner: 0, reason: "TOWN_CENTER_DESTROYED" });
-    // P3-R08: la instantánea terminal conserva el edificio retirado con su vida real (0 de 1500), no un valor inventado.
+    // P3-R08: la instantánea terminal conserva el edificio retirado con su vida real (0 de 3000), no un valor inventado.
     const rival = state.outcome!.mainBuildings.find((b) => b.owner === 1)!;
     expect(rival).toMatchObject({ destroyed: true, hp: 0, maxHp: BALANCE.buildings.townCenter.hp });
     expect(state.outcome!.mainBuildings.find((b) => b.owner === 0)).toMatchObject({ destroyed: false, hp: BALANCE.buildings.townCenter.hp });
