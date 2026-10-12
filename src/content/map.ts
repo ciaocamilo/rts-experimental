@@ -9,7 +9,7 @@ export interface TerrainRectSpec {
   readonly z: number;
   readonly w: number;
   readonly h: number;
-  readonly kind?: "water" | "bridge";
+  readonly kind?: "water" | "bridge" | "forest";
 }
 
 export interface StartBuildingSpec {
@@ -61,13 +61,27 @@ const RIVER: readonly TerrainRectSpec[] = [
   { x: 61, z: 35, w: 6, h: 29, kind: "water" },
 ];
 
+// P7: bosques (obstáculo con arbolado denso) lejos de la aldea, los nodos y el pasillo del puente; mitad izquierda.
+const HALF_FOREST: readonly TerrainRectSpec[] = [
+  { x: 2, z: 0, w: 14, h: 9, kind: "forest" },
+  { x: 20, z: 0, w: 12, h: 4, kind: "forest" },
+  { x: 2, z: 55, w: 14, h: 9, kind: "forest" },
+  { x: 20, z: 60, w: 12, h: 4, kind: "forest" },
+  { x: 24, z: 13, w: 6, h: 5, kind: "forest" },
+  { x: 24, z: 46, w: 6, h: 5, kind: "forest" },
+  { x: 50, z: 9, w: 7, h: 6, kind: "forest" },
+  { x: 50, z: 49, w: 7, h: 6, kind: "forest" },
+];
+
 const mirrorRect = (t: TerrainRectSpec): TerrainRectSpec => ({ ...t, x: MAP_WIDTH - t.x - t.w });
 
-const TERRAIN: readonly TerrainRectSpec[] = [...HALF_TERRAIN, ...HALF_TERRAIN.map(mirrorRect), ...RIVER];
+const LEFT_TERRAIN: readonly TerrainRectSpec[] = [...HALF_TERRAIN, ...HALF_FOREST];
+const TERRAIN: readonly TerrainRectSpec[] = [...LEFT_TERRAIN, ...LEFT_TERRAIN.map(mirrorRect), ...RIVER];
 
-// P6: aldea inicial del jugador 0 (6 casas y 2 torres de 2 × 2); el jugador 1 es el espejo.
+// P6/P7: aldea inicial del jugador 0 (12 casas en cuatro hileras y 2 torres de 2 × 2); el jugador 1 es el espejo.
 const START_BUILDINGS_HALF: readonly { kind: "house" | "tower"; cell: CellPos }[] = [
   ...[4, 7, 10].flatMap((x) => [25, 37].map((z) => ({ kind: "house" as const, cell: { x, z } }))),
+  ...[4, 7, 10].flatMap((x) => [22, 40].map((z) => ({ kind: "house" as const, cell: { x, z } }))),
   { kind: "tower", cell: { x: 19, z: 27 } },
   { kind: "tower", cell: { x: 19, z: 35 } },
 ];

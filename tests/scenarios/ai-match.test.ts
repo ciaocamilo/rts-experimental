@@ -39,7 +39,7 @@ describe("T-08 partida completa de la IA sin intervención humana", () => {
   it("recorre el ciclo económico: recolecta, entrena aldeanos, construye el cuartel y entrena militares", () => {
     expect(run.commandsByType.Gather).toBeGreaterThan(0);
     expect(run.commandsByType.Train).toBeGreaterThan(5);
-    // P6: el bando ya parte con 6 casas (capacidad 40), así que la IA solo necesita construir el cuartel.
+    // P7: el bando ya parte con 12 casas (capacidad 50, el tope), así que la IA solo necesita construir el cuartel.
     expect(run.commandsByType.Build).toBeGreaterThanOrEqual(1);
     const buildings = run.session.state.buildings.filter((b) => b.owner === 1);
     expect(buildings.some((b) => b.kind === "house")).toBe(true);

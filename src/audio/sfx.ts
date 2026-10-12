@@ -393,6 +393,55 @@ function defeat(rng: Rng): Float32Array {
 const variantsOf = (count: number, make: (variant: number, rng: Rng) => Float32Array, seed: number): Float32Array[] =>
   Array.from({ length: count }, (_, v) => make(v, createRng(seed + v * 101)));
 
+/** Una nota de ave: seno con glís exponencial, vibrato y segundo armónico, con envolvente suave que la deja en cero en ambos extremos. */
+function birdNote(sr: number, f0: number, f1: number, seconds: number, vibDepth = 0, vibRate = 0, h2 = 0.25, h3 = 0): Float32Array {
+  const n = samples(seconds, sr);
+  const out = new Float32Array(n);
+  let phase = 0;
+  for (let i = 0; i < n; i++) {
+    const k = i / n;
+    const f = f0 * Math.pow(f1 / f0, k) + vibDepth * Math.sin((2 * Math.PI * vibRate * i) / sr);
+    phase += (2 * Math.PI * f) / sr;
+    const env = Math.pow(Math.sin(Math.PI * k), 1.5);
+    out[i] = (Math.sin(phase) + h2 * Math.sin(2 * phase) + h3 * Math.sin(3 * phase)) * env;
+  }
+  return out;
+}
+
+/**
+ * Cantos de ave de ambiente. La especie es `variant % 4` (0 pío agudo repetido, 1 silbido con vibrato,
+ * 2 trino corto, 3 arrullo grave) y `floor(variant / 4)` solo desplaza el tono y los tiempos. Todas duran ≤ 1,2 s.
+ */
+function bird(variant: number, rng: Rng): Float32Array {
+  const sr = LO;
+  const species = variant % 4;
+  const shift = 1 + 0.08 * Math.floor(variant / 4) + rng.range(-0.02, 0.02);
+  const out = makeBuffer(1.2, sr);
+  const put = (note: Float32Array, at: number, gain = 1): void => void addInto(out, note, Math.round(at * sr), gain);
+  if (species === 0) {
+    const count = 3 + (variant >= 4 ? 1 : 0);
+    for (let i = 0; i < count; i++) put(birdNote(sr, 3100 * shift, 3900 * shift, 0.07, 0, 0, 0.2), i * 0.14, 1 - i * 0.12);
+  } else if (species === 1) {
+    put(birdNote(sr, 2400 * shift, 3100 * shift, 0.24, 45, 26, 0.3), 0);
+    put(birdNote(sr, 3100 * shift, 2200 * shift, 0.2, 35, 30, 0.2), 0.3);
+    put(birdNote(sr, 2700 * shift, 1900 * shift, 0.34, 55, 24, 0.3), 0.56);
+  } else if (species === 2) {
+    const trill = birdNote(sr, 3600 * shift, 4300 * shift, 0.4, 0, 0, 0.2);
+    for (let i = 0; i < trill.length; i++) trill[i]! *= 0.55 + 0.45 * Math.sin((2 * Math.PI * 28 * i) / sr);
+    put(trill, 0);
+    put(birdNote(sr, 4600 * shift, 3500 * shift, 0.09, 0, 0, 0.2), 0.48, 0.9);
+    put(birdNote(sr, 4300 * shift, 3300 * shift, 0.09, 0, 0, 0.2), 0.62, 0.7);
+  } else {
+    const base = 470 * shift;
+    put(birdNote(sr, base, base * 0.95, 0.16, 6, 22, 0.5, 0.15), 0);
+    put(birdNote(sr, base * 1.1, base, 0.3, 8, 20, 0.5, 0.15), 0.27);
+    put(birdNote(sr, base, base * 0.9, 0.18, 6, 22, 0.5, 0.15), 0.67);
+  }
+  let end = out.length;
+  while (end > 1 && Math.abs(out[end - 1]!) < 1e-5) end--;
+  return finish(out.slice(0, Math.min(out.length, end + Math.round(0.03 * sr))), sr, 0.8);
+}
+
 /** Sintetiza todos los efectos una vez; determinista para una semilla dada. El número de variantes sale de `CUES`. */
 export function buildSfxBank(seed = 1): SfxBank {
   const rng = createRng(seed);
@@ -413,5 +462,6 @@ export function buildSfxBank(seed = 1): SfxBank {
     victory: entry(LO, [victory(createRng(seed + 11))]),
     defeat: entry(LO, [defeat(createRng(seed + 12))]),
     fire: entry(LO, [fire(rng)]),
+    bird: entry(LO, variantsOf(CUES.bird.variants, bird, seed + 14)),
   };
 }

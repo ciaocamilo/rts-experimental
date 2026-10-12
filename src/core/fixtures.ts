@@ -3,7 +3,7 @@ import { BALANCE } from "../content/balance";
 import { addBuilding, addTerrain, addUnit, createEmptyState, createInitialState } from "./state";
 import type { Command, EntityId, GameState, PlayerId } from "./types";
 
-export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa" | "sonidos" | "realismo" | "rio";
+export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa" | "sonidos" | "realismo" | "rio" | "retratos";
 
 export interface Fixture {
   state: GameState;
@@ -45,7 +45,7 @@ function createTargetScene(): Fixture {
   for (const owner of [0, 1] as const) {
     const mx = (x: number): number => (owner === 0 ? x : MAP_WIDTH - x);
     const cellX = (x: number, w: number): number => (owner === 0 ? x : MAP_WIDTH - x - w);
-    for (let i = 0; i < 8; i++) addBuilding(state, owner, "house", cellX(4, house), 4 + 3 * i);
+    for (let i = 0; i < 8; i++) addBuilding(state, owner, "house", cellX(4, house), 10 + 3 * i);
     addBuilding(state, owner, "barracks", cellX(20, barracks), 44);
 
     const villagers = state.units.filter((u) => u.owner === owner).map((u) => u.id);
@@ -63,10 +63,10 @@ function createTargetScene(): Fixture {
 
     const marchers: EntityId[] = [];
     for (let i = 0; i < 20; i++) {
-      const z = owner === 0 ? 2 + Math.floor(i / 5) * 0.8 : 59 + Math.floor(i / 5) * 0.8;
+      const z = owner === 0 ? 12 + Math.floor(i / 5) * 0.8 : 51 + Math.floor(i / 5) * 0.8;
       marchers.push(addUnit(state, owner, "soldier", mx(14 + (i % 5) * 0.8), z).id);
     }
-    commands.push(move(marchers, mx(50), owner === 0 ? 3 : 60, owner));
+    commands.push(move(marchers, mx(50), owner === 0 ? 20 : 44, owner));
   }
   // Centros casi indestructibles: la escena de carga no debe terminar a mitad de la medición.
   for (const b of state.buildings) if (b.kind === "townCenter") b.hp = 1_000_000;
@@ -144,7 +144,7 @@ function createSoundScene(final?: FinalOption): Fixture {
   // Derrumbe grande: cuartel propio con poca vida atacado por un rival.
   const ownBarracks = addBuilding(state, 0, "barracks", 28, 43);
   ownBarracks.hp = 80;
-  attack(dummy(1, "soldier", 27.5, 49), ownBarracks.id);
+  attack(dummy(1, "soldier", 31.8, 44.5), ownBarracks.id);
 
   // Producción: el cuartel y el centro urbano propios suenan; los del rival callan.
   const trainer = addBuilding(state, 0, "barracks", 20, 42);
@@ -244,10 +244,35 @@ function createRiverScene(): Fixture {
   return { state, commands, groups: [west, east] };
 }
 
+/**
+ * Banco de pruebas de P7 para el retrato: unidades y edificios de ambos bandos (algunos dañados y una obra) junto a la
+ * cámara inicial y un grupo rival al este, separado más de 20 celdas para que nadie combata; todo fuera de los bosques.
+ */
+function createPortraitScene(): Fixture {
+  const state = createInitialState(1, false);
+  const kinds = ["villager", "soldier", "archer"] as const;
+  const hurt = [1, 0.6, 0.35] as const;
+  for (const owner of [0, 1] as const) {
+    const x0 = owner === 0 ? 18 : 46;
+    kinds.forEach((kind, i) => {
+      const u = addUnit(state, owner, kind, x0 + i * 1.6, 30);
+      u.hp = Math.max(1, Math.round(BALANCE.units[kind].hp * hurt[owner === 0 ? i : 2 - i]!));
+    });
+    addBuilding(state, owner, "house", x0, 34).hp = Math.round(BALANCE.buildings.house.hp * (owner === 0 ? 1 : 0.55));
+    addBuilding(state, owner, "barracks", x0 + 5, 34).hp = Math.round(BALANCE.buildings.barracks.hp * (owner === 0 ? 0.8 : 1));
+    addBuilding(state, owner, "tower", x0 + 11, 34);
+  }
+  const site = addBuilding(state, 0, "house", 22, 24, false);
+  site.buildDone = Math.floor(BALANCE.buildings.house.buildTicks * 0.45);
+  site.hp = Math.round(BALANCE.buildings.house.hp * 0.5);
+  return { state, commands: [], groups: [] };
+}
+
 /** Escenarios de P0-B (§6): corredor de 3 celdas, cruce de grupos y carga de 100 unidades. */
 export function createFixture(name: FixtureName, options: { final?: FinalOption } = {}): Fixture {
   seq = 0;
   if (name === "objetivo") return createTargetScene();
+  if (name === "retratos") return createPortraitScene();
   if (name === "rio") return createRiverScene();
   if (name === "realismo") return createRealismScene();
   if (name === "sonidos") return createSoundScene(options.final);

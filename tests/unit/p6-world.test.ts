@@ -19,12 +19,12 @@ describe("P6 mundo: río, puente y edificios iniciales", () => {
     expect(() => validateMapLayout(MAP_LAYOUT)).not.toThrow();
   });
 
-  it("cada bando parte con 6 casas y 2 torres completas y capacidad 40", () => {
+  it("cada bando parte con 12 casas y 2 torres completas y capacidad 50 (tope global)", () => {
     const state = createInitialState(1);
     for (const owner of [0, 1] as const) {
-      expect(state.buildings.filter((b) => b.owner === owner && b.kind === "house" && b.complete)).toHaveLength(6);
+      expect(state.buildings.filter((b) => b.owner === owner && b.kind === "house" && b.complete)).toHaveLength(12);
       expect(state.buildings.filter((b) => b.owner === owner && b.kind === "tower" && b.complete)).toHaveLength(2);
-      expect(state.players[owner].popCapacity).toBe(40);
+      expect(state.players[owner].popCapacity).toBe(50);
     }
   });
 

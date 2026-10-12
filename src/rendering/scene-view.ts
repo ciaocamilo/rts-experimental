@@ -11,6 +11,7 @@ import { barState, flameCount } from "./health";
 import { Lighting } from "./lighting";
 import { buildBushGeometries, buildTreeGeometries, Materials, VISUAL } from "./models";
 import { NodeFactory, type NodeRig, setNodeSpent } from "./nodes";
+import type { PortraitKit } from "./portrait";
 import { computePose, deathPose, deathState, type WorkKind } from "./pose";
 import { TerrainView } from "./terrain-view";
 import { type BridgeRect, walkHeight } from "./bridge";
@@ -779,6 +780,24 @@ export class SceneView {
     const rect = this.canvas.getBoundingClientRect();
     const v = new THREE.Vector3(x, y, z).project(this.camera);
     return { x: rect.left + ((v.x + 1) / 2) * rect.width, y: rect.top + ((1 - v.y) / 2) * rect.height };
+  }
+
+  /** Árboles decorativos del mapa (posiciones); las aves cantan desde los que estén a la vista. */
+  sceneryTrees(): readonly { x: number; z: number }[] {
+    return this.terrain.scenery.trees;
+  }
+
+  /** Piezas compartidas (geometrías, materiales, fábricas) con las que el retrato dibuja los mismos modelos. */
+  portraitKit(): PortraitKit {
+    return {
+      assets: this.assets,
+      mat: this.mat,
+      units: this.units,
+      buildingGeometry: this.buildingGeometry,
+      buildingProxyMaterial: this.buildingProxyMaterial,
+      nodes: this.nodes,
+      quality: this.quality,
+    };
   }
 
   /** Función que proyecta un punto del suelo a coordenadas normalizadas de pantalla (−1 a 1); se pide una vez por cuadro. */

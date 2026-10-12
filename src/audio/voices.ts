@@ -15,7 +15,8 @@ export type CueId =
   | "collapse"
   | "victory"
   | "defeat"
-  | "fire";
+  | "fire"
+  | "bird";
 
 export interface CueSpec {
   readonly priority: number;
@@ -49,6 +50,8 @@ export const CUES: Readonly<Record<CueId, CueSpec>> = {
   pick: { priority: 1, cap: 1, minGap: 0.3, gain: 0.5, variants: 4, wet: 0.05 },
   forage: { priority: 1, cap: 1, minGap: 0.3, gain: 0.35, variants: 2, wet: 0.05 },
   fire: { priority: 0, cap: 3, minGap: 0, gain: 0.2, variants: 1, wet: 0.1 },
+  // Ambiente: cuatro especies (variante % 4) con tres variaciones cada una; los dispara `BirdScheduler`, no la simulación.
+  bird: { priority: 0, cap: 3, minGap: 0.4, gain: 0.35, variants: 12, wet: 0.25 },
 };
 
 /** Únicos cues que no suenan para ambos bandos: la puerta y la campana. */

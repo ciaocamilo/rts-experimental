@@ -62,6 +62,7 @@ export class TerrainView {
   private readonly tuftMaterial: THREE.MeshLambertMaterial;
   private readonly aoMaterial: THREE.MeshBasicMaterial;
   private readonly toneMaterial: THREE.MeshBasicMaterial;
+  private readonly forestFloorMaterial: THREE.MeshBasicMaterial;
   private readonly shoreMaterial: THREE.MeshLambertMaterial;
   private readonly waterMaterial: THREE.MeshPhongMaterial;
   private readonly shaderWater: WaterMaterial | null;
@@ -85,6 +86,7 @@ export class TerrainView {
     this.aoMaterial = assets.basic({ map: assets.textures.contact, transparent: true, depthWrite: false, toneMapped: false });
     this.toneMaterial = assets.basic({ map: assets.textures.tone, transparent: true, depthWrite: false });
     this.shoreMaterial = assets.lambert({ vertexColors: true, transparent: true, depthWrite: false });
+    this.forestFloorMaterial = assets.basic({ color: 0x1c3a1d, transparent: true, opacity: 0.42, depthWrite: false });
     this.waterMap = assets.textures.water;
     this.rippleMap = assets.textures.waterRipple;
     this.waterMaterial = this.assets.track(
@@ -132,10 +134,11 @@ export class TerrainView {
       if (t.kind === "bridge") this.addBridge(t);
       else if (t.kind === "water") {
         if (!isRiver(t)) this.addWater(t);
-      } else this.addRock(t);
+      } else if (t.kind === "forest") this.addForestFloor(t);
+      else this.addRock(t);
     }
 
-    this.plan = planScenery(width, depth, terrain);
+    this.plan = planScenery(width, depth, terrain, 1337, this.assets.quality === "high" ? 1 : 0.5);
     this.addTrees(this.plan.trees);
     if (this.assets.quality === "high") {
       this.addBushes(this.plan.bushes);
@@ -198,6 +201,14 @@ export class TerrainView {
     mesh.instanceMatrix.needsUpdate = true;
     mesh.renderOrder = 1;
     this.group.add(mesh);
+  }
+
+  /** El bosque es suelo: una mancha de hojarasca oscura bajo los árboles; el obstáculo lógico sigue siendo el rectángulo. */
+  private addForestFloor(t: TerrainRect): void {
+    const geometry = this.own(new THREE.PlaneGeometry(t.w, t.h).rotateX(-Math.PI / 2).translate(t.x + t.w / 2, 0.012, t.z + t.h / 2));
+    const floor = new THREE.Mesh(geometry, this.forestFloorMaterial);
+    floor.renderOrder = 1;
+    this.group.add(floor);
   }
 
   private addRock(t: TerrainRect): void {
