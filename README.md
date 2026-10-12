@@ -6,7 +6,7 @@ Prototipo de estrategia en tiempo real (RTS) que se ejecuta en el navegador. Un 
 
 ![Torre propia en llamas seleccionada, con el retrato en la barra de castillo](docs/images/portada.png)
 
-*Escena de pruebas `?fixture=realismo&ai=0`: edificios en llamas según su vida, humo, torre seleccionada con su retrato y barra de castillo con miniatura.*
+*Escena de pruebas `?fixture=realismo&ai=0` a 1600x900 con el aspecto actual (etapa 8): edificios en llamas según su vida, humo, torre seleccionada con retrato, ficha de ataque y alcance, barra de castillo con miniatura y botones de ladrillo.*
 
 ## Contenido
 
@@ -217,7 +217,7 @@ Pila tecnológica: Vite 6, TypeScript 7 (modo estricto), Three.js 0.186, Pyodide
 
 Incrementos completados: etapas 0 y 1 (base, navegación, IA en worker, economía, combate, rival completo y estabilización) y etapas 2 a 8 (mejoras visuales, defensa y recursos, sonido, realismo audiovisual, interfaz y mundo, bosques, retratos y castillo, identidad y pantalla).
 
-Pruebas: 431 de TypeScript y 59 de Python.
+Pruebas: 447 de TypeScript y 59 de Python.
 
 Medición en un equipo con Ryzen 5 5600H y RTX 3050, Chromium, 1366x768, escena `objetivo` durante unos 6 minutos (anterior a la etapa 2 y no repetida con el aspecto actual):
 
