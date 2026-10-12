@@ -5,11 +5,14 @@ import { previewPlacement } from "../core/placement";
 import type { Command } from "../core/types";
 import type { SceneView } from "../rendering/scene-view";
 import { REJECT_TEXT } from "../ui/messages";
-import { type CameraRig, EDGE_SPEED_FACTOR, edgePan, type PanKeys } from "./camera-rig";
+import { type CameraRig, EDGE_MARGIN_PX, EDGE_SPEED_FACTOR, edgePan, type PanKeys } from "./camera-rig";
+import { type CursorKind, cursorCss, cursorFor, resolveRightClick, selectionCaps } from "./cursors";
 import { boxSelect, clearSelection, clickSelect, type Selection } from "./selection";
 
 const HUMAN = 0 as const;
 const DRAG_THRESHOLD_PX = 5;
+/** Intervalo máximo entre reevaluaciones del cursor con el ratón quieto (cambios de selección o unidades en movimiento). */
+const CURSOR_REFRESH_SEC = 0.1;
 const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel", tower: "torre" };
 
 const KEY_MAP: Record<string, keyof PanKeys> = {
@@ -43,6 +46,10 @@ export class InputController {
   private drag: { x: number; y: number; shift: boolean; active: boolean } | null = null;
   private placement: BuildingKind | null = null;
   private pointer: { x: number; y: number } | null = null;
+  private hover: { x: number; y: number } | null = null;
+  private cursorDirty = false;
+  private cursorClock = 0;
+  private cursorKind: CursorKind | null = null;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -55,10 +62,12 @@ export class InputController {
     window.addEventListener("keydown", (e) => this.onKey(e, true), opts);
     window.addEventListener("keyup", (e) => this.onKey(e, false), opts);
     window.addEventListener("blur", () => this.resetKeys(), opts);
+    window.addEventListener("blur", () => this.leaveCanvas(), opts);
     window.addEventListener("pointermove", (e) => this.onEdge(e), opts);
     document.documentElement.addEventListener("mouseleave", () => this.clearEdge(), opts);
     canvas.addEventListener("pointerdown", (e) => this.onDown(e), opts);
     canvas.addEventListener("pointermove", (e) => this.onMove(e), opts);
+    canvas.addEventListener("pointerleave", () => this.leaveCanvas(), opts);
     canvas.addEventListener("pointerup", (e) => this.onUp(e), opts);
     canvas.addEventListener("pointercancel", () => this.cancelDrag(), opts);
     canvas.addEventListener("contextmenu", (e) => this.onContext(e), opts);
@@ -71,6 +80,7 @@ export class InputController {
     const mouse = this.drag?.active ? null : e;
     const edgeActive = !!(mouse && (mouse.up || mouse.down || mouse.left || mouse.right));
     this.rig.pan(dtSec, { up: k.up || !!mouse?.up, down: k.down || !!mouse?.down, left: k.left || !!mouse?.left, right: k.right || !!mouse?.right }, edgeActive ? EDGE_SPEED_FACTOR : 1);
+    this.updateCursor(dtSec);
     if (!this.placement) return;
     if (!this.ownVillagers().length) {
       this.cancelPlacement();
@@ -145,6 +155,29 @@ export class InputController {
     this.hooks.onOrder(id);
   }
 
+  /** El cursor anuncia lo que haría el clic derecho; se reevalúa al mover el ratón y, con el ratón quieto, a 10 Hz como máximo. */
+  private updateCursor(dtSec: number): void {
+    this.cursorClock += dtSec;
+    if (!this.cursorDirty && this.cursorClock < CURSOR_REFRESH_SEC) return;
+    this.cursorDirty = false;
+    this.cursorClock = 0;
+    const session = this.hooks.getSession();
+    const state = session.state;
+    let kind: CursorKind | null = null;
+    if (this.hover && !this.placement && !this.drag?.active && !session.paused && state.matchStatus !== "ended") {
+      const action = resolveRightClick(state, this.view.pickEntities(this.hover.x, this.hover.y), HUMAN);
+      kind = cursorFor(action, selectionCaps(state, this.hooks.selection, HUMAN));
+    }
+    if (kind === this.cursorKind) return;
+    this.cursorKind = kind;
+    this.canvas.style.cursor = kind ? cursorCss(kind) : "";
+  }
+
+  private leaveCanvas(): void {
+    this.hover = null;
+    this.cursorDirty = true;
+  }
+
   dispose(): void {
     this.abort.abort();
   }
@@ -158,11 +191,13 @@ export class InputController {
     this.edge = { up: false, down: false, left: false, right: false };
   }
 
-  /** Solo el ratón sobre el canvas desplaza; sobre la interfaz (paneles, botones, ayuda) se detiene. */
+  /** El ratón desplaza sobre el canvas y sobre la barra inferior; hacia abajo solo en el borde de la pantalla, no en el del escenario. */
   private onEdge(e: PointerEvent): void {
-    if (e.pointerType !== "mouse" || e.target !== this.canvas) return this.clearEdge();
+    const overBar = e.target instanceof Element && e.target.closest("#bottom-bar") !== null;
+    if (e.pointerType !== "mouse" || (e.target !== this.canvas && !overBar)) return this.clearEdge();
     const r = this.canvas.getBoundingClientRect();
-    this.edge = edgePan(e.clientX - r.left, e.clientY - r.top, r.width, r.height);
+    const pan = edgePan(e.clientX - r.left, e.clientY - r.top, r.width, r.height, EDGE_MARGIN_PX, window.innerHeight - r.top);
+    this.edge = overBar ? { up: false, down: pan.down, left: false, right: false } : pan;
   }
 
   private onKey(e: KeyboardEvent, down: boolean): void {
@@ -194,6 +229,8 @@ export class InputController {
 
   private onMove(e: PointerEvent): void {
     this.pointer = { x: e.clientX, y: e.clientY };
+    this.hover = this.pointer;
+    this.cursorDirty = true;
     const d = this.drag;
     if (!d) return;
     if (!d.active && Math.hypot(e.clientX - d.x, e.clientY - d.y) >= DRAG_THRESHOLD_PX) d.active = true;
@@ -245,20 +282,10 @@ export class InputController {
     if (sel.units.size === 0) return this.hooks.notify("No hay unidades propias seleccionadas");
 
     // Se ignoran las unidades propias que tapan al objetivo (p. ej. aldeanos sobre un árbol).
-    const s = session.state;
-    for (const hit of this.view.pickEntities(e.clientX, e.clientY)) {
-      const node = s.resourceNodes.find((n) => n.id === hit);
-      if (node) {
-        return this.order({ type: "Gather", entityIds: [...sel.units], target: { entityId: node.id } });
-      }
-      const site = s.buildings.find((b) => b.id === hit && b.owner === HUMAN && !b.complete);
-      if (site) {
-        return this.order({ type: "ResumeBuild", entityIds: [...sel.units], target: { entityId: site.id } });
-      }
-      if ([...s.units, ...s.buildings].some((x) => x.id === hit && x.owner !== HUMAN)) {
-        return this.order({ type: "Attack", entityIds: [...sel.units], target: { entityId: hit } });
-      }
-    }
+    const action = resolveRightClick(session.state, this.view.pickEntities(e.clientX, e.clientY), HUMAN);
+    if (action?.kind === "gather") return this.order({ type: "Gather", entityIds: [...sel.units], target: { entityId: action.node.id } });
+    if (action?.kind === "resume") return this.order({ type: "ResumeBuild", entityIds: [...sel.units], target: { entityId: action.site.id } });
+    if (action?.kind === "attack") return this.order({ type: "Attack", entityIds: [...sel.units], target: { entityId: action.target.id } });
 
     const point = this.view.groundPoint(e.clientX, e.clientY);
     if (!point) return this.hooks.notify("Destino fuera del mapa");

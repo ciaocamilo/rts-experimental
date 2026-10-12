@@ -96,9 +96,25 @@ export class UnitFactory {
     ];
   }
 
-  private torsoParts(role: Role, owner: 0 | 1): Part[] {
+  /** Aldeana: corpiño del bando, falda larga de lana, delantal de lino, toca blanca y trenza. */
+  private dressParts(team: number): Part[] {
+    const m = this.mat;
+    return [
+      { geometry: new THREE.CapsuleGeometry(0.095, 0.17, 4, 10).scale(1.3, 1, 0.9), position: [0, 0.2, 0], color: team },
+      { geometry: new THREE.CylinderGeometry(0.11, 0.11, 0.035, 12).scale(1.25, 1, 0.95), position: [0, 0.075, 0], color: m.leather.color.getHex() },
+      { geometry: new THREE.CylinderGeometry(0.125, 0.235, 0.4, 14), position: [0, -0.13, 0], color: m.trousers.color.getHex() },
+      { geometry: new THREE.BoxGeometry(0.2, 0.3, 0.02).rotateX(0.12), position: [0, -0.1, 0.17], color: m.sack.color.getHex() },
+      { geometry: new THREE.SphereGeometry(0.1, 10, 8), position: [0, 0.47, 0], color: m.skin.color.getHex() },
+      { geometry: new THREE.SphereGeometry(0.112, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), position: [0, 0.49, -0.012], color: m.feather.color.getHex() },
+      { geometry: new THREE.SphereGeometry(0.05, 8, 6), position: [0, 0.45, -0.1], color: m.feather.color.getHex() },
+      { geometry: new THREE.CapsuleGeometry(0.03, 0.13, 3, 6), position: [0, 0.33, -0.115], color: m.leather.color.getHex() },
+    ];
+  }
+
+  private torsoParts(role: Role, owner: 0 | 1, female: boolean): Part[] {
     const m = this.mat;
     const team = m.team[owner].color.getHex();
+    if (female) return this.dressParts(team);
     const parts: Part[] = [
       { geometry: new THREE.CapsuleGeometry(0.1, 0.18, 4, 10).scale(1.5, 1, 0.95), position: [0, 0.19, 0], color: team },
       { geometry: new THREE.CylinderGeometry(0.11, 0.11, 0.05, 12).scale(1.5, 1, 1), position: [0, 0.05, 0], color: m.leather.color.getHex() },
@@ -158,8 +174,9 @@ export class UnitFactory {
     ];
   }
 
-  /** Construye un humano articulado por rol (aldeano, arquero o soldado). */
-  create(role: Role, owner: 0 | 1, withShadow: boolean): UnitRig {
+  /** Construye un humano articulado por rol (aldeano, arquero o soldado); `female` solo aplica al aldeano. */
+  create(role: Role, owner: 0 | 1, withShadow: boolean, female = false): UnitRig {
+    female = female && role === "villager";
     const m = this.mat;
     const root = new THREE.Group();
     const facing = new THREE.Group();
@@ -180,7 +197,7 @@ export class UnitFactory {
     const torso = new THREE.Group();
     torso.position.set(0, 0.42, 0);
     bob.add(torso);
-    this.mesh(this.geometry(`torso:${role}:${owner}`, () => this.torsoParts(role, owner)), torso);
+    this.mesh(this.geometry(`torso:${role}:${owner}${female ? ":f" : ""}`, () => this.torsoParts(role, owner, female)), torso);
 
     const armL = new THREE.Group();
     const armR = new THREE.Group();

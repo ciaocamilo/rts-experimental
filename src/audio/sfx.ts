@@ -115,32 +115,37 @@ function arrowHit(variant: number, rng: Rng): Float32Array {
   addInto(out, bandNoise(rng, n, sr, 1800, 1, 0.003), 0, 0.4);
   return finish(out, sr);
 }
-/** Golpe sordo del aldeano: carne y tela con un cuerpo de madera, sin resonancia metálica. */
+/** Puñetazo del aldeano: soplo breve del brazo, impacto seco de carne con cuerpo grave y sin resonancia metálica. */
 function blow(variant: number, rng: Rng): Float32Array {
   const sr = HI;
   const out = makeBuffer(0.3, sr);
   const n = out.length;
-  addInto(out, thump(170 - variant * 25, 90, 0.2, sr, 0.05), 0, 1);
-  addInto(out, lowNoise(rng, n, sr, 700, 0.02), 0, 0.7);
-  addInto(out, bandNoise(rng, n, sr, 1500, 1, 0.005), 0, 0.2);
-  addInto(out, modalBank([140 - variant * 12, 260, 410], [0.4, 0.25, 0.15], [0.05, 0.035, 0.025], 0.3, sr), 0, 0.5);
+  const hit = Math.round(0.045 * sr);
+  const air = filterSweep("bandpass", whiteNoise(rng, samples(0.06, sr)), sr, (t) => 700 + 1800 * Math.min(1, t / 0.05), 1.2);
+  addInto(out, multiply(air, pluckEnv(air.length, sr, 0.03, 0.02)), 0, 0.5);
+  addInto(out, thump(150 - variant * 18, 55, 0.2, sr, 0.045), hit, 1);
+  addInto(out, lowNoise(rng, n - hit, sr, 1100, 0.012), hit, 0.8);
+  addInto(out, bandNoise(rng, n - hit, sr, 2200 + 300 * variant, 1.2, 0.004), hit, 0.45);
+  addInto(out, modalBank([110 - variant * 8, 210, 330], [0.4, 0.25, 0.12], [0.05, 0.035, 0.025], 0.2, sr), hit, 0.45);
+  softClip(out, 1.3);
   return finish(out, sr);
 }
 
-/** Grito de muerte: fuente glotal con contorno de tono, formantes /a/ a /o/, soplo y jadeo final; el aldeano es más agudo. */
+/** Grito de muerte: fuente glotal con contorno de tono, formantes /a/ a /o/, soplo y jadeo final; el aldeano es más agudo y la aldeana (variantes 6 a 8) casi una octava sobre el soldado. */
 function death(variant: number, rng: Rng): Float32Array {
   const sr = LO;
+  const female = variant >= 6;
   const villager = variant < 3;
   const k = variant % 3;
   const seconds = 0.95 + 0.18 * k;
   const n = samples(seconds, sr);
-  const base = (villager ? 1.3 : 1) * (130 + 20 * k);
+  const base = female ? 2.05 * (140 + 18 * k) : (villager ? 1.3 : 1) * (130 + 20 * k);
   const f0At = (t: number): number => {
-    const rise = 1 + 0.9 * smooth(t / 0.15);
+    const rise = 1 + (female ? 0.7 : 0.9) * smooth(t / (female ? 0.12 : 0.15));
     const fall = 1 - 0.5 * Math.pow(Math.max(0, (t - 0.25) / (seconds - 0.25)), 1.2);
     return base * rise * fall * (1 + 0.03 * Math.sin(2 * Math.PI * 6.5 * t) * Math.min(1, t / 0.3));
   };
-  const shift = villager ? 1.12 : 1;
+  const shift = female ? 1.2 : villager ? 1.12 : 1;
   const formantsAt = (t: number): readonly number[] => {
     const m = smooth((t - 0.1) / 0.5);
     return [(700 - 250 * m) * shift, (1100 - 300 * m) * shift, 2500 * shift];

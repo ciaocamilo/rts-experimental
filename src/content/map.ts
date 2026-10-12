@@ -107,9 +107,10 @@ function build(): MapLayout {
   const tc1: CellPos = { x: MAP_WIDTH - tc0.x - TC, z: tc0.z };
 
   const spawns0: Pos[] = [
-    { x: 13.5, z: 31 },
-    { x: 13.5, z: 32 },
-    { x: 13.5, z: 33 },
+    { x: 12.9, z: 31.5 },
+    { x: 14.1, z: 31.5 },
+    { x: 12.9, z: 33.5 },
+    { x: 14.1, z: 33.5 },
   ];
   const spawns1: Pos[] = spawns0.map((p) => ({ x: MAP_WIDTH - p.x, z: p.z }));
 
@@ -138,6 +139,12 @@ function build(): MapLayout {
 }
 
 export const MAP_LAYOUT: MapLayout = build();
+
+/** Centro del centro urbano del jugador 0: punto de partida de la cámara. */
+export function homeView(layout: MapLayout): Pos {
+  const tc = layout.townCenters[0];
+  return { x: tc.x + TC / 2, z: tc.z + TC / 2 };
+}
 
 // La alcanzabilidad (§4.1) requiere navegación y se valida en core/map-check.
 export function validateMapLayout(layout: MapLayout): void {

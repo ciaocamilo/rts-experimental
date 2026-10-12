@@ -1,6 +1,6 @@
-import { BALANCE } from "../content/balance";
+import { BALANCE, type UnitKind } from "../content/balance";
 import { activityOf, type Activity } from "../core/economy";
-import type { EntityId, GameState, PlayerId } from "../core/types";
+import type { EntityId, Gender, GameState, PlayerId } from "../core/types";
 
 export interface Selection {
   /** Unidades propias seleccionadas; reciben órdenes. */
@@ -91,6 +91,8 @@ export interface SelectionInfo {
   type: "unit" | "building" | "node";
   /** Variante del modelo: rol, tipo de edificio o recurso. */
   kind: string;
+  /** Aldeana o aldeano (solo unidades); cambia el retrato y el nombre. */
+  gender: Gender | null;
   name: string;
   side: Side;
   sideLabel: string;
@@ -105,6 +107,8 @@ export interface SelectionInfo {
   progress: number | null;
   /** Líneas de detalle sin repetir el nombre. */
   lines: string[];
+  /** Ataque y alcance (este solo si no es cuerpo a cuerpo), o null si la entidad no ataca. */
+  combat: CombatStats | null;
   /** Clave del aspecto del modelo; cambia solo cuando el retrato debe redibujarse. */
   aspectKey: string;
   owner: PlayerId | null;
@@ -120,12 +124,12 @@ export function describeSelection(state: GameState, id: EntityId, player: Player
     const max = BALANCE.units[u.kind].hp;
     const side = sideOf(u.owner, player);
     const activity = ACTIVITY_TEXT[activityOf(u)];
-    const lines = [activity.charAt(0).toUpperCase() + activity.slice(1)];
-    if (u.carry) lines.push(`carga ${u.carry.amount} de ${RESOURCE_NAME[u.carry.kind]}`);
+    const carry = u.carry ? ` · carga ${u.carry.amount} de ${RESOURCE_NAME[u.carry.kind]}` : "";
+    const lines = [activity.charAt(0).toUpperCase() + activity.slice(1) + carry];
     return {
-      id, type: "unit", kind: u.kind, name: UNIT_LABEL[u.kind], side, sideLabel: SIDE_LABEL[side],
+      id, type: "unit", kind: u.kind, gender: u.gender, name: u.kind === "villager" && u.gender === "female" ? "Aldeana" : UNIT_LABEL[u.kind], side, sideLabel: SIDE_LABEL[side],
       value: u.hp, max, ratio: ratioOf(u.hp, max), barLabel: `Vida ${u.hp} / ${max}`, barKind: "life", progress: null,
-      lines, aspectKey: `unit:${u.kind}:${u.owner}`, owner: u.owner,
+      lines, combat: combatStats(u.kind), aspectKey: `unit:${u.kind}:${u.owner}:${u.gender}`, owner: u.owner,
     };
   }
   const b = state.buildings.find((x) => x.id === id);
@@ -138,9 +142,10 @@ export function describeSelection(state: GameState, id: EntityId, player: Player
     else if (def.housing > 0) lines.push(`Aloja ${def.housing} unidades`);
     if (b.queue.length > 0) lines.push(`Cola ${b.queue.length}/${BALANCE.economy.queueLimit}`);
     return {
-      id, type: "building", kind: b.kind, name: BUILDING_LABEL[b.kind], side, sideLabel: SIDE_LABEL[side],
+      id, type: "building", kind: b.kind, gender: null, name: BUILDING_LABEL[b.kind], side, sideLabel: SIDE_LABEL[side],
       value: b.hp, max: def.hp, ratio: ratioOf(b.hp, def.hp), barLabel: `Vida ${b.hp} / ${def.hp}`, barKind: "life", progress,
-      lines, aspectKey: `building:${b.kind}:${b.owner}:${progress === null ? "done" : Math.floor(progress * 20)}`, owner: b.owner,
+      lines, combat: def.weapon !== null && progress === null ? combatStats(def.weapon, def.arrows ?? 1) : null,
+      aspectKey: `building:${b.kind}:${b.owner}:${progress === null ? "done" : Math.floor(progress * 20)}`, owner: b.owner,
     };
   }
   const n = state.resourceNodes.find((x) => x.id === id);
@@ -148,13 +153,33 @@ export function describeSelection(state: GameState, id: EntityId, player: Player
     const max = BALANCE.nodeAmount;
     const spent = n.remaining <= 0;
     return {
-      id, type: "node", kind: n.kind, name: NODE_LABEL[n.kind], side: "nature", sideLabel: SIDE_LABEL.nature,
+      id, type: "node", kind: n.kind, gender: null, name: NODE_LABEL[n.kind], side: "nature", sideLabel: SIDE_LABEL.nature,
       value: n.remaining, max, ratio: ratioOf(n.remaining, max), barLabel: spent ? "Agotado" : `Restante ${n.remaining} / ${max}`, barKind: "resource", progress: null,
-      lines: [`Da ${RESOURCE_NAME[n.kind]}`], aspectKey: `node:${n.kind}:${n.kind === "wood" ? n.id % 3 : 0}:${spent ? "spent" : "full"}`, owner: null,
+      lines: [`Da ${RESOURCE_NAME[n.kind]}`], combat: null, aspectKey: `node:${n.kind}:${n.kind === "wood" ? n.id % 3 : 0}:${spent ? "spent" : "full"}`, owner: null,
     };
   }
   return null;
 }
+
+/** Ataque total por disparo y alcance en celdas; `range` es null en el cuerpo a cuerpo. */
+export interface CombatStats {
+  attack: number;
+  range: number | null;
+}
+
+/** Ataque (daño × `arrows` flechas) y alcance del arma de una unidad; null si no hace daño. */
+export function combatStats(kind: UnitKind, arrows = 1): CombatStats | null {
+  const def = BALANCE.units[kind];
+  if (def.damage <= 0) return null;
+  return { attack: def.damage * arrows, range: def.range > 1 ? def.range : null };
+}
+
+/** Texto para lectores de pantalla y descripciones: "Ataque 8, alcance 5". */
+export function combatLabel(c: CombatStats): string {
+  return c.range === null ? `Ataque ${c.attack}` : `Ataque ${c.attack}, alcance ${num(c.range)}`;
+}
+
+const num = (n: number): string => String(n).replace(".", ",");
 
 function ratioOf(value: number, max: number): number {
   return Number.isFinite(max) && max > 0 && Number.isFinite(value) ? Math.min(1, Math.max(0, value / max)) : 0;

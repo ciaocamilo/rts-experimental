@@ -34,9 +34,9 @@ const base = {
     observation_tick: 140,
     player_id: 1,
     seed: 1,
-    game_version: "p7.0.0",
+    game_version: "p8.0.0",
     map_version: "map-0.5 (128x64, río, bosques)",
-    balance_version: "balance-0.4",
+    balance_version: "balance-0.7",
     players: [
       { id: 0, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
       { id: 1, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
@@ -48,8 +48,8 @@ const base = {
       { id: 7, owner: 1, kind: "villager", x: 50.5, z: 33, hp: 40, task: "blocked", activity: "blocked", dest: { x: 48.5, z: 32.5 }, blocked_reason: "STUCK", carry: null, target_id: null, defending: false },
     ],
     buildings: [
-      { id: 1, owner: 0, kind: "townCenter", cell_x: 8, cell_z: 30, hp: 1500, complete: true, build_done: 0, queue: [] },
-      { id: 4, owner: 1, kind: "townCenter", cell_x: 116, cell_z: 30, hp: 1500, complete: true, build_done: 0, queue: [{ id: 9, kind: "villager", remaining: 120 }] },
+      { id: 1, owner: 0, kind: "townCenter", cell_x: 8, cell_z: 30, hp: 3000, complete: true, build_done: 0, queue: [] },
+      { id: 4, owner: 1, kind: "townCenter", cell_x: 116, cell_z: 30, hp: 3000, complete: true, build_done: 0, queue: [{ id: 9, kind: "villager", remaining: 120 }] },
     ],
     resource_nodes: [
       { id: 8, kind: "food", cell_x: 15, cell_z: 22, remaining: 500 },

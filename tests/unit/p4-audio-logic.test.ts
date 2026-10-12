@@ -191,11 +191,13 @@ describe("P4 CueTranslator", () => {
 
   it("muertes: un grito por unidad en pantalla con variante según el tipo", () => {
     const t = new CueTranslator();
-    const mk = (seq: number, kind: DeathEvent["kind"], pos = IN): DeathEvent & { seq: number } => ({ seq, tick: 1, id: seq, owner: seq % 2 === 0 ? 0 : 1, kind, pos });
-    const out = t.process(frame(world(), { deaths: [mk(1, "villager"), mk(2, "soldier"), mk(3, "archer", OUT)] }));
-    expect(out.map((c) => c.cue)).toEqual(["death", "death"]);
+    const mk = (seq: number, kind: DeathEvent["kind"], pos = IN, gender: DeathEvent["gender"] = "male"): DeathEvent & { seq: number } => ({ seq, tick: 1, id: seq, owner: seq % 2 === 0 ? 0 : 1, kind, gender, pos });
+    const out = t.process(frame(world(), { deaths: [mk(1, "villager"), mk(2, "soldier"), mk(3, "archer", OUT), mk(4, "villager", IN, "female")] }));
+    expect(out.map((c) => c.cue)).toEqual(["death", "death", "death"]);
     expect(out[0]!.variant).toBeLessThan(3);
     expect(out[1]!.variant).toBeGreaterThanOrEqual(3);
+    expect(out[1]!.variant).toBeLessThan(6);
+    expect(out[2]!.variant).toBeGreaterThanOrEqual(6);
   });
 
   it("la puerta solo suena para el jugador y con el edificio en pantalla", () => {

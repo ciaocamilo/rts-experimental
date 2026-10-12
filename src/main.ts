@@ -6,7 +6,7 @@ import { AudioEngine } from "./audio/engine";
 import { loadMusicInWorker } from "./audio/music-loader";
 import { loadSettings } from "./audio/settings";
 import { BALANCE, MAX_ACTIVE_TICKS, validateBalance } from "./content/balance";
-import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH, validateMapLayout } from "./content/map";
+import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH, homeView, validateMapLayout } from "./content/map";
 import { AUDIO_VERSION, BALANCE_VERSION, GAME_VERSION, GRAPHICS_VERSION, MAP_VERSION } from "./content/versions";
 import { createFixture, type FixtureName } from "./core/fixtures";
 import { hashState } from "./core/hash";
@@ -16,17 +16,19 @@ import { createInitialState, livingOf, reservedOf } from "./core/state";
 import type { Command } from "./core/types";
 import { PerfRecorder } from "./diagnostics/recorder";
 import { buildReport } from "./diagnostics/report";
-import { CameraRig } from "./input/camera-rig";
+import { CameraRig, INITIAL_ZOOM } from "./input/camera-rig";
 import { InputController } from "./input/controller";
 import { clearSelection, emptySelection, pruneSelection } from "./input/selection";
 import { PortraitView } from "./rendering/portrait";
 import { SceneView } from "./rendering/scene-view";
 import { CommandPanel } from "./ui/command-panel";
-import { applyCastleBar } from "./ui/castle-bar";
+import { applyBrickButtons, applyCastleBar } from "./ui/castle-bar";
 import { EndDialog } from "./ui/end-dialog";
+import { FullscreenToggle } from "./ui/fullscreen";
 import { describeResult, REJECT_TEXT, toastKind } from "./ui/messages";
 import { Minimap } from "./ui/minimap";
 import { ToastCenter } from "./ui/toasts";
+import { WelcomeDialog } from "./ui/welcome";
 
 const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos", "realismo", "rio", "retratos"];
 
@@ -68,6 +70,7 @@ function start(): void {
   validateMapLayout(MAP_LAYOUT);
   validateInitialReachability(createInitialState(0));
   applyCastleBar(el("bottom-bar"));
+  applyBrickButtons(el("controls"));
 
   const params = new URLSearchParams(location.search);
   const fixtureParam = params.get("fixture");
@@ -83,7 +86,10 @@ function start(): void {
     return created;
   };
 
-  const rig = new CameraRig(MAP_WIDTH, MAP_DEPTH, { x: 16, z: MAP_DEPTH / 2 });
+  // Las escenas `?fixture=` conservan la cámara de siempre; la partida normal arranca sobre la ciudad del jugador.
+  const fixtureView = { x: 16, z: MAP_DEPTH / 2 };
+  const startView = fixtureName ? fixtureView : { ...homeView(MAP_LAYOUT), zoom: INITIAL_ZOOM };
+  const rig = new CameraRig(MAP_WIDTH, MAP_DEPTH, startView);
   // `?graphics=low` desactiva sombras, antialiasing, decoración fina y animación del agua; `?shadows=0` solo las sombras.
   const quality = params.get("graphics") === "low" ? "low" : "high";
   const view = new SceneView(el<HTMLCanvasElement>("view"), MAP_WIDTH, MAP_DEPTH, rig, quality, params.get("shadows") !== "0");
@@ -384,6 +390,7 @@ function start(): void {
     errors.length = 0;
     session = newSession();
     view.reset();
+    if (!fixtureName) rig.reset(startView);
     audio?.reset();
     ai = aiEnabled ? createAI(session) : null;
     ai?.director.start();
@@ -406,10 +413,31 @@ function start(): void {
   window.addEventListener("resize", () => view.resize());
   setLogs(false);
 
+  new FullscreenToggle(el<HTMLButtonElement>("btn-fullscreen"), notify);
+
   const help = el("help");
   const toggleHelp = (): void => {
     help.classList.toggle("visible");
   };
+
+  // La bienvenida aparece en cada carga normal (sin casilla ni almacenamiento); `?welcome=0` y las escenas `?fixture=` la omiten.
+  // La partida queda en pausa hasta pulsar Comenzar; la IA ya carga mientras tanto.
+  if (!fixtureName && params.get("welcome") !== "0") {
+    const welcome = new WelcomeDialog(el("welcome"), {
+      start: (openHelp) => {
+        welcome.hide();
+        if (openHelp) help.classList.add("visible");
+        void engine?.unlock();
+        session.resume();
+        ai?.director.resume();
+        refreshOverlay();
+      },
+    });
+    session.pause();
+    refreshOverlay();
+    welcome.show();
+  }
+
   el("btn-help").addEventListener("click", toggleHelp);
   el("help-close").addEventListener("click", toggleHelp);
   logsButton.addEventListener("click", () => setLogs(!logsVisible));

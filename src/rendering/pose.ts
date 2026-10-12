@@ -92,6 +92,21 @@ export function computePose(input: PoseInput): Pose {
 
   if (input.combatPhase !== null) {
     const p = clamp01(input.combatPhase);
+    if (role === "villager") {
+      // Golpe de tosco: el brazo derecho se alza y cae con el torso, el izquierdo se adelanta para guardarse.
+      pose.armLx = -0.7;
+      pose.armLz = 0.25;
+      if (p < 0.3) {
+        const k = easeIn(p / 0.3);
+        pose.armRx = lerp(-2.1, 0.3, k);
+        pose.torsoPitch = lerp(-0.12, 0.35, k);
+      } else {
+        const k = easeOut((p - 0.3) / 0.7);
+        pose.armRx = lerp(0.3, -2.1, k);
+        pose.torsoPitch = lerp(0.35, -0.12, k);
+      }
+      return pose;
+    }
     if (role === "soldier") {
       // Golpe inmediato, recuperación y elevación del arma para el siguiente.
       pose.armLx = -0.9;

@@ -75,7 +75,7 @@ export interface Balance {
 const s = (seconds: number): number => Math.round(seconds * TICKS_PER_SECOND);
 
 export const BALANCE: Balance = {
-  start: { food: 200, wood: 200, stone: 0, villagers: 3, popCapacity: 10 },
+  start: { food: 200, wood: 200, stone: 0, villagers: 4, popCapacity: 10 },
   maxPopulation: 50,
   nodesPerKindPerPlayer: 8,
   woodNodesPerPlayer: 16,
@@ -84,18 +84,19 @@ export const BALANCE: Balance = {
   economy: { harvestIntervalTicks: 20, carryCapacity: 10, queueLimit: 5, cancelRefundRatio: 0.75, siteInitialHpRatio: 0.1 },
   combat: { acquireRange: 6, leashRange: 8 },
   units: {
-    // El aldeano solo golpea en defensa propia (cuerpo a cuerpo, débil); nunca adquiere ni recibe órdenes de ataque.
-    villager: { cost: { food: 50, wood: 0, stone: 0 }, trainTicks: s(10), hp: 40, speedCellsPerSec: 2.5, damage: 3, attackIntervalTicks: s(1.5), range: 0.5, radius: 0.3 },
+    // El aldeano golpea cuerpo a cuerpo (débil) en defensa propia o por orden expresa; nunca adquiere objetivos solo.
+    villager: { cost: { food: 50, wood: 0, stone: 0 }, trainTicks: s(10), hp: 40, speedCellsPerSec: 2.5, damage: 5, attackIntervalTicks: s(1.5), range: 0.5, radius: 0.3 },
     soldier: { cost: { food: 60, wood: 20, stone: 0 }, trainTicks: s(12), hp: 100, speedCellsPerSec: 2.5, damage: 10, attackIntervalTicks: s(1), range: 0.5, radius: 0.3 },
     archer: { cost: { food: 40, wood: 50, stone: 0 }, trainTicks: s(15), hp: 60, speedCellsPerSec: 2.5, damage: 8, attackIntervalTicks: s(1.5), range: 5, radius: 0.3 },
   },
   buildings: {
     // El centro urbano dispara como la torre, pero con 3 flechas por disparo (triple daño).
-    townCenter: { cost: { food: 0, wood: 0, stone: 0 }, buildTicks: 0, hp: 1500, footprint: 4, housing: 0, constructible: false, trains: ["villager"], weapon: "archer", arrows: 3 },
+    // P8: centro urbano y torre tienen el doble de vida que en P7 (1500 y 800).
+    townCenter: { cost: { food: 0, wood: 0, stone: 0 }, buildTicks: 0, hp: 3000, footprint: 4, housing: 0, constructible: false, trains: ["villager"], weapon: "archer", arrows: 3 },
     house: { cost: { food: 0, wood: 50, stone: 0 }, buildTicks: s(15), hp: 300, footprint: 2, housing: 5, constructible: true, trains: [], weapon: null },
     barracks: { cost: { food: 0, wood: 150, stone: 0 }, buildTicks: s(25), hp: 600, footprint: 3, housing: 0, constructible: true, trains: ["soldier", "archer"], weapon: null },
     // P3: la torre usa el daño, la cadencia y el alcance del arquero (`weapon`); sin alcance mínimo.
-    tower: { cost: { food: 0, wood: 0, stone: 300 }, buildTicks: s(30), hp: 800, footprint: 2, housing: 0, constructible: true, trains: [], weapon: "archer" },
+    tower: { cost: { food: 0, wood: 0, stone: 300 }, buildTicks: s(30), hp: 1600, footprint: 2, housing: 0, constructible: true, trains: [], weapon: "archer" },
   },
 };
 

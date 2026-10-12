@@ -57,6 +57,20 @@ describe("P5 efectos: señales pedidas por el autor", () => {
     }
   });
 
+  it("grito de la aldeana: se oye, es más agudo que el del aldeano y las tres variantes difieren", () => {
+    const sr = bank.death.sampleRate;
+    expect(bank.death.variants).toHaveLength(9);
+    for (let k = 0; k < 3; k++) {
+      const female = bank.death.variants[6 + k]!;
+      const villager = bank.death.variants[k]!;
+      expect(female.length / sr).toBeGreaterThanOrEqual(0.9);
+      expect(female.length / sr).toBeLessThanOrEqual(1.4);
+      expect(pitchOf(female, sr, 0.2, 0.35)).toBeGreaterThan(pitchOf(villager, sr, 0.2, 0.35));
+      expect(rms(female, sr, 0.15, 0.6)).toBeGreaterThan(0.1);
+    }
+    expect(bank.death.variants[6]).not.toEqual(bank.death.variants[7]);
+  });
+
   it("derrumbe: el golpe final coincide con el fin visual y es lo más fuerte", () => {
     const cases: readonly [number, number, number, number][] = [[0, 2.2, 0.85, 0.15], [2, 2.5, 0.85, 0.15], [1, 3.4, 1.4, 0.15], [3, 3.8, 1.4, 0.15]];
     for (const [variant, seconds, hitAt] of cases) {
@@ -146,7 +160,7 @@ describe("P5 traductor", () => {
 
   it("no repite la misma variante de grito dos veces seguidas", () => {
     const t = new CueTranslator();
-    const deaths = Array.from({ length: 12 }, (_, i) => ({ seq: i + 1, tick: 1, id: i + 1, owner: 1 as const, kind: "soldier" as const, pos: { x: 20, z: 20 } }));
+    const deaths = Array.from({ length: 12 }, (_, i) => ({ seq: i + 1, tick: 1, id: i + 1, owner: 1 as const, kind: "soldier" as const, gender: "male" as const, pos: { x: 20, z: 20 } }));
     const variants = deaths.map((d) => t.process(frame(createEmptyState(1, 40), { deaths: [d] }))[0]!.variant);
     for (let i = 1; i < variants.length; i++) expect(variants[i]).not.toBe(variants[i - 1]);
   });

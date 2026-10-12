@@ -38,13 +38,13 @@ export const CUES: Readonly<Record<CueId, CueSpec>> = {
   defeat: { priority: 6, cap: 1, minGap: 0, gain: 1, variants: 1, wet: 0.3 },
   // Cuatro variantes: las pares son pequeñas y las impares grandes (ver `collapseVariant`).
   collapse: { priority: 4, cap: 3, minGap: 0.15, gain: 1, variants: 4, wet: 0.45 },
-  // Tres variantes de aldeano (0 a 2) y tres de militar (3 a 5).
-  death: { priority: 4, cap: 4, minGap: 0.09, gain: 0.9, variants: 6, wet: 0.25 },
-  door: { priority: 3, cap: 3, minGap: 0.2, gain: 0.5, variants: 1, wet: 0.2 },
+  // Tres variantes de aldeano (0 a 2), tres de militar (3 a 5) y tres de aldeana (6 a 8).
+  death: { priority: 4, cap: 4, minGap: 0.09, gain: 0.9, variants: 9, wet: 0.25 },
+  door: { priority: 3, cap: 3, minGap: 0.2, gain: 1.3, variants: 1, wet: 0.2 },
   sword: { priority: 2, cap: 8, minGap: 0.05, gain: 0.85, variants: 8, wet: 0.2 },
   arrow: { priority: 2, cap: 8, minGap: 0.05, gain: 0.8, variants: 6, wet: 0.2 },
   arrowHit: { priority: 2, cap: 6, minGap: 0.05, gain: 0.5, variants: 3, wet: 0.1 },
-  blow: { priority: 2, cap: 4, minGap: 0.08, gain: 0.6, variants: 3, wet: 0.1 },
+  blow: { priority: 2, cap: 4, minGap: 0.08, gain: 0.85, variants: 3, wet: 0.1 },
   hammer: { priority: 1, cap: 6, minGap: 0.08, gain: 0.6, variants: 6, wet: 0.08 },
   axe: { priority: 1, cap: 1, minGap: 0.3, gain: 0.5, variants: 4, wet: 0.05 },
   pick: { priority: 1, cap: 1, minGap: 0.3, gain: 0.5, variants: 4, wet: 0.05 },

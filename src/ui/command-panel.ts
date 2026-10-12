@@ -1,6 +1,6 @@
 import { BALANCE, type BuildingKind, type UnitKind } from "../content/balance";
 import type { EntityId, GameState } from "../core/types";
-import { describeSelection, type Selection, type SelectionInfo, type Side } from "../input/selection";
+import { combatLabel, describeSelection, type Selection, type SelectionInfo, type Side } from "../input/selection";
 
 export interface PanelActions {
   build(kind: BuildingKind): void;
@@ -34,6 +34,11 @@ interface InfoCard {
   vital: HTMLElement;
   vitalFill: HTMLElement;
   vitalText: HTMLElement;
+  stats: HTMLElement;
+  attackBox: HTMLElement;
+  attackValue: HTMLElement;
+  rangeBox: HTMLElement;
+  rangeValue: HTMLElement;
   work: HTMLElement;
   workFill: HTMLElement;
   lines: HTMLElement;
@@ -56,14 +61,25 @@ const ICONS: Record<string, string> = {
   soldier: '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/>',
   archer: '<path d="M6 3c8 2 12 8 12 9s-4 7-12 9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 12h15m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="2"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+  sword: '<g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M20 4 10 14" stroke-width="2.8"/><path d="M6.5 10.5l7 7" stroke-width="2.4"/><path d="M9 15 4.5 19.5" stroke-width="3"/></g>',
+  bow: '<path d="M6 3c8 2 12 8 12 9s-4 7-12 9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 12h15m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="2"/>',
   cancel: '<path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="3"/>',
 };
 
-function icon(name: string): HTMLElement {
+function icon(name: string, size = 22): HTMLElement {
   const span = document.createElement("span");
   span.className = "ico";
-  span.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">${ICONS[name] ?? ""}</svg>`;
+  span.innerHTML = `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="currentColor" aria-hidden="true">${ICONS[name] ?? ""}</svg>`;
   return span;
+}
+
+/** Casilla de una estadística: icono y valor. */
+function statBox(parent: HTMLElement, iconName: string): { box: HTMLElement; value: HTMLElement } {
+  const box = el("span", "stat", parent);
+  const ico = icon(iconName, 16);
+  ico.className = "stat-ico";
+  box.append(ico);
+  return { box, value: el("b", "", box) };
 }
 
 /** Texto de un coste para la descripción accesible del botón. */
@@ -145,12 +161,16 @@ export class CommandPanel {
     const vital = el("div", "info-vital", data);
     const vitalFill = el("i", "", el("span", "vbar", vital));
     const vitalText = el("span", "vtext", vital);
+    const stats = el("div", "info-stats", data);
+    stats.hidden = true;
+    const attack = statBox(stats, "sword");
+    const range = statBox(stats, "bow");
     const work = el("div", "info-vital work", data);
     const workFill = el("i", "", el("span", "vbar", work));
     work.hidden = true;
     const lines = el("div", "info-lines", data);
     const text = el("div", "info-text", infoRoot);
-    return { card, name, side, vital, vitalFill, vitalText, work, workFill, lines, text };
+    return { card, name, side, vital, vitalFill, vitalText, stats, attackBox: attack.box, attackValue: attack.value, rangeBox: range.box, rangeValue: range.value, work, workFill, lines, text };
   }
 
   private updateInfo(state: GameState, selection: Selection): void {
@@ -159,7 +179,7 @@ export class CommandPanel {
     const id = selection.inspected ?? (selection.units.size === 1 ? [...selection.units][0]! : null);
     const info = id === null ? null : describeSelection(state, id, HUMAN);
     if (info) {
-      const key = [info.id, info.name, info.side, info.barLabel, info.ratio.toFixed(3), info.progress?.toFixed(3) ?? "", info.lines.join("|")].join("~");
+      const key = [info.id, info.name, info.side, info.barLabel, info.ratio.toFixed(3), info.progress?.toFixed(3) ?? "", info.combat ? combatLabel(info.combat) : "", info.lines.join("|")].join("~");
       if (key === this.infoKey) {
         this.onInfo?.(info);
         return;
@@ -176,10 +196,15 @@ export class CommandPanel {
       c.vitalFill.style.width = `${Math.round(info.ratio * 100)}%`;
       c.vitalFill.style.background = fill;
       c.vitalText.textContent = info.barLabel;
+      c.stats.hidden = info.combat === null;
+      c.stats.title = info.combat ? combatLabel(info.combat) : "";
+      c.attackValue.textContent = info.combat ? String(info.combat.attack) : "";
+      c.rangeBox.hidden = info.combat?.range == null;
+      c.rangeValue.textContent = info.combat?.range == null ? "" : String(info.combat.range).replace(".", ",");
       c.work.hidden = info.progress === null;
       if (info.progress !== null) c.workFill.style.width = `${Math.round(info.progress * 100)}%`;
       c.lines.textContent = info.lines.join("\n");
-      c.card.setAttribute("aria-label", `${info.name}, ${info.sideLabel.toLowerCase()}. ${info.barLabel}`);
+      c.card.setAttribute("aria-label", `${info.name}, ${info.sideLabel.toLowerCase()}. ${info.barLabel}${info.combat ? `. ${combatLabel(info.combat)}` : ""}`);
       this.onInfo?.(info);
       return;
     }

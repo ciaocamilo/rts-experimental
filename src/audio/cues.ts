@@ -165,7 +165,9 @@ export class CueTranslator {
 
     for (const d of frame.deaths) {
       if (d.seq <= this.cursors.death) continue;
-      if (visible(d.pos)) emit("death", d.pos, this.choose(d.kind === "villager" ? "death:v" : "death:m", 3, d.kind === "villager" ? 0 : 3));
+      if (!visible(d.pos)) continue;
+      const [group, offset] = d.kind !== "villager" ? ["death:m", 3] : d.gender === "female" ? ["death:f", 6] : ["death:v", 0];
+      emit("death", d.pos, this.choose(group, 3, offset));
     }
     this.cursors.death = lastSeq(frame.deaths, this.cursors.death);
 

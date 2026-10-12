@@ -63,6 +63,15 @@ describe("cámara con el ratón (P2-H12)", () => {
     expect(edgePan(600, 700, 1200, 600)).toEqual(none);
   });
 
+  it("hacia abajo se mide contra el borde de la pantalla, no contra el del escenario (P8-H14)", () => {
+    // Escenario de 600 px con una barra de 100 px debajo: la pantalla mide 700.
+    expect(edgePan(600, 599, 1200, 600, EDGE_MARGIN_PX, 700)).toEqual(none);
+    expect(edgePan(600, 700 - EDGE_MARGIN_PX - 1, 1200, 600, EDGE_MARGIN_PX, 700)).toEqual(none);
+    expect(edgePan(600, 700 - EDGE_MARGIN_PX, 1200, 600, EDGE_MARGIN_PX, 700)).toEqual({ ...none, down: true });
+    expect(edgePan(600, 700, 1200, 600, EDGE_MARGIN_PX, 700)).toEqual({ ...none, down: true });
+    expect(edgePan(600, 701, 1200, 600, EDGE_MARGIN_PX, 700)).toEqual(none);
+  });
+
   it("la diagonal no es más rápida y la cámara sigue dentro del mapa", () => {
     const straight = new CameraRig(128, 64, { x: 64, z: 32 });
     straight.pan(0.1, edgePan(600, 0, 1200, 600));

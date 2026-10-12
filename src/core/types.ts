@@ -1,6 +1,7 @@
 import type { BuildingKind, ResourceKind, UnitKind } from "../content/balance";
 
 export type PlayerId = 0 | 1;
+export type Gender = "male" | "female";
 export type EntityId = number;
 
 export interface Vec2 {
@@ -63,6 +64,8 @@ export interface Unit {
   id: EntityId;
   owner: PlayerId;
   kind: UnitKind;
+  /** Solo cambia el aspecto y el nombre (Aldeana); las reglas son las mismas. Los militares son "male". */
+  gender: Gender;
   pos: Vec2;
   hp: number;
   task: UnitTask;
@@ -243,6 +246,7 @@ export interface DeathEvent {
   id: EntityId;
   owner: PlayerId;
   kind: UnitKind;
+  gender: Gender;
   pos: Vec2;
 }
 

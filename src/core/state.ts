@@ -1,13 +1,23 @@
 import { BALANCE, type BuildingKind, type ResourceKind, type UnitKind } from "../content/balance";
 import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH } from "../content/map";
 import { STATE_SCHEMA_VERSION } from "../content/versions";
-import type { Building, GameState, PlayerId, PlayerState, ResourceNode, Unit } from "./types";
+import type { Building, Gender, GameState, PlayerId, PlayerState, ResourceNode, Unit } from "./types";
 
-export function makeUnit(id: number, owner: PlayerId, kind: UnitKind, x: number, z: number): Unit {
+/** 50/50 determinista a partir de la semilla y el id de la unidad: la misma partida da los mismos aldeanos y aldeanas. */
+export function rollGender(seed: number, id: number): Gender {
+  let h = (Math.imul(seed | 0, 0x9e3779b1) ^ Math.imul(id | 0, 0x85ebca6b)) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+  h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+  h ^= h >>> 16;
+  return (h >>> 8) % 2 === 0 ? "male" : "female";
+}
+
+export function makeUnit(id: number, owner: PlayerId, kind: UnitKind, x: number, z: number, gender: Gender = "male"): Unit {
   return {
     id,
     owner,
     kind,
+    gender,
     pos: { x, z },
     hp: BALANCE.units[kind].hp,
     task: "idle",
@@ -66,9 +76,10 @@ export function createInitialState(seed: number, startBuildings = true): GameSta
   for (const owner of [0, 1] as const satisfies readonly PlayerId[]) {
     const tc = MAP_LAYOUT.townCenters[owner];
     addBuilding(state, owner, "townCenter", tc.x, tc.z);
-    for (const spawn of MAP_LAYOUT.villagerSpawns[owner].slice(0, BALANCE.start.villagers)) {
-      state.units.push(makeUnit(state.nextEntityId++, owner, "villager", spawn.x, spawn.z));
-    }
+    // Aldeanos iniciales alternados (hombre, mujer, hombre, mujer): la mitad de cada género.
+    MAP_LAYOUT.villagerSpawns[owner].slice(0, BALANCE.start.villagers).forEach((spawn, i) => {
+      state.units.push(makeUnit(state.nextEntityId++, owner, "villager", spawn.x, spawn.z, i % 2 === 0 ? "male" : "female"));
+    });
   }
 
   for (const node of MAP_LAYOUT.nodes) {
@@ -117,8 +128,8 @@ export function addNode(state: GameState, kind: ResourceKind, x: number, z: numb
   return node;
 }
 
-export function addUnit(state: GameState, owner: PlayerId, kind: UnitKind, x: number, z: number): Unit {
-  const unit = makeUnit(state.nextEntityId++, owner, kind, x, z);
+export function addUnit(state: GameState, owner: PlayerId, kind: UnitKind, x: number, z: number, gender: Gender = "male"): Unit {
+  const unit = makeUnit(state.nextEntityId++, owner, kind, x, z, gender);
   state.units.push(unit);
   return unit;
 }
