@@ -34,6 +34,7 @@ interface InfoCard {
   vital: HTMLElement;
   vitalFill: HTMLElement;
   vitalText: HTMLElement;
+  stats: HTMLElement;
   work: HTMLElement;
   workFill: HTMLElement;
   lines: HTMLElement;
@@ -145,12 +146,14 @@ export class CommandPanel {
     const vital = el("div", "info-vital", data);
     const vitalFill = el("i", "", el("span", "vbar", vital));
     const vitalText = el("span", "vtext", vital);
+    const stats = el("div", "info-stats", data);
+    stats.hidden = true;
     const work = el("div", "info-vital work", data);
     const workFill = el("i", "", el("span", "vbar", work));
     work.hidden = true;
     const lines = el("div", "info-lines", data);
     const text = el("div", "info-text", infoRoot);
-    return { card, name, side, vital, vitalFill, vitalText, work, workFill, lines, text };
+    return { card, name, side, vital, vitalFill, vitalText, stats, work, workFill, lines, text };
   }
 
   private updateInfo(state: GameState, selection: Selection): void {
@@ -159,7 +162,7 @@ export class CommandPanel {
     const id = selection.inspected ?? (selection.units.size === 1 ? [...selection.units][0]! : null);
     const info = id === null ? null : describeSelection(state, id, HUMAN);
     if (info) {
-      const key = [info.id, info.name, info.side, info.barLabel, info.ratio.toFixed(3), info.progress?.toFixed(3) ?? "", info.lines.join("|")].join("~");
+      const key = [info.id, info.name, info.side, info.barLabel, info.ratio.toFixed(3), info.progress?.toFixed(3) ?? "", info.combat ?? "", info.lines.join("|")].join("~");
       if (key === this.infoKey) {
         this.onInfo?.(info);
         return;
@@ -176,6 +179,8 @@ export class CommandPanel {
       c.vitalFill.style.width = `${Math.round(info.ratio * 100)}%`;
       c.vitalFill.style.background = fill;
       c.vitalText.textContent = info.barLabel;
+      c.stats.hidden = info.combat === null;
+      c.stats.textContent = info.combat ?? "";
       c.work.hidden = info.progress === null;
       if (info.progress !== null) c.workFill.style.width = `${Math.round(info.progress * 100)}%`;
       c.lines.textContent = info.lines.join("\n");

@@ -124,7 +124,10 @@ Botones superiores de ladrillo, con el botón de pantalla completa a la izquierd
 
 - **Identidad:** la pestaña se titula «RTS Camilus - Juego experimental» y usa como icono una torre dorada (`public/favicon.svg`, SVG sin recursos externos).
 - **Bienvenida:** aparece en cada carga normal con el objetivo, cinco consejos y los botones «Comenzar» y «Ver ayuda». La partida queda en pausa hasta pulsar uno de ellos (o Intro o Esc) y la IA ya carga mientras tanto. No se omite ni se recuerda; `?welcome=0` y las escenas `?fixture=` no la muestran. La ayuda (H) ahora empieza cerrada.
-- **Vista inicial:** la cámara arranca con zoom 2,2 centrada en el centro urbano del jugador, también tras reiniciar. Las escenas `?fixture=` conservan la cámara de siempre.
+- **Vista inicial:** la cámara arranca con zoom 3 centrada en el centro urbano del jugador, también tras reiniciar (zoom máximo 7). Las escenas `?fixture=` conservan la cámara de siempre.
+- **Ataque y alcance:** la ficha de la barra inferior muestra, bajo la vida, el ataque y el alcance de la unidad o el edificio seleccionado si ataca (por ejemplo, el centro urbano: ataque 24, tres flechas de 8, alcance 5).
+
+![Ficha con ataque y alcance del centro urbano](docs/images/etapa8-ficha-ataque.png)
 - **Pantalla completa:** botón y tecla F; el estado del botón sigue al del navegador (si Esc la cierra, se actualiza).
 - **Cursores de acción:** con aldeanos seleccionados, el cursor cambia a hacha sobre un árbol, cesta sobre un arbusto y pico sobre una roca; con militares, a espada sobre un enemigo. Solo aparece si el clic derecho haría esa acción con la selección actual. Son SVG generados por código y no se ven en las capturas.
 - **Botones de ladrillo:** mosaico SVG generado por código, texto crema con contraste mínimo de 4,5:1 y fila que se parte en varias líneas si la ventana es estrecha.
@@ -135,7 +138,7 @@ Botones superiores de ladrillo, con el botón de pantalla completa a la izquierd
 | Acción | Entrada |
 |---|---|
 | Pantalla completa | Tecla F o botón con icono de esquinas |
-| Cámara | WASD o flechas, o cursor en el borde de la pantalla (24 px, 1,5 veces más rápido); rueda para acercar o alejar (hasta 5,5 veces); clic o arrastre en la miniatura |
+| Cámara | WASD o flechas, o cursor en el borde de la pantalla (24 px, 1,5 veces más rápido); rueda para acercar o alejar (hasta 7 veces); clic o arrastre en la miniatura |
 | Registros técnicos | Tecla L o botón «Registros» |
 | Seleccionar | Clic o arrastre; Shift suma o quita; Esc limpia (el clic en un edificio, enemigo o recurso solo muestra su retrato e información) |
 | Ventana final | Tab recorre los botones, Intro reinicia, Esc cierra la ventana; el botón «Resultado» la reabre |

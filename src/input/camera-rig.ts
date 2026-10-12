@@ -1,7 +1,7 @@
 export const ZOOM_MIN = 0.6;
-export const ZOOM_MAX = 5.5;
+export const ZOOM_MAX = 7;
 /** Zoom con que arranca la partida normal: encuadra la ciudad del jugador. */
-export const INITIAL_ZOOM = 2.2;
+export const INITIAL_ZOOM = 3;
 const PAN_SPEED = 30; // celdas/s con zoom 1
 
 export interface PanKeys {

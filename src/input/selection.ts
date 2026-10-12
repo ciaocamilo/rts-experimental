@@ -1,4 +1,4 @@
-import { BALANCE } from "../content/balance";
+import { BALANCE, type UnitKind } from "../content/balance";
 import { activityOf, type Activity } from "../core/economy";
 import type { EntityId, GameState, PlayerId } from "../core/types";
 
@@ -105,6 +105,8 @@ export interface SelectionInfo {
   progress: number | null;
   /** Líneas de detalle sin repetir el nombre. */
   lines: string[];
+  /** Ataque y alcance ("Ataque 8 · Alcance 5"), o null si la entidad no ataca. */
+  combat: string | null;
   /** Clave del aspecto del modelo; cambia solo cuando el retrato debe redibujarse. */
   aspectKey: string;
   owner: PlayerId | null;
@@ -125,7 +127,7 @@ export function describeSelection(state: GameState, id: EntityId, player: Player
     return {
       id, type: "unit", kind: u.kind, name: UNIT_LABEL[u.kind], side, sideLabel: SIDE_LABEL[side],
       value: u.hp, max, ratio: ratioOf(u.hp, max), barLabel: `Vida ${u.hp} / ${max}`, barKind: "life", progress: null,
-      lines, aspectKey: `unit:${u.kind}:${u.owner}`, owner: u.owner,
+      lines, combat: combatText(u.kind, 1, u.kind === "villager"), aspectKey: `unit:${u.kind}:${u.owner}`, owner: u.owner,
     };
   }
   const b = state.buildings.find((x) => x.id === id);
@@ -140,7 +142,8 @@ export function describeSelection(state: GameState, id: EntityId, player: Player
     return {
       id, type: "building", kind: b.kind, name: BUILDING_LABEL[b.kind], side, sideLabel: SIDE_LABEL[side],
       value: b.hp, max: def.hp, ratio: ratioOf(b.hp, def.hp), barLabel: `Vida ${b.hp} / ${def.hp}`, barKind: "life", progress,
-      lines, aspectKey: `building:${b.kind}:${b.owner}:${progress === null ? "done" : Math.floor(progress * 20)}`, owner: b.owner,
+      lines, combat: def.weapon !== null && progress === null ? combatText(def.weapon, def.arrows ?? 1, false) : null,
+      aspectKey: `building:${b.kind}:${b.owner}:${progress === null ? "done" : Math.floor(progress * 20)}`, owner: b.owner,
     };
   }
   const n = state.resourceNodes.find((x) => x.id === id);
@@ -150,10 +153,21 @@ export function describeSelection(state: GameState, id: EntityId, player: Player
     return {
       id, type: "node", kind: n.kind, name: NODE_LABEL[n.kind], side: "nature", sideLabel: SIDE_LABEL.nature,
       value: n.remaining, max, ratio: ratioOf(n.remaining, max), barLabel: spent ? "Agotado" : `Restante ${n.remaining} / ${max}`, barKind: "resource", progress: null,
-      lines: [`Da ${RESOURCE_NAME[n.kind]}`], aspectKey: `node:${n.kind}:${n.kind === "wood" ? n.id % 3 : 0}:${spent ? "spent" : "full"}`, owner: null,
+      lines: [`Da ${RESOURCE_NAME[n.kind]}`], combat: null, aspectKey: `node:${n.kind}:${n.kind === "wood" ? n.id % 3 : 0}:${spent ? "spent" : "full"}`, owner: null,
     };
   }
   return null;
+}
+
+const num = (n: number): string => String(n).replace(".", ",");
+
+/** Ataque (por disparo, con `arrows` flechas) y alcance del arma de una unidad; null si no hace daño. */
+export function combatText(kind: UnitKind, arrows = 1, defenseOnly = false): string | null {
+  const def = BALANCE.units[kind];
+  if (def.damage <= 0) return null;
+  const attack = arrows > 1 ? `${def.damage * arrows} (${arrows} × ${def.damage})` : String(def.damage);
+  const range = def.range <= 1 ? "cuerpo a cuerpo" : num(def.range);
+  return `Ataque ${attack}${defenseOnly ? " (solo defensa)" : ""} · Alcance ${range}`;
 }
 
 function ratioOf(value: number, max: number): number {

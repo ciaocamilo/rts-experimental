@@ -7,7 +7,7 @@ import { createInitialState } from "../../src/core/state";
 import type { GameState } from "../../src/core/types";
 import { CameraRig, INITIAL_ZOOM, ZOOM_MAX, ZOOM_MIN } from "../../src/input/camera-rig";
 import { CURSOR_HOTSPOT, CURSOR_SIZE, cursorCss, cursorFor, cursorSvg, resolveRightClick, selectionCaps, type CursorKind } from "../../src/input/cursors";
-import { emptySelection } from "../../src/input/selection";
+import { combatText, describeSelection, emptySelection } from "../../src/input/selection";
 import { BRICK_BUTTON_TILE, BRICK_BUTTON_TONES, brickButtonSvg } from "../../src/ui/castle-bar";
 import { fullscreenLabel } from "../../src/ui/fullscreen";
 import { welcomeContent } from "../../src/ui/welcome";
@@ -51,6 +51,8 @@ describe("P8 vida de centros urbanos y torres", () => {
 describe("P8 cámara inicial", () => {
   it("arranca con zoom dentro de los límites, centrada en el centro urbano del jugador", () => {
     expect(INITIAL_ZOOM).toBeGreaterThan(1);
+    expect(INITIAL_ZOOM).toBe(3);
+    expect(ZOOM_MAX).toBeGreaterThan(5.5);
     expect(INITIAL_ZOOM).toBeLessThanOrEqual(ZOOM_MAX);
     const home = homeView(MAP_LAYOUT);
     const tc = MAP_LAYOUT.townCenters[0];
@@ -73,6 +75,40 @@ describe("P8 cámara inicial", () => {
     rig.reset({ x: 1, z: 1 });
     expect(rig.zoom).toBe(1);
     expect(ZOOM_MIN).toBeLessThan(1);
+  });
+});
+
+describe("P8 ataque y alcance en la ficha", () => {
+  const state = createInitialState(1);
+  const info = (id: number) => describeSelection(state, id, 0)!;
+
+  it("las unidades muestran el ataque y el alcance de su balance", () => {
+    const villager = state.units.find((u) => u.kind === "villager")!;
+    expect(info(villager.id).combat).toBe("Ataque 3 (solo defensa) · Alcance cuerpo a cuerpo");
+    const soldier = { ...villager, id: 9001, kind: "soldier" as const };
+    const archer = { ...villager, id: 9002, kind: "archer" as const };
+    const armed = { ...state, units: [...state.units, soldier, archer] } as GameState;
+    expect(describeSelection(armed, soldier.id, 0)!.combat).toBe("Ataque 10 · Alcance cuerpo a cuerpo");
+    expect(describeSelection(armed, archer.id, 0)!.combat).toBe("Ataque 8 · Alcance 5");
+  });
+
+  it("torre y centro urbano completos atacan; casa, cuartel, recursos y obras no", () => {
+    const own = (kind: string) => state.buildings.find((b) => b.owner === 0 && b.kind === kind)!;
+    expect(info(own("tower").id).combat).toBe("Ataque 8 · Alcance 5");
+    expect(info(own("townCenter").id).combat).toBe("Ataque 24 (3 × 8) · Alcance 5");
+    expect(info(own("house").id).combat).toBeNull();
+    const site = { ...own("tower"), id: 9003, complete: false, buildDone: 10 };
+    const building = { ...state, buildings: [...state.buildings, site] } as GameState;
+    expect(describeSelection(building, site.id, 0)!.combat).toBeNull();
+    expect(info(state.resourceNodes[0]!.id).combat).toBeNull();
+  });
+
+  it("el texto sale del balance y la ficha lo muestra bajo la vida", () => {
+    expect(combatText("archer")).toBe(`Ataque ${BALANCE.units.archer.damage} · Alcance ${BALANCE.units.archer.range}`);
+    expect(html).toContain("#info .info-stats");
+    const panel = readFileSync(new URL("../../src/ui/command-panel.ts", import.meta.url), "utf8");
+    expect(panel.indexOf('"vtext"')).toBeLessThan(panel.indexOf('"info-stats"'));
+    expect(panel.indexOf('"info-stats"')).toBeLessThan(panel.indexOf('"info-lines"'));
   });
 });
 
