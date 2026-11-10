@@ -6,9 +6,14 @@ import type { Cell, NavGrid } from "../navigation/grid";
 import type { Command, GameState, RejectCode, Unit } from "./types";
 
 const UNIT_RADIUS = BALANCE.units.villager.radius;
+/** Un bloque conserva su forma hasta esta distancia al centro; más allá se acerca (un ejército disperso se reagrupa). */
+const FORMATION_RADIUS = 16;
+/** Radio máximo (celdas) de la búsqueda de una celda libre cerca del puesto ideal de cada unidad. */
+const FORMATION_SEARCH = 8;
 
 function stepLength(unit: Unit): number {
-  return BALANCE.units[unit.kind].speedCellsPerSec / TICKS_PER_SECOND;
+  const speed = BALANCE.units[unit.kind].speedCellsPerSec;
+  return (unit.pace === undefined ? speed : Math.min(speed, unit.pace)) / TICKS_PER_SECOND;
 }
 
 function enqueue(state: GameState, unit: Unit): void {
@@ -27,6 +32,7 @@ export function unitComponent(grid: NavGrid, unit: Unit): number {
 }
 
 export function clearTask(unit: Unit): void {
+  delete unit.pace;
   unit.task = "idle";
   unit.dest = null;
   unit.path = [];
@@ -46,7 +52,77 @@ export function walkTo(state: GameState, unit: Unit, cell: Cell): void {
   enqueue(state, unit);
 }
 
-/** Asigna destinos libres y distintos, por orden estable de ID, alrededor del punto objetivo. */
+/** Celda libre de la región `comp` más cercana a `want` (anillos crecientes; desempate por z, x). */
+function nearestOpenCell(grid: NavGrid, comp: number, want: Cell, taken: ReadonlySet<number>): Cell | null {
+  let best: Cell | null = null;
+  let bestD = Infinity;
+  let foundRing = -1;
+  for (let r = 0; r <= FORMATION_SEARCH; r++) {
+    if (best && r > foundRing + 1) break;
+    for (let z = want.z - r; z <= want.z + r; z++) {
+      for (let x = want.x - r; x <= want.x + r; x++) {
+        if (Math.max(Math.abs(x - want.x), Math.abs(z - want.z)) !== r) continue;
+        if (!grid.inBounds(x, z) || grid.isBlocked(x, z) || grid.componentAt(x, z) !== comp || taken.has(z * grid.width + x)) continue;
+        const d = (x - want.x) ** 2 + (z - want.z) ** 2;
+        if (d < bestD) {
+          bestD = d;
+          best = { x, z };
+          if (foundRing < 0) foundRing = r;
+        }
+      }
+    }
+  }
+  return best;
+}
+
+/**
+ * Modo batalla: un bloque de unidades avanza conservando su forma. Cada una recibe como destino su puesto actual
+ * desplazado lo mismo que el centro del bloque (con la celda libre más próxima si el puesto está ocupado o bloqueado)
+ * y todas marchan al paso de la más lenta. Devuelve null si no hay un bloque que mover (se usa el reparto normal).
+ */
+function issueFormationMove(state: GameState, grid: NavGrid, units: readonly Unit[], target: { x: number; z: number }): MoveOutcome | null {
+  const tx = Math.min(grid.width - 1, Math.floor(target.x));
+  const tz = Math.min(grid.depth - 1, Math.floor(target.z));
+  const anchor = grid.isBlocked(tx, tz) ? grid.nearestFree(tx, tz) : { x: tx, z: tz };
+  if (!anchor) return null;
+  const comp = grid.componentAt(anchor.x, anchor.z);
+  const members = units.filter((u) => unitComponent(grid, u) === comp);
+  if (members.length < 2) return null;
+
+  const cx = members.reduce((s, u) => s + u.pos.x, 0) / members.length;
+  const cz = members.reduce((s, u) => s + u.pos.z, 0) / members.length;
+  const taken = new Set<number>();
+  const placed: { unit: Unit; cell: Cell }[] = [];
+  for (const unit of members) {
+    let ox = unit.pos.x - cx;
+    let oz = unit.pos.z - cz;
+    const len = Math.hypot(ox, oz);
+    if (len > FORMATION_RADIUS) {
+      ox *= FORMATION_RADIUS / len;
+      oz *= FORMATION_RADIUS / len;
+    }
+    const want: Cell = {
+      x: Math.min(grid.width - 1, Math.max(0, Math.floor(target.x + ox))),
+      z: Math.min(grid.depth - 1, Math.max(0, Math.floor(target.z + oz))),
+    };
+    const cell = nearestOpenCell(grid, comp, want, taken);
+    if (!cell) continue;
+    taken.add(cell.z * grid.width + cell.x);
+    placed.push({ unit, cell });
+  }
+  if (placed.length === 0) return null;
+
+  const pace = Math.min(...placed.map((p) => BALANCE.units[p.unit.kind].speedCellsPerSec));
+  for (const { unit, cell } of placed) {
+    unit.job = null;
+    unit.threat = null;
+    walkTo(state, unit, cell);
+    if (pace < BALANCE.units[unit.kind].speedCellsPerSec) unit.pace = pace;
+  }
+  return { assigned: placed.length, total: units.length };
+}
+
+/** Asigna destinos libres y distintos, por orden estable de ID, alrededor del punto objetivo (o, en batalla, en bloque). */
 export function issueMove(state: GameState, grid: NavGrid, command: Command): MoveOutcome {
   const target = command.target;
   if (!target || !("x" in target) || !Number.isFinite(target.x) || !Number.isFinite(target.z)) {
@@ -59,6 +135,10 @@ export function issueMove(state: GameState, grid: NavGrid, command: Command): Mo
   const ids = new Set(command.entityIds);
   const units = state.units.filter((u) => ids.has(u.id)).sort((a, b) => a.id - b.id);
   if (units.length === 0) return { code: "INCOMPATIBLE_ENTITY" };
+  if (state.mode === "battle" && units.length > 1) {
+    const block = issueFormationMove(state, grid, units, target);
+    if (block) return block;
+  }
 
   const free: { x: number; z: number; d: number }[] = [];
   for (let cz = 0; cz < grid.depth; cz++) {

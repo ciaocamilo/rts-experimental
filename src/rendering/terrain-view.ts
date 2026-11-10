@@ -8,12 +8,23 @@ import type { BushGeometry } from "./models";
 import { buildRiverGeometry, buildWaterGeometry, cornerRadius, waterSeed, type WaterLayer } from "./water";
 import { WaterMaterial } from "./water-material";
 import { applyWind, WIND } from "./wind";
+import { buildMountainGeometry, buildValleyPixels, valleyPath, VALLEY_RES } from "./relief";
 import { buildBridge } from "./bridge";
+import { buildTentGeometry, pennantColor } from "./camp";
 
 /** Máximo de mechones de hierba instanciados y margen respecto a roca y agua (P5-H08). */
 const MAX_TUFTS = 6000;
 const TUFT_ROCK_MARGIN = 0.15;
 const TUFT_WATER_MARGIN = 1.1;
+/** Altura de la cima de una montaña, en celdas. */
+const MOUNTAIN_PEAK = 5;
+/** Prolongación de un afluente dentro del cauce principal para que ambos se fundan, en celdas. */
+const CANAL_OVERLAP = 2.2;
+
+/** Semilla estable del valle a partir de su posición. */
+function valleySeed(t: TerrainRect): number {
+  return (t.x * 31 + t.z * 17) % 9973;
+}
 
 /** Roca con la cara superior irregular: solo baja la cresta (nunca sube) y no toca el rectángulo lógico. */
 function roughRock(w: number, h: number, d: number, density: number, seed: number): THREE.BoxGeometry {
@@ -63,6 +74,10 @@ export class TerrainView {
   private readonly aoMaterial: THREE.MeshBasicMaterial;
   private readonly toneMaterial: THREE.MeshBasicMaterial;
   private readonly forestFloorMaterial: THREE.MeshBasicMaterial;
+  private readonly campFloorMaterial: THREE.MeshBasicMaterial;
+  private readonly campGeometry = new Map<string, THREE.BufferGeometry>();
+  private readonly trailMaterial: THREE.MeshBasicMaterial;
+  private readonly mountainMaterial: THREE.MeshLambertMaterial;
   private readonly shoreMaterial: THREE.MeshLambertMaterial;
   private readonly waterMaterial: THREE.MeshPhongMaterial;
   private readonly shaderWater: WaterMaterial | null;
@@ -87,6 +102,9 @@ export class TerrainView {
     this.toneMaterial = assets.basic({ map: assets.textures.tone, transparent: true, depthWrite: false });
     this.shoreMaterial = assets.lambert({ vertexColors: true, transparent: true, depthWrite: false });
     this.forestFloorMaterial = assets.basic({ color: 0x1c3a1d, transparent: true, opacity: 0.42, depthWrite: false });
+    this.campFloorMaterial = assets.basic({ color: 0x6e5a3a, transparent: true, opacity: 0.6, depthWrite: false });
+    this.trailMaterial = assets.basic({ vertexColors: true, transparent: true, depthWrite: false });
+    this.mountainMaterial = assets.lambert({ vertexColors: true });
     this.waterMap = assets.textures.water;
     this.rippleMap = assets.textures.waterRipple;
     this.waterMaterial = this.assets.track(
@@ -109,6 +127,7 @@ export class TerrainView {
   private clear(): void {
     for (const r of this.owned) r.dispose();
     this.owned = [];
+    this.campGeometry.clear();
     this.waterMeshes.length = 0;
     this.group.clear();
   }
@@ -130,11 +149,22 @@ export class TerrainView {
     const isRiver = (t: TerrainRect): boolean => t.kind === "water" && bridges.some((b) => b.x === t.x && b.w === t.w);
     const river = terrain.filter(isRiver);
     if (river.length > 0) this.addRiver([...river, ...bridges.filter((b) => river.some((r) => r.x === b.x && r.w === b.w))]);
+    // Un cauce estrecho y largo que toca el río principal es un afluente: se dibuja continuo y desemboca en él.
+    const canalSide = (t: TerrainRect): 1 | -1 | 0 => {
+      if (t.kind !== "water" || isRiver(t) || t.w < 3 * t.h || t.h > 4) return 0;
+      if (river.some((r) => r.x === t.x + t.w)) return 1;
+      return river.some((r) => r.x + r.w === t.x) ? -1 : 0;
+    };
     for (const t of terrain) {
       if (t.kind === "bridge") this.addBridge(t);
       else if (t.kind === "water") {
-        if (!isRiver(t)) this.addWater(t);
+        const side = canalSide(t);
+        if (side !== 0) this.addCanal(t, side);
+        else if (!isRiver(t)) this.addWater(t);
       } else if (t.kind === "forest") this.addForestFloor(t);
+      else if (t.kind === "mountain") this.addMountain(t);
+      else if (t.kind === "valley") this.addValley(t);
+      else if (t.kind === "camp") this.addCamp(t, width);
       else this.addRock(t);
     }
 
@@ -152,6 +182,7 @@ export class TerrainView {
     const rng = mulberry32(8841);
     const blocked = (x: number, z: number): boolean =>
       terrain.some((t) => {
+        if (t.kind === "valley") return false;
         const m = t.kind === "water" ? TUFT_WATER_MARGIN : TUFT_ROCK_MARGIN;
         return x > t.x - m && x < t.x + t.w + m && z > t.z - m && z < t.z + t.h + m;
       });
@@ -163,6 +194,26 @@ export class TerrainView {
       const rot = rng() * Math.PI;
       const tone = rng();
       if (!blocked(x, z)) spots.push({ x, z, s, rot, tone });
+    }
+    // Los valles tienen hierba más alta y densa, salvo sobre la senda; flujo aleatorio propio para no alterar el resto del mapa.
+    const valleyRng = mulberry32(5521);
+    for (const t of terrain) {
+      if (t.kind !== "valley") continue;
+      const seed = valleySeed(t);
+      const along = t.w >= t.h;
+      const length = along ? t.w : t.h;
+      const across = along ? t.h : t.w;
+      for (let i = 0; i < t.w * t.h * 2.2; i++) {
+        const x = t.x + valleyRng() * t.w;
+        const z = t.z + valleyRng() * t.h;
+        const s = 1 + valleyRng() * 0.9;
+        const rot = valleyRng() * Math.PI;
+        const tone = valleyRng();
+        const a = along ? x - t.x : z - t.z;
+        const c = along ? z - t.z : x - t.x;
+        if (a >= 0 && a <= length && Math.abs(c - valleyPath(a, across, seed)) < 0.75) continue;
+        spots.push({ x, z, s, rot, tone });
+      }
     }
     const w = 0.55;
     const h = 0.42;
@@ -211,6 +262,90 @@ export class TerrainView {
     this.group.add(floor);
   }
 
+  /** Tienda de campaña: escenario fijo sobre un claro de tierra pisada; la puerta mira al enemigo (P10-R20). */
+  private addCamp(t: TerrainRect, mapWidth: number): void {
+    const cx = t.x + t.w / 2;
+    const cz = t.z + t.h / 2;
+    const ground = new THREE.Mesh(this.own(new THREE.PlaneGeometry(t.w - 0.2, t.h - 0.2).rotateX(-Math.PI / 2).translate(cx, 0.014, cz)), this.campFloorMaterial);
+    ground.renderOrder = 1;
+    this.group.add(ground);
+
+    const key = cx < mapWidth / 2 ? "west" : "east";
+    let geometry = this.campGeometry.get(key);
+    if (!geometry) {
+      geometry = this.own(buildTentGeometry(pennantColor(cx, mapWidth)));
+      this.campGeometry.set(key, geometry);
+    }
+    const tent = new THREE.Mesh(geometry, this.mountainMaterial);
+    const yaw = (((t.x * 7 + t.z * 13) % 5) - 2) * 0.04;
+    tent.position.set(cx, 0, cz);
+    tent.rotation.y = (key === "east" ? Math.PI : 0) + yaw;
+    tent.castShadow = tent.receiveShadow = true;
+    this.group.add(tent);
+  }
+
+  /** Macizo montañoso: relieve irregular con laderas empinadas que cubre el rectángulo bloqueado; solo aspecto. */
+  private addMountain(t: TerrainRect): void {
+    const geometry = this.own(buildMountainGeometry(t.w, t.h, t.x * 7 + t.z * 13 + 1, MOUNTAIN_PEAK));
+    const mesh = new THREE.Mesh(geometry, this.mountainMaterial);
+    mesh.position.set(t.x + t.w / 2, 0, t.z + t.h / 2);
+    mesh.castShadow = mesh.receiveShadow = true;
+    this.group.add(mesh);
+  }
+
+  /** El valle es suelo transitable: una mancha de hierba más oscura y una senda de tierra que lo recorre. */
+  private addValley(t: TerrainRect): void {
+    const seed = valleySeed(t);
+    const texture = this.own(new THREE.DataTexture(buildValleyPixels(t.w, t.h, seed), t.w * VALLEY_RES, t.h * VALLEY_RES, THREE.RGBAFormat, THREE.UnsignedByteType));
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.magFilter = texture.minFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
+    texture.needsUpdate = true;
+    const material = this.own(this.assets.basic({ map: texture, transparent: true, depthWrite: false }));
+    const tint = new THREE.Mesh(this.own(new THREE.PlaneGeometry(t.w, t.h).rotateX(-Math.PI / 2).translate(t.x + t.w / 2, 0.011, t.z + t.h / 2)), material);
+    tint.renderOrder = 1;
+    this.group.add(tint, this.valleyTrail(t, seed));
+  }
+
+  /** Senda de tierra sinuosa de bordes suaves a lo largo del eje largo del valle. */
+  private valleyTrail(t: TerrainRect, seed: number): THREE.Mesh {
+    const along = t.w >= t.h;
+    const length = along ? t.w : t.h;
+    const across = along ? t.h : t.w;
+    const segments = Math.max(4, Math.round(length * 2));
+    const columns: readonly (readonly [number, number])[] = [[-0.85, 0], [-0.45, 0.55], [0, 0.72], [0.45, 0.55], [0.85, 0]];
+    const positions: number[] = [];
+    const colors: number[] = [];
+    const indices: number[] = [];
+    for (let s = 0; s <= segments; s++) {
+      const a = (length * s) / segments;
+      const lateral = valleyPath(a, across, seed);
+      for (const [offset, alpha] of columns) {
+        const c = lateral + offset;
+        positions.push(along ? t.x + a : t.x + c, 0.013, along ? t.z + c : t.z + a);
+        const warm = 1 - Math.abs(offset) * 0.35;
+        colors.push(0.5 * warm, 0.4 * warm, 0.27 * warm, alpha);
+      }
+    }
+    const n = columns.length;
+    for (let s = 0; s < segments; s++) {
+      for (let c = 0; c < n - 1; c++) {
+        const i = s * n + c;
+        // Cara superior (+y) en ambos ejes: el sentido cambia si la senda corre a lo largo de z.
+        if (along) indices.push(i, i + 1, i + n, i + 1, i + n + 1, i + n);
+        else indices.push(i, i + n, i + 1, i + 1, i + n, i + n + 1);
+      }
+    }
+    const geometry = this.own(new THREE.BufferGeometry());
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 4));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(geometry, this.trailMaterial);
+    mesh.renderOrder = 1;
+    return mesh;
+  }
+
   private addRock(t: TerrainRect): void {
     const geometry = this.own(roughRock(t.w, ROCK_HEIGHT, t.h, 0.6, t.x * 3 + t.z));
     const rock = new THREE.Mesh(geometry, this.rockMaterials);
@@ -246,6 +381,29 @@ export class TerrainView {
       mesh.castShadow = mesh.receiveShadow = true;
       this.group.add(mesh);
     }
+  }
+
+  /** Afluente: estanque en el nacimiento y una cinta continua que se interna en el río principal (`side` indica su lado). */
+  private addCanal(t: TerrainRect, side: 1 | -1): void {
+    const pond = Math.min(6, t.w / 2);
+    this.addWater({ x: side > 0 ? t.x : t.x + t.w - pond, z: t.z, w: pond, h: t.h, kind: "water" });
+    const x0 = side > 0 ? t.x + pond / 2 : t.x - CANAL_OVERLAP;
+    const x1 = side > 0 ? t.x + t.w + CANAL_OVERLAP : t.x + t.w - pond / 2;
+    const length = x1 - x0;
+    const origin = { x: (x0 + x1) / 2, z: t.z + t.h / 2 };
+    const seed = waterSeed(t.x, t.z) + 3;
+    const fit = Math.min(1, Math.max(0.1, (0.9 * cornerRadius(t.h, t.h) - Math.min(0.4, t.h * 0.08)) / 1.8));
+    const scale = (layers: readonly WaterLayer[]): WaterLayer[] => layers.map((l) => ({ ...l, offset: l.offset * fit }));
+    const shore = new THREE.Mesh(this.own(buildRiverGeometry(t.h, length, seed, scale(SHORE_LAYERS), origin, 0)), this.shoreMaterial);
+    shore.position.set(origin.x, 0.012, origin.z);
+    const water = new THREE.Mesh(this.own(buildRiverGeometry(t.h, length, seed, scale(WATER_LAYERS), origin, 0.12)), this.shaderWater ?? this.waterMaterial);
+    water.position.set(origin.x, 0.056, origin.z);
+    // La cinta se construye a lo largo de z: un cuarto de vuelta la pone a lo largo de x.
+    shore.rotation.y = water.rotation.y = Math.PI / 2;
+    shore.renderOrder = 1;
+    water.renderOrder = 2;
+    this.waterMeshes.push(water);
+    this.group.add(shore, water);
   }
 
   private addWater(t: TerrainRect): void {

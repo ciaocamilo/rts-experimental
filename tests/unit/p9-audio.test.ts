@@ -52,14 +52,14 @@ describe("P9 cues de artillería y caballería", () => {
     expect(new CueTranslator(1).process(frame())).toEqual([]);
   });
 
-  it("el caballero relincha al nacer y al morir", () => {
+  it("el caballero relincha al nacer pero al morir suena una persona, no el caballo", () => {
     const spawn: SpawnEvent & { seq: number } = { seq: 1, tick: 1, buildingId: 9, unitId: 3, owner: 0, kind: "knight", pos: IN };
     const out = new CueTranslator(1).process(frame({ spawns: [spawn] }));
     expect(out.map((r) => r.cue)).toEqual(["door", "neigh"]);
     expect(out[1]!.delay).toBeGreaterThan(0);
 
     const death: DeathEvent & { seq: number } = { seq: 1, tick: 1, id: 3, owner: 1, kind: "knight", gender: "male", pos: IN };
-    expect(new CueTranslator(1).process(frame({ deaths: [death] })).map((r) => r.cue)).toEqual(["death", "neigh"]);
+    expect(new CueTranslator(1).process(frame({ deaths: [death] })).map((r) => r.cue)).toEqual(["death"]);
     expect(new CueTranslator(1).process(frame({ deaths: [{ ...death, kind: "soldier" }] })).map((r) => r.cue)).toEqual(["death"]);
   });
 
@@ -89,7 +89,7 @@ describe("P9 sonidos sintetizados", () => {
       expect(seconds("blast", v)).toBeLessThanOrEqual(1.4);
       expect(peak(bank.blast.variants[v]!)).toBeLessThan(1);
     }
-    for (let v = 0; v < CUES.neigh.variants; v++) expect(seconds("neigh", v)).toBeLessThanOrEqual(0.9);
+    for (let v = 0; v < CUES.neigh.variants; v++) expect(seconds("neigh", v)).toBeLessThanOrEqual(1.3);
   });
 
   it("las variantes del disparo son distintas entre sí", () => {

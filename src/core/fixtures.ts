@@ -1,9 +1,10 @@
 import { MAP_WIDTH } from "../content/map";
 import { BALANCE } from "../content/balance";
 import { addBuilding, addTerrain, addUnit, createEmptyState, createInitialState } from "./state";
+import { createBattleState } from "./battle";
 import type { Command, EntityId, GameState, PlayerId } from "./types";
 
-export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa" | "sonidos" | "realismo" | "rio" | "retratos" | "artilleria";
+export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa" | "sonidos" | "realismo" | "rio" | "retratos" | "artilleria" | "batalla" | "comandante";
 
 export interface Fixture {
   state: GameState;
@@ -287,9 +288,22 @@ function createArtilleryScene(): Fixture {
   return { state, commands: [move(knights, 24.5, 22.5)], groups: [] };
 }
 
+/** Banco de pruebas de P10: un caballero y un comandante por bando, a la vista y fuera de alcance, para compararlos. */
+function createCommanderScene(): Fixture {
+  const state = createBattleState(1);
+  state.units = [];
+  for (const [owner, x] of [[0, 15], [1, 24]] as const) {
+    addUnit(state, owner, "knight", x, 30);
+    addUnit(state, owner, "commander", x, 34);
+  }
+  return { state, commands: [], groups: [] };
+}
+
 /** Escenarios de P0-B (§6): corredor de 3 celdas, cruce de grupos y carga de 100 unidades. */
 export function createFixture(name: FixtureName, options: { final?: FinalOption } = {}): Fixture {
   seq = 0;
+  if (name === "batalla") return { state: createBattleState(1), commands: [], groups: [] };
+  if (name === "comandante") return createCommanderScene();
   if (name === "objetivo") return createTargetScene();
   if (name === "retratos") return createPortraitScene();
   if (name === "artilleria") return createArtilleryScene();

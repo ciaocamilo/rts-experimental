@@ -77,6 +77,8 @@ export interface UnitRig {
   role: Role;
   horse: HorseRig | null;
   cannon: CannonRig | null;
+  /** Capa y estandarte del comandante: nodo que la vista mece según la marcha. */
+  cape: THREE.Group | null;
 }
 
 /**
@@ -199,8 +201,53 @@ export class UnitFactory {
       if (role === "knight") {
         parts.push({ geometry: new THREE.ConeGeometry(0.04, 0.2, 6), position: [0, 0.66, -0.03], rotation: [-0.5, 0, 0], color: team });
       }
+      if (role === "commander") parts.push(...this.commanderTorsoParts(team));
     }
     return parts;
+  }
+
+  /** Atuendo de gala del comandante: penacho alto, coraza con ribetes dorados, hombreras y gola. */
+  private commanderTorsoParts(team: number): Part[] {
+    const gold = 0xd4af37;
+    const white = 0xf3efe2;
+    return [
+      { geometry: new THREE.CylinderGeometry(0.02, 0.026, 0.1, 6), position: [0, 0.6, 0], color: gold },
+      { geometry: new THREE.ConeGeometry(0.05, 0.34, 6), position: [0, 0.82, -0.04], rotation: [-0.35, 0, 0], color: team },
+      { geometry: new THREE.ConeGeometry(0.04, 0.3, 6), position: [0.05, 0.8, -0.06], rotation: [-0.5, 0, -0.3], color: white },
+      { geometry: new THREE.ConeGeometry(0.04, 0.3, 6), position: [-0.05, 0.8, -0.06], rotation: [-0.5, 0, 0.3], color: white },
+      { geometry: new THREE.TorusGeometry(0.118, 0.012, 5, 14).rotateX(Math.PI / 2), position: [0, 0.49, 0], color: gold },
+      { geometry: new THREE.TorusGeometry(0.15, 0.014, 5, 16).scale(1.15, 1, 1).rotateX(Math.PI / 2), position: [0, 0.34, 0], color: gold },
+      { geometry: new THREE.TorusGeometry(0.15, 0.014, 5, 16).scale(1.15, 1, 1).rotateX(Math.PI / 2), position: [0, 0.18, 0], color: gold },
+      { geometry: new THREE.BoxGeometry(0.03, 0.2, 0.012), position: [0, 0.27, 0.16], color: gold },
+      { geometry: new THREE.SphereGeometry(0.095, 8, 6), position: [0.21, 0.37, 0], color: gold },
+      { geometry: new THREE.SphereGeometry(0.095, 8, 6), position: [-0.21, 0.37, 0], color: gold },
+      { geometry: new THREE.CylinderGeometry(0.02, 0.02, 0.02, 6).rotateX(Math.PI / 2), position: [0.0, 0.3, 0.185], color: white },
+    ];
+  }
+
+  /** Capa larga y estandarte del bando; cuelgan de un nodo propio que la vista mece con la marcha. */
+  private commanderCapeParts(team: number): Part[] {
+    const m = this.mat;
+    return [
+      { geometry: new THREE.BoxGeometry(0.38, 0.62, 0.025).translate(0, -0.31, 0), position: [0, 0, 0], color: team },
+      { geometry: new THREE.BoxGeometry(0.4, 0.04, 0.03), position: [0, -0.6, 0], color: 0xd4af37 },
+      { geometry: new THREE.CylinderGeometry(0.012, 0.012, 0.95, 5), position: [0.12, 0.25, -0.04], color: m.leather.color.getHex() },
+      { geometry: new THREE.BoxGeometry(0.26, 0.2, 0.012), position: [0.25, 0.56, -0.04], color: team },
+      { geometry: new THREE.BoxGeometry(0.26, 0.025, 0.014), position: [0.25, 0.67, -0.04], color: 0xd4af37 },
+      { geometry: new THREE.ConeGeometry(0.025, 0.06, 5), position: [0.12, 0.75, -0.04], color: 0xd4af37 },
+    ];
+  }
+
+  /** Gualdrapa del caballo del comandante: manta del bando con ribete dorado y testera. */
+  private caparisonParts(team: number): Part[] {
+    const gold = 0xd4af37;
+    return [
+      { geometry: new THREE.BoxGeometry(0.03, 0.36, 0.56), position: [0.215, 0.6, SADDLE_Z], color: team },
+      { geometry: new THREE.BoxGeometry(0.03, 0.36, 0.56), position: [-0.215, 0.6, SADDLE_Z], color: team },
+      { geometry: new THREE.BoxGeometry(0.034, 0.03, 0.58), position: [0.215, 0.42, SADDLE_Z], color: gold },
+      { geometry: new THREE.BoxGeometry(0.034, 0.03, 0.58), position: [-0.215, 0.42, SADDLE_Z], color: gold },
+      { geometry: new THREE.BoxGeometry(0.36, 0.22, 0.03), position: [0, 0.85, 0.42], color: gold },
+    ];
   }
 
   /** Artillero: jubón del bando, gorra negra, cinto con cuerno de pólvora y delantal de cuero. */
@@ -231,7 +278,7 @@ export class UnitFactory {
       { geometry: new THREE.CapsuleGeometry(0.04, 0.22, 3, 8), position: [0, -0.15, 0], color: m.team[owner].color.getHex() },
       { geometry: new THREE.SphereGeometry(0.045, 8, 6), position: [0, -0.32, 0], color: m.skin.color.getHex() },
     ];
-    const armed = role === "soldier" || role === "knight";
+    const armed = role === "soldier" || role === "knight" || role === "commander";
     if (armed && side === "R") {
       parts.push({ geometry: new THREE.BoxGeometry(0.035, 0.42, 0.012), position: [0, -0.55, 0], color: m.steel.color.getHex() });
       parts.push({ geometry: new THREE.CylinderGeometry(0.015, 0.015, 0.12, 6).rotateZ(Math.PI / 2), position: [0, -0.34, 0], color: m.leather.color.getHex() });
@@ -276,8 +323,9 @@ export class UnitFactory {
 
     let seat: THREE.Object3D = bob;
     let horse: HorseRig | null = null;
-    if (role === "knight") {
-      const mounted = this.createHorse(owner, bob);
+    const mountedRole = role === "knight" || role === "commander";
+    if (mountedRole) {
+      const mounted = this.createHorse(owner, bob, role === "commander");
       horse = mounted.rig;
       seat = mounted.rider;
     }
@@ -304,6 +352,14 @@ export class UnitFactory {
     this.mesh(this.geometry(`arm:${role}:${owner}:L`, () => this.armParts(role, owner, "L")), armL);
     this.mesh(this.geometry(`arm:${role}:${owner}:R`, () => this.armParts(role, owner, "R")), armR);
     torso.add(armL, armR);
+
+    let cape: THREE.Group | null = null;
+    if (role === "commander") {
+      cape = new THREE.Group();
+      cape.position.set(0, 0.4, -0.12);
+      this.mesh(this.geometry(`cape:${owner}`, () => this.commanderCapeParts(this.mat.team[owner].color.getHex())), cape);
+      torso.add(cape);
+    }
 
     let axe: THREE.Object3D | null = null;
     let hammer: THREE.Object3D | null = null;
@@ -366,29 +422,34 @@ export class UnitFactory {
       shadow.position.y = 0.015;
     }
     let proxyGeometry = this.proxyGeometry;
-    if (role === "knight") {
+    if (mountedRole) {
       mark.position.z = -0.8;
-      mark.scale.setScalar(1.6);
+      mark.scale.setScalar(role === "commander" ? 1.9 : 1.6);
       shadow?.scale.set(1.5, 1, 2.3);
       proxyGeometry = this.mountProxy;
     }
     const proxy = this.mesh(proxyGeometry, root, this.proxyMaterial);
 
-    return { root, facing, bob, torso, legL, legR, armL, armR, bundleWood, bundleFood, bundleStone, tools: { axe, hammer }, nocked, shadow, mark, proxy, role, horse, cannon: null };
+    return { root, facing, bob, torso, legL, legR, armL, armR, bundleWood, bundleFood, bundleStone, tools: { axe, hammer }, nocked, shadow, mark, proxy, role, horse, cannon: null, cape };
   }
 
   /** Caballo articulado con su jinete: devuelve el grupo del asiento donde se monta el esqueleto humano. */
-  private createHorse(owner: 0 | 1, bob: THREE.Group): { rig: HorseRig; rider: THREE.Group } {
+  private createHorse(owner: 0 | 1, bob: THREE.Group, commander = false): { rig: HorseRig; rider: THREE.Group } {
     const high = this.assets.quality === "high";
     const team = this.mat.team[owner].color.getHex();
     const pitch = new THREE.Group();
     pitch.position.set(0, HORSE.hip, HIND_Z);
+    // El caballo del comandante es mayor (≈ 1,15 ×).
+    if (commander) pitch.scale.setScalar(1.15);
     const inner = new THREE.Group();
     inner.position.set(0, -HORSE.hip, -HIND_Z);
     pitch.add(inner);
     bob.add(pitch);
 
-    const chest = this.mesh(this.geometry(`horse:body:${owner}`, () => horseBodyParts({ team })), inner);
+    const chest = this.mesh(
+      this.geometry(commander ? `horse:body:commander:${owner}` : `horse:body:${owner}`, () => [...horseBodyParts({ team }), ...(commander ? this.caparisonParts(team) : [])]),
+      inner,
+    );
     const neck = new THREE.Group();
     neck.position.set(...NECK_PIVOT);
     this.mesh(this.geometry("horse:neck", () => horseNeckParts()), neck);
@@ -492,6 +553,7 @@ export class UnitFactory {
       role: "cannon",
       horse: null,
       cannon: { barrel, gun, wheelL, wheelR, crew },
+      cape: null,
     };
   }
 

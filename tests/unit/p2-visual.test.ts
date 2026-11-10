@@ -172,7 +172,7 @@ describe("eventos de golpe para el renderizador", () => {
     }
     expect(strikes.length).toBeGreaterThan(0);
     for (const s of strikes) {
-      expect(["soldier", "archer"]).toContain(s.attackerKind);
+      expect(["soldier", "archer", "knight", "cannon", "tower"]).toContain(s.attackerKind);
       expect(Number.isFinite(s.from.x + s.from.z + s.to.x + s.to.z)).toBe(true);
     }
     expect(hpLost).toBeGreaterThan(0);

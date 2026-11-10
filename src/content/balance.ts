@@ -6,7 +6,7 @@ export const MAX_CATCHUP_STEPS = 5;
 // P7: 30 minutos × 60 s × 20 ticks.
 export const MAX_ACTIVE_TICKS = 36_000;
 
-export type UnitKind = "villager" | "soldier" | "archer" | "knight" | "cannon";
+export type UnitKind = "villager" | "soldier" | "archer" | "knight" | "cannon" | "commander";
 export type BuildingKind = "townCenter" | "house" | "barracks" | "tower" | "stable" | "armory";
 export type ResourceKind = "food" | "wood" | "stone";
 
@@ -73,7 +73,24 @@ export interface CombatDef {
   readonly leashRange: number;
 }
 
+/** P10: modo batalla, solo ejércitos. */
+export interface BattleDef {
+  /** Efectivos de cada ejército al comenzar (el comandante no se entrena). */
+  readonly roster: Readonly<Record<"cannon" | "archer" | "knight" | "soldier" | "commander", number>>;
+  /** Un enemigo solo es visible a menos de esta distancia (celdas) de una unidad propia. */
+  readonly visionRadius: number;
+  /** El comandante ve mucho más lejos que el resto del ejército. */
+  readonly commanderVisionRadius: number;
+  /** Multiplicador de la vida de toda unidad militar en batalla (el aldeano no existe en este modo). */
+  readonly hpMultiplier: number;
+  /** Distancia mínima entre ejércitos al empezar, en celdas. */
+  readonly minArmyDistance: number;
+  /** Separación entre centros de la formación inicial, en celdas. */
+  readonly spacing: number;
+}
+
 export interface Balance {
+  readonly battle: BattleDef;
   readonly start: { readonly food: number; readonly wood: number; readonly stone: number; readonly villagers: number; readonly popCapacity: number };
   readonly maxPopulation: number;
   readonly nodesPerKindPerPlayer: number;
@@ -92,6 +109,7 @@ const s = (seconds: number): number => Math.round(seconds * TICKS_PER_SECOND);
 
 export const BALANCE: Balance = {
   start: { food: 200, wood: 200, stone: 0, villagers: 4, popCapacity: 10 },
+  battle: { roster: { cannon: 8, archer: 22, knight: 15, soldier: 45, commander: 1 }, visionRadius: 14, commanderVisionRadius: 30, hpMultiplier: 3, minArmyDistance: 60, spacing: 1.2 },
   maxPopulation: 50,
   nodesPerKindPerPlayer: 8,
   woodNodesPerPlayer: 16,
@@ -106,6 +124,8 @@ export const BALANCE: Balance = {
     archer: { cost: { food: 40, wood: 50, stone: 0 }, trainTicks: s(15), hp: 60, speedCellsPerSec: 2.5, damage: 8, attackIntervalTicks: s(1.5), range: 5, radius: 0.3 },
         // P9: el caballero ataca como el soldado y se desplaza al doble de velocidad.
         knight: { cost: { food: 100, wood: 50, stone: 0 }, trainTicks: s(18), hp: 100, speedCellsPerSec: 5, damage: 10, attackIntervalTicks: s(1), range: 0.5, radius: 0.4 },
+        // P10: como el caballero con el cuádruple de vida y de daño (ajuste P10-1.1); solo existe al inicio de una batalla (ninguna producción lo lista, coste de relleno).
+        commander: { cost: { food: 200, wood: 100, stone: 0 }, trainTicks: s(36), hp: 400, speedCellsPerSec: 5, damage: 40, attackIntervalTicks: s(1), range: 0.5, radius: 0.45 },
         // P9: la bala cae en parábola y hace daño de área. Alcance 7,5 (50 % más que el arquero) y distancia mínima de 2,5.
         cannon: {
           cost: { food: 0, wood: 200, stone: 150 },
@@ -183,7 +203,19 @@ export function validateBalance(balance: Balance): void {
       if (a.edgeDamageRatio > 1) throw new Error(`Balance inválido: ${kind}.artillery.edgeDamageRatio=${a.edgeDamageRatio}`);
     }
   }
+  const roster = Object.entries(balance.battle.roster);
+  for (const [kind, count] of roster) check(`battle.roster.${kind}`, count);
+  if (roster.every(([, count]) => count === 0)) throw new Error("Balance inválido: battle.roster vacío");
+  check("battle.visionRadius", balance.battle.visionRadius, 0.001);
+  check("battle.commanderVisionRadius", balance.battle.commanderVisionRadius, 0.001);
+  check("battle.hpMultiplier", balance.battle.hpMultiplier, 0.001);
+  if (balance.battle.commanderVisionRadius < balance.battle.visionRadius) throw new Error("Balance inválido: el comandante ve menos que el ejército");
+  check("battle.minArmyDistance", balance.battle.minArmyDistance, 0.001);
+  check("battle.spacing", balance.battle.spacing, 0.001);
+  const longestShot = Math.max(...Object.values(balance.units).map((u) => u.range));
+  if (balance.battle.visionRadius <= longestShot) throw new Error("Balance inválido: battle.visionRadius no supera el mayor alcance");
   for (const [kind, def] of Object.entries(balance.buildings)) {
+    if ((def.trains as readonly string[]).includes("commander")) throw new Error(`Balance inválido: ${kind} entrena al comandante`);
     check(`${kind}.cost.food`, def.cost.food);
     check(`${kind}.cost.wood`, def.cost.wood);
     check(`${kind}.cost.stone`, def.cost.stone);

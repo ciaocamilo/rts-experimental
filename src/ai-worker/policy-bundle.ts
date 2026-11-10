@@ -1,4 +1,5 @@
 import contractPy from "../../python/policy/contract.py?raw";
+import battlePy from "../../python/policy/battle.py?raw";
 import entryPy from "../../python/policy/entry.py?raw";
 import initPy from "../../python/policy/__init__.py?raw";
 import policyPy from "../../python/policy/policy.py?raw";
@@ -9,6 +10,7 @@ export const POLICY_FILES: Readonly<Record<string, string>> = {
   "__init__.py": initPy,
   "contract.py": contractPy,
   "policy.py": policyPy,
+  "battle.py": battlePy,
   "entry.py": entryPy,
   "worker-v2.schema.json": schemaJson,
 };

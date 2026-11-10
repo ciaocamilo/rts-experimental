@@ -438,8 +438,46 @@ export function updateCombat(state: GameState, grid: NavGrid): StrikeEvent[] {
   return events;
 }
 
+/** Vida total del ejército de un bando (desempate por tiempo en batalla). */
+export function armyHp(state: GameState, owner: PlayerId): number {
+  let total = 0;
+  for (const u of state.units) if (u.owner === owner && u.hp > 0) total += u.hp;
+  return total;
+}
+
+/** Modo batalla: gana quien aniquila al rival; el límite de tiempo lo decide la vida total conservada. */
+function resolveBattle(state: GameState): void {
+  const alive: [number, number] = [0, 0];
+  for (const u of state.units) if (u.hp > 0) alive[u.owner] += 1;
+  let winner: PlayerId | null;
+  let reason: "ARMY_DESTROYED" | "TIME_LIMIT";
+  if (alive[0] === 0 || alive[1] === 0) {
+    reason = "ARMY_DESTROYED";
+    winner = alive[0] === 0 && alive[1] === 0 ? null : alive[0] === 0 ? 1 : 0;
+  } else if (state.tick >= MAX_ACTIVE_TICKS) {
+    reason = "TIME_LIMIT";
+    const hp0 = armyHp(state, 0);
+    const hp1 = armyHp(state, 1);
+    winner = hp0 === hp1 ? null : hp0 > hp1 ? 0 : 1;
+  } else {
+    return;
+  }
+  state.outcome = {
+    winner,
+    reason,
+    endTick: state.tick,
+    mainBuildings: [],
+    casualties: { units: [...state.losses.units], buildings: [...state.losses.buildings] },
+  };
+  state.matchStatus = "ended";
+}
+
 /** Fija el resultado: la destrucción de centros tiene prioridad sobre el límite de tiempo. */
 export function resolveMatch(state: GameState, destroyedCenters: readonly PlayerId[], mainBuildings: readonly MainBuildingFinal[]): void {
+  if (state.mode === "battle") {
+    resolveBattle(state);
+    return;
+  }
   const reason = destroyedCenters.length > 0 ? "TOWN_CENTER_DESTROYED" : state.tick >= MAX_ACTIVE_TICKS ? "TIME_LIMIT" : null;
   if (!reason) return;
   const lost = new Set(destroyedCenters);

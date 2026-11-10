@@ -70,8 +70,8 @@ export const collapseVariant = (big: boolean, timbre: number): number => (big ? 
 /** Los cues del bando 0 únicamente; el resto suena para ambos bandos. */
 export const audibleFor = (cue: CueId, owner: 0 | 1): boolean => !PLAYER_ONLY_CUES.includes(cue) || owner === 0;
 
-const FIXED_RATE: readonly CueId[] = ["bell", "victory", "defeat"];
-const NON_SPATIAL: readonly CueId[] = ["bell", "victory", "defeat"];
+const FIXED_RATE: readonly CueId[] = ["bell", "victory", "defeat", "horn"];
+const NON_SPATIAL: readonly CueId[] = ["bell", "victory", "defeat", "horn"];
 /** El grito pierde la mitad de la atenuación por distancia para que se sienta. */
 const HALF_ATTENUATION: readonly CueId[] = ["death"];
 const WORK_CUE = { build: "hammer", wood: "axe", stone: "pick", food: "forage" } as const;
@@ -81,6 +81,7 @@ export class CueTranslator {
   private rng: Rng;
   private cursors = { strike: 0, death: 0, spawn: 0, work: 0, destroyed: 0, impact: 0 };
   private endTick: number | null = null;
+  private hornSounded = false;
   private lastVariant = new Map<string, number>();
 
   constructor(private readonly seed = 1) {
@@ -91,6 +92,7 @@ export class CueTranslator {
   reset(): void {
     this.cursors = { strike: 0, death: 0, spawn: 0, work: 0, destroyed: 0, impact: 0 };
     this.endTick = null;
+    this.hornSounded = false;
     this.rng = createRng(this.seed);
     this.lastVariant.clear();
   }
@@ -162,7 +164,7 @@ export class CueTranslator {
         emit("cannon", s.from, this.choose("cannon", CUES.cannon.variants));
         continue;
       }
-      const cue: CueId = s.attackerKind === "soldier" || s.attackerKind === "knight" ? "sword" : s.attackerKind === "archer" ? "arrow" : "blow";
+      const cue: CueId = s.attackerKind === "soldier" || s.attackerKind === "knight" || s.attackerKind === "commander" ? "sword" : s.attackerKind === "archer" ? "arrow" : "blow";
       if (cue === "arrow") shoot(s, this.choose(cue, CUES[cue].variants), 0);
       else emit(cue, s.from, this.choose(cue, CUES[cue].variants));
     }
@@ -171,10 +173,10 @@ export class CueTranslator {
 
     for (const d of frame.deaths) {
       if (d.seq <= this.cursors.death) continue;
+      if (d.kind === "commander" && d.owner === 0) emit("horn", null, 1);
       if (!visible(d.pos)) continue;
       const [group, offset] = d.kind !== "villager" ? ["death:m", 3] : d.gender === "female" ? ["death:f", 6] : ["death:v", 0];
       emit("death", d.pos, this.choose(group, 3, offset));
-      if (d.kind === "knight") emit("neigh", d.pos, this.choose("neigh", CUES.neigh.variants), 0.05);
     }
     this.cursors.death = lastSeq(frame.deaths, this.cursors.death);
 
@@ -218,6 +220,11 @@ export class CueTranslator {
     this.cursors.destroyed = lastSeq(frame.destroyed, this.cursors.destroyed);
 
     const { state } = frame;
+    // El cuerno suena una vez, en cuanto corre el primer tick de la batalla (no mientras el menú la mantiene en pausa).
+    if (state.mode === "battle" && state.tick > 0 && !this.hornSounded) {
+      this.hornSounded = true;
+      emit("horn", null, 0);
+    }
     if (state.matchStatus === "ended" && state.outcome && state.outcome.endTick !== this.endTick) {
       this.endTick = state.outcome.endTick;
       emit(state.outcome.winner === 0 ? "victory" : "defeat", null, 0, END_DELAY);

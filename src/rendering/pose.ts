@@ -1,4 +1,4 @@
-export type Role = "villager" | "archer" | "soldier" | "knight" | "cannon";
+export type Role = "villager" | "archer" | "soldier" | "knight" | "commander" | "cannon";
 export type WorkKind = "wood" | "food" | "stone" | "build";
 
 export interface PoseInput {
@@ -74,7 +74,7 @@ export function computePose(input: PoseInput): Pose {
   pose.armLz += breathe;
   pose.armRz -= breathe;
 
-  if (role === "knight") return riderPose(pose, input, breathe);
+  if (role === "knight" || role === "commander") return riderPose(pose, input, breathe);
   if (role === "cannon") return pose;
 
   if (input.walking) {
@@ -271,6 +271,17 @@ const GALLOP_OFFSETS = [0.5, 0.62, 0, 0.12] as const;
 const STANCE = 0.3;
 const smooth = (k: number): number => k * k * (3 - 2 * k);
 
+/** Velocidad relativa (0..1) a partir de la cual las patas ya dan la zancada completa. */
+const MOVING_GAIT = 0.3;
+/** Celdas por ciclo de zancada al trote (la pata de apoyo recorre unas 0,45 celdas en el 30 % del ciclo) y al galope. */
+const TROT_STRIDE = 1.45;
+const GALLOP_STRIDE = 2.3;
+
+/** Longitud de zancada según la velocidad relativa: al ir más despacio el ciclo es más corto, así el casco no resbala sobre el suelo. */
+export function strideLength(gait: number): number {
+  return lerp(TROT_STRIDE, GALLOP_STRIDE, smooth(clamp01((gait - 0.5) / 0.5)));
+}
+
 function gallopLeg(phase: number, offset: number, amplitude: number): LegAngles {
   const u = ((phase + offset) % 1 + 1) % 1;
   if (u < STANCE) return { upper: lerp(-amplitude, amplitude, u / STANCE), lower: 0 };
@@ -291,12 +302,14 @@ export function gallopPose(phase: number, speedRatio: number, options: GallopOpt
   const seed = options.seed ?? 0;
   const rear = clamp01(options.rear ?? 0);
   const phi = 2 * Math.PI * phase;
+  // Las patas dan la zancada completa en cuanto el caballo se mueve: a medio paso con la mitad de amplitud los cascos no tocarían el suelo y parecería flotar.
+  const step = smooth(clamp01(s / MOVING_GAIT));
   const restLeg: LegAngles = { upper: 0, lower: 0 };
   const legs = GALLOP_OFFSETS.map((offset, i) => {
     const hind = i >= 2;
     const g = gallopLeg(phase, offset, hind ? 0.5 : 0.45);
     const base = hind ? HIND_REST : restLeg;
-    return { upper: lerp(base.upper, g.upper, s), lower: lerp(base.lower, g.lower, s) };
+    return { upper: lerp(base.upper, g.upper, step), lower: lerp(base.lower, g.lower, step) };
   }) as unknown as [LegAngles, LegAngles, LegAngles, LegAngles];
 
   // Reposo con vida: pastar y escarbar salen de la semilla, no de Math.random.

@@ -18,6 +18,7 @@ export const REJECT_TEXT: Record<RejectCode, string> = {
   SITE_BUSY: "la obra ya tiene constructor",
   NOT_COMPLETE: "el edificio aún no está terminado",
   NOT_IMPLEMENTED: "orden aún no implementada",
+  NOT_IN_MODE: "orden no disponible en este modo de juego",
 };
 
 const LABEL: Record<CommandType, string> = {

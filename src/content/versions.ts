@@ -1,9 +1,10 @@
 export const GAME_NAME = "RTS Camilus";
 export const GAME_CREDIT = "Creado experimentalmente por Ing. Camilo A. Castañeda Galindo";
 export const GAME_SUBTITLE = "Juego de estrategia en tiempo real";
-export const GAME_VERSION = "p9.0.0";
-export const STATE_SCHEMA_VERSION = 9;
-export const MAP_VERSION = "map-0.5 (128x64, río, bosques)";
-export const BALANCE_VERSION = "balance-0.8";
-export const AUDIO_VERSION = "audio-0.5";
-export const GRAPHICS_VERSION = "gfx-0.5";
+export const GAME_VERSION = "p10.4.0";
+export const STATE_SCHEMA_VERSION = 10;
+export const MAP_VERSION = "map-0.6 (128x64, militares)";
+export const BATTLE_MAP_VERSION = "battle-0.4 (128x64, 91 uds)";
+export const BALANCE_VERSION = "balance-1.1";
+export const AUDIO_VERSION = "audio-0.7";
+export const GRAPHICS_VERSION = "gfx-0.9";

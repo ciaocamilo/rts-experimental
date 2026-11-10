@@ -14,15 +14,15 @@ const base = {
     protocol_version: 2,
     session_id: SESSION,
     worker_generation: 1,
-    expected: { pyodide: "0.27.7", python: "3.12", policy: "policy-0.6" },
-    config: { max_commands: 4 },
+    expected: { pyodide: "0.27.7", python: "3.12", policy: "policy-0.9" },
+    config: { max_commands: 8 },
   },
   ready: {
     type: "READY",
     protocol_version: 2,
     session_id: SESSION,
     worker_generation: 1,
-    versions: { pyodide: "0.27.7", python: "3.12.7", policy: "policy-0.6" },
+    versions: { pyodide: "0.27.7", python: "3.12.7", policy: "policy-0.9" },
     timings_ms: { pyodide_load: 1400.5, policy_load: 12.25, total: 1420 },
   },
   observe: {
@@ -34,9 +34,10 @@ const base = {
     observation_tick: 140,
     player_id: 1,
     seed: 1,
-    game_version: "p9.0.0",
-    map_version: "map-0.5 (128x64, río, bosques)",
-    balance_version: "balance-0.8",
+    game_version: "p10.1.0",
+    map_version: "map-0.6 (128x64, militares)",
+    balance_version: "balance-1.1",
+    mode: "village",
     players: [
       { id: 0, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
       { id: 1, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
@@ -66,6 +67,7 @@ const base = {
         archer: { food: 40, wood: 50, stone: 0 },
         knight: { food: 100, wood: 50, stone: 0 },
         cannon: { food: 0, wood: 200, stone: 150 },
+        commander: { food: 200, wood: 100, stone: 0 },
       },
       building_cost: {
         house: { food: 0, wood: 50, stone: 0 },
@@ -89,7 +91,7 @@ const base = {
     request_id: 7,
     observation_tick: 140,
     player_id: 1,
-    policy_version: "policy-0.6",
+    policy_version: "policy-0.9",
     commands: [{ command_id: "7:0", type: "Move", entity_ids: [5, 6], payload: { x: 48.5, z: 32.5 } }],
     reason_codes: ["GATHER"],
     metrics: { policy_ms: 1.5, convert_ms: 0.25 },
@@ -128,6 +130,24 @@ add("observe con caballero, cañón, establo y armería", true, mutate("observe"
     { id: 24, owner: 0, kind: "armory", cell_x: 24, cell_z: 30, hp: 700, complete: true, build_done: 700, queue: [{ id: 25, kind: "cannon", remaining: 300 }] },
   );
 }));
+add("observe de batalla con comandante y terreno", true, mutate("observe", (o) => {
+  o.mode = "battle";
+  o.map_version = "battle-0.2 (128x64, montañas)";
+  o.players.forEach((p) => Object.assign(p, { food: 0, wood: 0, stone: 0, pop: 61, pop_capacity: 122 }));
+  o.units = [
+    { id: 1, owner: 1, kind: "commander", x: 102, z: 32, hp: 200, task: "idle", activity: "idle", dest: null, blocked_reason: null, carry: null, target_id: null, defending: false },
+    { id: 2, owner: 1, kind: "cannon", x: 114, z: 28, hp: 120, task: "moving", activity: "moving", dest: { x: 100, z: 28 }, blocked_reason: null, carry: null, target_id: null, defending: false },
+  ];
+  o.buildings = [];
+  o.resource_nodes = [];
+  o.map.terrain = [
+    { x: 30, z: 0, w: 16, h: 13, kind: "mountain" },
+    { x: 28, z: 13, w: 8, h: 8, kind: "valley" },
+    { x: 20, z: 2, w: 8, h: 10, kind: "forest" },
+    { x: 61, z: 0, w: 6, h: 12, kind: "water" },
+    { x: 61, z: 12, w: 6, h: 3, kind: "bridge" },
+  ];
+}));
 add("observe sin entidades", true, mutate("observe", (o) => {
   o.units = [];
   o.buildings = [];
@@ -140,6 +160,9 @@ add("decision vacía", true, mutate("decision", (d) => {
   d.commands = [];
   d.reason_codes = [];
 }));
+add("decision de batalla con ocho comandos", true, withCommands(
+  Array.from({ length: 8 }, (_, i) => ({ command_id: `7:${i}`, type: i % 2 ? "Attack" : "Move", entity_ids: [5 + i], payload: i % 2 ? { target_id: 1 } : { x: 90 - i, z: 30 } })),
+));
 add("decision con cuatro comandos (Move, Stop, Gather, Attack)", true, withCommands([
   { command_id: "7:0", type: "Move", entity_ids: [5], payload: { x: 1, z: 2 } },
   { command_id: "7:1", type: "Stop", entity_ids: [6], payload: {} },
@@ -198,6 +221,10 @@ add("observe con carga sin cantidad", false, mutate("observe", (o) => (o.units[1
 add("observe con cola de más de 5", false, mutate("observe", (o) => {
   o.buildings[1].queue = Array.from({ length: 6 }, (_, i) => ({ id: 20 + i, kind: "villager", remaining: 10 }));
 }), "INVALID_MESSAGE");
+add("observe sin modo", false, mutate("observe", (o) => delete o.mode), "INVALID_MESSAGE");
+add("observe con modo desconocido", false, mutate("observe", (o) => (o.mode = "arena")), "INVALID_MESSAGE");
+add("observe con terreno de tipo desconocido", false, mutate("observe", (o) => (o.map.terrain[0].kind = "lava")), "INVALID_MESSAGE");
+add("observe sin coste del comandante", false, mutate("observe", (o) => delete o.rules.unit_cost.commander), "INVALID_MESSAGE");
 add("observe con coste de unidad faltante", false, mutate("observe", (o) => delete o.rules.unit_cost.archer), "INVALID_MESSAGE");
 add("observe sin piedra en el jugador", false, mutate("observe", (o) => delete o.players[0].stone), "INVALID_MESSAGE");
 add("observe con unidad sin defending", false, mutate("observe", (o) => delete o.units[0].defending), "INVALID_MESSAGE");
@@ -212,15 +239,15 @@ add("observe con más de 500 unidades", false, mutate("observe", (o) => {
   o.units = Array.from({ length: 501 }, (_, i) => ({ ...o.units[0], id: i + 1 }));
 }), "INVALID_MESSAGE");
 add("init sin expected", false, mutate("init", (m) => delete m.expected), "INVALID_MESSAGE");
-add("init con max_commands 5", false, mutate("init", (m) => (m.config.max_commands = 5)), "INVALID_MESSAGE");
+add("init con max_commands 9", false, mutate("init", (m) => (m.config.max_commands = 9)), "INVALID_MESSAGE");
 add("ready sin versions", false, mutate("ready", (m) => delete m.versions), "INVALID_MESSAGE");
 add("ready con tiempo negativo", false, mutate("ready", (m) => (m.timings_ms.total = -1)), "INVALID_MESSAGE");
 add("error con código desconocido", false, mutate("error", (m) => (m.code = "BOOM")), "INVALID_MESSAGE");
 add("error con mensaje largo", false, mutate("error", (m) => (m.message = "x".repeat(201))), "INVALID_MESSAGE");
 
 // Decisión: lote y comandos
-add("decision con cinco comandos", false, withCommands(
-  Array.from({ length: 5 }, (_, i) => ({ command_id: `7:${i % 4}`, type: "Stop", entity_ids: [5], payload: {} })),
+add("decision con nueve comandos", false, withCommands(
+  Array.from({ length: 9 }, (_, i) => ({ command_id: `7:${i % 8}`, type: "Stop", entity_ids: [5], payload: {} })),
 ), "INVALID_MESSAGE");
 add("decision con comandos no arreglo", false, mutate("decision", (d) => (d.commands = {})), "INVALID_MESSAGE");
 add("decision con campo extra", false, mutate("decision", (d) => (d.estado = {})), "INVALID_MESSAGE");

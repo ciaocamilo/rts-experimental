@@ -454,8 +454,8 @@ class StoneAndTowerTest(unittest.TestCase):
     def workers(self, count=8):
         return [unit(10 + i, activity="gathering", target=100) for i in range(count)]
 
-    def test_version_is_policy_0_6(self):
-        self.assertEqual(policy.VERSION, "policy-0.6")
+    def test_version_is_policy_0_7(self):
+        self.assertEqual(policy.VERSION, "policy-0.9")
 
     def test_sends_two_idle_villagers_to_stone_when_a_tower_is_missing(self):
         units = [unit(10 + i, activity="gathering", target=100) for i in range(4)]

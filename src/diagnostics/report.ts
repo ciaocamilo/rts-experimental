@@ -2,7 +2,7 @@ import type { AIDirector } from "../ai-client/director";
 import type { WorkerAIProvider } from "../ai-client/provider";
 import { PROTOCOL_VERSION } from "../ai-client/protocol";
 import type { GameSession } from "../app/session";
-import { BALANCE_VERSION, GAME_VERSION, MAP_VERSION } from "../content/versions";
+import { BALANCE_VERSION, BATTLE_MAP_VERSION, GAME_VERSION, MAP_VERSION } from "../content/versions";
 import { hashState } from "../core/hash";
 import { matchResult } from "../core/result";
 import type { GameState } from "../core/types";
@@ -99,7 +99,8 @@ export function buildReport(input: ReportInput): DiagnosticsReport {
     schema: REPORT_SCHEMA,
     versions: {
       game: GAME_VERSION,
-      map: MAP_VERSION,
+      map: state.mode === "battle" ? BATTLE_MAP_VERSION : MAP_VERSION,
+      mode: state.mode,
       balance: BALANCE_VERSION,
       schema: state.schemaVersion,
       contract: PROTOCOL_VERSION,

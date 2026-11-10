@@ -37,7 +37,7 @@ function contrast(a: string, b: string, factorA = 1): number {
 
 describe("P8 vida de centros urbanos y torres", () => {
   it("el balance duplica la vida y el estado inicial la refleja en ambos bandos", () => {
-    expect(BALANCE_VERSION).toBe("balance-0.8");
+    expect(BALANCE_VERSION).toBe("balance-1.1");
     expect(BALANCE.buildings.townCenter.hp).toBe(3000);
     expect(BALANCE.buildings.tower.hp).toBe(1600);
     const state = createInitialState(1);

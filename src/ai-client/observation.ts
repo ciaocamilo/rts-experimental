@@ -1,8 +1,9 @@
 import { BALANCE } from "../content/balance";
-import { BALANCE_VERSION, GAME_VERSION, MAP_VERSION } from "../content/versions";
+import { BALANCE_VERSION, BATTLE_MAP_VERSION, GAME_VERSION, MAP_VERSION } from "../content/versions";
+import { visibleEnemies } from "../core/battle";
 import { activityOf } from "../core/economy";
 import { populationOf } from "../core/state";
-import type { CommandResult, GameState, PlayerId } from "../core/types";
+import type { CommandResult, GameState, PlayerId, Unit } from "../core/types";
 import { PROTOCOL_VERSION, type ObserveMessage, type OrderResult } from "./protocol";
 
 export interface ObservationContext {
@@ -21,6 +22,13 @@ export function toOrderResult(result: CommandResult): OrderResult {
 
 const byId = <T extends { id: number }>(items: readonly T[]): T[] => [...items].sort((a, b) => a.id - b.id);
 
+/** En batalla la IA solo recibe sus unidades y las enemigas que ve; en villa recibe todas. */
+function observedUnits(state: GameState, player: PlayerId): Unit[] {
+  if (state.mode !== "battle") return state.units;
+  const seen = new Set(visibleEnemies(state, player).map((u) => u.id));
+  return state.units.filter((u) => u.owner === player || seen.has(u.id));
+}
+
 /** Copia lógica del estado: solo datos planos, ordenados por ID y sin referencias mutables. */
 export function buildObservation(state: GameState, ctx: ObservationContext): ObserveMessage {
   return {
@@ -33,8 +41,9 @@ export function buildObservation(state: GameState, ctx: ObservationContext): Obs
     player_id: ctx.playerId,
     seed: state.seed,
     game_version: GAME_VERSION,
-    map_version: MAP_VERSION,
+    map_version: state.mode === "battle" ? BATTLE_MAP_VERSION : MAP_VERSION,
     balance_version: BALANCE_VERSION,
+    mode: state.mode,
     players: state.players.map((p) => ({
       id: p.id,
       food: p.food,
@@ -43,7 +52,7 @@ export function buildObservation(state: GameState, ctx: ObservationContext): Obs
       pop: populationOf(state, p.id),
       pop_capacity: p.popCapacity,
     })),
-    units: byId(state.units).map((u) => ({
+    units: byId(observedUnits(state, ctx.playerId)).map((u) => ({
       id: u.id,
       owner: u.owner,
       kind: u.kind,
@@ -76,7 +85,7 @@ export function buildObservation(state: GameState, ctx: ObservationContext): Obs
       cell_z: n.cell.z,
       remaining: n.remaining,
     })),
-    map: { width: state.mapWidth, depth: state.mapDepth, terrain: state.terrain.map((t) => ({ x: t.x, z: t.z, w: t.w, h: t.h })) },
+    map: { width: state.mapWidth, depth: state.mapDepth, terrain: state.terrain.map((t) => ({ x: t.x, z: t.z, w: t.w, h: t.h, ...(t.kind ? { kind: t.kind } : {}) })) },
     rules: {
       max_population: BALANCE.maxPopulation,
       queue_limit: BALANCE.economy.queueLimit,
@@ -87,6 +96,7 @@ export function buildObservation(state: GameState, ctx: ObservationContext): Obs
         archer: { ...BALANCE.units.archer.cost },
         knight: { ...BALANCE.units.knight.cost },
         cannon: { ...BALANCE.units.cannon.cost },
+        commander: { ...BALANCE.units.commander.cost },
       },
       building_cost: {
         house: { ...BALANCE.buildings.house.cost },

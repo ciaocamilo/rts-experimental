@@ -130,7 +130,7 @@ export class AIDirector {
     options: DirectorOptions,
   ) {
     this.playerId = options.playerId;
-    this.intervalTicks = options.intervalTicks ?? 20;
+    this.intervalTicks = options.intervalTicks ?? (session.state.mode === "battle" ? 10 : 20);
     this.maxAgeTicks = options.maxAgeTicks ?? 10;
     this.maxFailures = options.maxConsecutiveFailures ?? 2;
     this.now = options.now ?? (() => performance.now());

@@ -1,4 +1,5 @@
-import { MAX_ACTIVE_TICKS, TICKS_PER_SECOND } from "../content/balance";
+import { BALANCE, MAX_ACTIVE_TICKS, TICKS_PER_SECOND, type UnitKind } from "../content/balance";
+import { armyCounts } from "./battle";
 import type { GameState, PlayerId } from "./types";
 
 export type MatchResultLabel = "victoria" | "derrota" | "empate" | "en curso";
@@ -21,7 +22,17 @@ export function describeEnd(state: GameState, perspective: PlayerId = 0): { titl
   const label = matchResult(state, perspective);
   const title = label === "empate" ? "Empate" : label === "victoria" ? "Victoria" : "Derrota";
   const reason =
-    outcome.reason === "TIME_LIMIT"
+    outcome.reason === "ARMY_DESTROYED"
+      ? outcome.winner === null
+        ? "los dos ejércitos cayeron a la vez"
+        : outcome.winner === perspective
+          ? "el ejército rival fue aniquilado"
+          : "tu ejército fue aniquilado"
+      : outcome.reason === "TIME_LIMIT" && state.mode === "battle"
+        ? outcome.winner === null
+          ? `tras ${Math.round(MAX_ACTIVE_TICKS / TICKS_PER_SECOND / 60)} minutos ambos ejércitos conservan la misma vida`
+          : `tras ${Math.round(MAX_ACTIVE_TICKS / TICKS_PER_SECOND / 60)} minutos ${outcome.winner === perspective ? "tu ejército conserva más vida" : "el ejército rival conserva más vida"}`
+        : outcome.reason === "TIME_LIMIT"
       ? `tras ${Math.round(MAX_ACTIVE_TICKS / TICKS_PER_SECOND / 60)} minutos ningún centro urbano cayó`
       : outcome.winner === null
         ? "ambos centros urbanos cayeron a la vez"
@@ -37,6 +48,12 @@ export function formatDuration(ticks: number): string {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
+export interface ArmyRow {
+  kind: UnitKind;
+  survivors: number;
+  casualties: number;
+}
+
 export interface EndSummary {
   label: MatchResultLabel;
   title: string;
@@ -46,6 +63,15 @@ export interface EndSummary {
   rivalLosses: { units: number; buildings: number };
   /** Estado final de cada centro urbano, desde la perspectiva indicada. */
   centers: { own: string; rival: string };
+  /** Solo en batalla: supervivientes y bajas por tipo de cada ejército. */
+  armies: { own: ArmyRow[]; rival: ArmyRow[] } | null;
+}
+
+const ARMY_ORDER = ["commander", "knight", "soldier", "archer", "cannon"] as const satisfies readonly UnitKind[];
+
+function armyRows(state: GameState, owner: PlayerId): ArmyRow[] {
+  const alive = armyCounts(state, owner);
+  return ARMY_ORDER.map((kind) => ({ kind, survivors: alive[kind], casualties: Math.max(0, BALANCE.battle.roster[kind] - alive[kind]) }));
 }
 
 /** Datos de la ventana de fin de partida; todo sale del estado, nada se recalcula aparte. */
@@ -65,5 +91,6 @@ export function endSummary(state: GameState, perspective: PlayerId = 0): EndSumm
     ownLosses: { units: outcome.casualties.units[perspective], buildings: outcome.casualties.buildings[perspective] },
     rivalLosses: { units: outcome.casualties.units[rival], buildings: outcome.casualties.buildings[rival] },
     centers: { own: center(perspective), rival: center(rival) },
+    armies: state.mode === "battle" ? { own: armyRows(state, perspective), rival: armyRows(state, rival) } : null,
   };
 }
