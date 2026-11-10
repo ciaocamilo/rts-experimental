@@ -14,7 +14,7 @@ const base = {
     protocol_version: 2,
     session_id: SESSION,
     worker_generation: 1,
-    expected: { pyodide: "0.27.7", python: "3.12", policy: "policy-0.4" },
+    expected: { pyodide: "0.27.7", python: "3.12", policy: "policy-0.6" },
     config: { max_commands: 4 },
   },
   ready: {
@@ -22,7 +22,7 @@ const base = {
     protocol_version: 2,
     session_id: SESSION,
     worker_generation: 1,
-    versions: { pyodide: "0.27.7", python: "3.12.7", policy: "policy-0.4" },
+    versions: { pyodide: "0.27.7", python: "3.12.7", policy: "policy-0.6" },
     timings_ms: { pyodide_load: 1400.5, policy_load: 12.25, total: 1420 },
   },
   observe: {
@@ -34,9 +34,9 @@ const base = {
     observation_tick: 140,
     player_id: 1,
     seed: 1,
-    game_version: "p8.0.0",
+    game_version: "p9.0.0",
     map_version: "map-0.5 (128x64, río, bosques)",
-    balance_version: "balance-0.7",
+    balance_version: "balance-0.8",
     players: [
       { id: 0, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
       { id: 1, food: 200, wood: 200, stone: 0, pop: 3, pop_capacity: 10 },
@@ -64,13 +64,17 @@ const base = {
         villager: { food: 50, wood: 0, stone: 0 },
         soldier: { food: 60, wood: 20, stone: 0 },
         archer: { food: 40, wood: 50, stone: 0 },
+        knight: { food: 100, wood: 50, stone: 0 },
+        cannon: { food: 0, wood: 200, stone: 150 },
       },
       building_cost: {
         house: { food: 0, wood: 50, stone: 0 },
         barracks: { food: 0, wood: 150, stone: 0 },
         tower: { food: 0, wood: 0, stone: 300 },
+        stable: { food: 0, wood: 175, stone: 0 },
+        armory: { food: 0, wood: 200, stone: 100 },
       },
-      footprint: { townCenter: 4, house: 2, barracks: 3, tower: 2 },
+      footprint: { townCenter: 4, house: 2, barracks: 3, tower: 2, stable: 3, armory: 3 },
     },
     previous_results: [
       { command_id: "6:0", accepted: true, code: null },
@@ -85,7 +89,7 @@ const base = {
     request_id: 7,
     observation_tick: 140,
     player_id: 1,
-    policy_version: "policy-0.4",
+    policy_version: "policy-0.6",
     commands: [{ command_id: "7:0", type: "Move", entity_ids: [5, 6], payload: { x: 48.5, z: 32.5 } }],
     reason_codes: ["GATHER"],
     metrics: { policy_ms: 1.5, convert_ms: 0.25 },
@@ -114,6 +118,16 @@ const withCommands = (commands) => mutate("decision", (d) => (d.commands = comma
 add("init válido", true, base.init);
 add("ready válido", true, base.ready);
 add("observe completo", true, base.observe);
+add("observe con caballero, cañón, establo y armería", true, mutate("observe", (o) => {
+  o.units.push(
+    { id: 20, owner: 0, kind: "knight", x: 40.5, z: 31, hp: 100, task: "moving", activity: "moving", dest: { x: 44.5, z: 31.5 }, blocked_reason: null, carry: null, target_id: null, defending: false },
+    { id: 21, owner: 0, kind: "cannon", x: 41.5, z: 33, hp: 120, task: "idle", activity: "attacking", dest: null, blocked_reason: null, carry: null, target_id: 5, defending: false },
+  );
+  o.buildings.push(
+    { id: 22, owner: 0, kind: "stable", cell_x: 20, cell_z: 30, hp: 600, complete: true, build_done: 500, queue: [{ id: 23, kind: "knight", remaining: 100 }] },
+    { id: 24, owner: 0, kind: "armory", cell_x: 24, cell_z: 30, hp: 700, complete: true, build_done: 700, queue: [{ id: 25, kind: "cannon", remaining: 300 }] },
+  );
+}));
 add("observe sin entidades", true, mutate("observe", (o) => {
   o.units = [];
   o.buildings = [];
@@ -144,6 +158,12 @@ add("decision con CancelTraining", true, withCommands([
 add("decision con Gather de piedra y Build de torre", true, withCommands([
   { command_id: "7:0", type: "Gather", entity_ids: [5], payload: { target_id: 10 } },
   { command_id: "7:1", type: "Build", entity_ids: [5], payload: { building_kind: "tower", cell_x: 40, cell_z: 20 } },
+]));
+add("decision con Build de establo y armería y Train de caballero y cañón", true, withCommands([
+  { command_id: "7:0", type: "Build", entity_ids: [5], payload: { building_kind: "stable", cell_x: 40, cell_z: 20 } },
+  { command_id: "7:1", type: "Build", entity_ids: [5], payload: { building_kind: "armory", cell_x: 44, cell_z: 20 } },
+  { command_id: "7:2", type: "Train", entity_ids: [4], payload: { unit_kind: "knight" } },
+  { command_id: "7:3", type: "Train", entity_ids: [4], payload: { unit_kind: "cannon" } },
 ]));
 add("observe con unidad defendiéndose y carga de piedra", true, mutate("observe", (o) => {
   o.units[1].carry = { kind: "stone", amount: 8 };
@@ -182,6 +202,9 @@ add("observe con coste de unidad faltante", false, mutate("observe", (o) => dele
 add("observe sin piedra en el jugador", false, mutate("observe", (o) => delete o.players[0].stone), "INVALID_MESSAGE");
 add("observe con unidad sin defending", false, mutate("observe", (o) => delete o.units[0].defending), "INVALID_MESSAGE");
 add("observe sin coste de torre", false, mutate("observe", (o) => delete o.rules.building_cost.tower), "INVALID_MESSAGE");
+add("observe sin coste del cañón", false, mutate("observe", (o) => delete o.rules.unit_cost.cannon), "INVALID_MESSAGE");
+add("observe sin coste de la armería", false, mutate("observe", (o) => delete o.rules.building_cost.armory), "INVALID_MESSAGE");
+add("observe sin huella del establo", false, mutate("observe", (o) => delete o.rules.footprint.stable), "INVALID_MESSAGE");
 add("observe con booleano como entero", false, mutate("observe", (o) => (o.request_id = true)), "INVALID_MESSAGE");
 add("observe con entero fraccionario", false, mutate("observe", (o) => (o.request_id = 1.5)), "INVALID_MESSAGE");
 add("observe con un solo jugador", false, mutate("observe", (o) => o.players.pop()), "INVALID_MESSAGE");

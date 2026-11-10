@@ -221,7 +221,7 @@ class MilitaryTest(unittest.TestCase):
         order = []
         army = []
         for i in range(6):
-            message = scene(units=base + army, extra_buildings=[self.barracks()], food=500, wood=500, capacity=50, pop=12 + len(army))
+            message = scene(units=base + army, extra_buildings=[self.barracks()], food=500, wood=170, capacity=50, pop=12 + len(army))
             commands, reasons = policy.decide(message)
             self.assertEqual(reasons, ["TRAIN_MILITARY"])
             kind = commands[0]["payload"]["unit_kind"]
@@ -232,15 +232,15 @@ class MilitaryTest(unittest.TestCase):
     def test_queued_units_count_for_the_ratio(self):
         base = [unit(10 + i, activity="gathering", target=100) for i in range(12)]
         queue = [{"id": 90, "kind": "soldier", "remaining": 100}, {"id": 91, "kind": "soldier", "remaining": 200}]
-        message = scene(units=base, extra_buildings=[self.barracks(queue=queue)], food=500, wood=500, capacity=50, pop=14)
+        message = scene(units=base, extra_buildings=[self.barracks(queue=queue)], food=500, wood=170, capacity=50, pop=14)
         self.assertEqual(policy.decide(message)[0], [])
         queue = [{"id": 90, "kind": "soldier", "remaining": 100}]
-        message = scene(units=base, extra_buildings=[self.barracks(queue=queue)], food=500, wood=500, capacity=50, pop=13)
+        message = scene(units=base, extra_buildings=[self.barracks(queue=queue)], food=500, wood=170, capacity=50, pop=13)
         self.assertEqual(policy.decide(message)[0][0]["payload"]["unit_kind"], "soldier")
 
     def test_does_not_train_what_it_cannot_afford(self):
         base = [unit(10 + i, activity="gathering", target=100) for i in range(12)]
-        message = scene(units=base, extra_buildings=[self.barracks()], food=59, wood=500, capacity=50)
+        message = scene(units=base, extra_buildings=[self.barracks()], food=59, wood=170, capacity=50)
         self.assertEqual(policy.decide(message)[0], [])
 
     def test_incomplete_barracks_does_not_train(self):
@@ -292,12 +292,170 @@ class MilitaryTest(unittest.TestCase):
         self.assertEqual(policy.decide(scene(units=base + soldiers(3) + [scout]))[0], [])
 
 
+class StageNineUnitsTest(unittest.TestCase):
+    def base(self):
+        return [unit(10 + i, activity="gathering", target=100) for i in range(12)]
+
+    def test_enemy_knight_or_cannon_near_the_base_triggers_defence(self):
+        for kind, hp in (("knight", 100), ("cannon", 120)):
+            raider = unit(300, kind=kind, owner=0, x=47.0, z=31.0, hp=hp)
+            commands, reasons = policy.decide(scene(units=self.base() + soldiers(3) + [raider]))
+            self.assertEqual(reasons, ["DEFEND"], kind)
+            self.assertEqual(commands[0]["payload"]["target_id"], 300, kind)
+
+    def test_own_knights_and_cannons_count_as_army_and_defend(self):
+        raider = unit(300, kind="soldier", owner=0, x=47.0, z=31.0, hp=100)
+        army = soldiers(2) + soldiers(1, start=60, kind="knight") + soldiers(1, start=70, kind="cannon")
+        commands, reasons = policy.decide(scene(units=self.base() + army + [raider]))
+        self.assertEqual(reasons, ["DEFEND"])
+        self.assertEqual(sorted(commands[0]["entity_ids"]), [50, 51, 60, 70])
+
+
+class AiStageNineTest(unittest.TestCase):
+    """P9: la política construye establo y armería, entrena caballeros y cañones y escolta a los cañones."""
+
+    def base(self):
+        return [unit(10 + i, activity="gathering", target=100) for i in range(12)]
+
+    def barracks(self, complete=True):
+        return building(60, "barracks", 1, 44, 14, complete=complete)
+
+    def stable(self, complete=True, queue=None):
+        return building(61, "stable", 1, 44, 18, complete=complete, queue=queue)
+
+    def armory(self, complete=True, queue=None):
+        return building(62, "armory", 1, 44, 22, complete=complete, queue=queue)
+
+    def builds(self, commands):
+        return [c["payload"]["building_kind"] for c in commands if c["type"] == "Build"]
+
+    def trains(self, commands):
+        return [c["payload"]["unit_kind"] for c in commands if c["type"] == "Train"]
+
+    def test_builds_a_stable_once_the_barracks_is_complete(self):
+        commands, reasons = policy.decide(scene(units=self.base(), extra_buildings=[self.barracks()], wood=175, capacity=50))
+        self.assertEqual(self.builds(commands), ["stable"])
+        self.assertIn("BUILD_STABLE", reasons)
+
+    def test_does_not_build_a_stable_too_early_or_twice_or_without_wood(self):
+        cases = (
+            dict(extra_buildings=[], wood=500),
+            dict(extra_buildings=[self.barracks(complete=False)], wood=500),
+            dict(extra_buildings=[self.barracks(), self.stable(complete=False)], wood=500),
+            dict(extra_buildings=[self.barracks()], wood=174),
+        )
+        for case in cases:
+            commands, _ = policy.decide(scene(units=self.base(), capacity=50, **case))
+            self.assertNotIn("stable", self.builds(commands), case)
+
+    def test_builds_the_armory_after_the_stable_when_it_can_pay_wood_and_stone(self):
+        buildings = [self.barracks(), self.stable(complete=False)]
+        commands, reasons = policy.decide(scene(units=self.base(), extra_buildings=buildings, wood=200, stone=100, capacity=50))
+        self.assertEqual(self.builds(commands), ["armory"])
+        self.assertIn("BUILD_ARMORY", reasons)
+        for case in (dict(wood=200, stone=99), dict(wood=199, stone=100)):
+            commands, _ = policy.decide(scene(units=self.base(), extra_buildings=buildings, capacity=50, **case))
+            self.assertNotIn("armory", self.builds(commands), case)
+        commands, _ = policy.decide(scene(units=self.base(), extra_buildings=[self.barracks()], wood=500, stone=500, capacity=50))
+        self.assertNotIn("armory", self.builds(commands))
+        built = buildings + [self.armory(complete=False)]
+        commands, _ = policy.decide(scene(units=self.base(), extra_buildings=built, wood=500, stone=500, capacity=50))
+        self.assertNotIn("armory", self.builds(commands))
+
+    def test_idle_villagers_gather_stone_for_the_armory_and_the_cannons(self):
+        towers = [building(70 + i, "tower", 1, 46, 26 + 4 * i) for i in range(4)]
+        idle = [unit(10 + i, activity="gathering", target=100) for i in range(5)]
+        idle += [unit(20 + i, activity="gathering", target=200) for i in range(3)] + [unit(30), unit(31)]
+        for extra in ([self.barracks(), self.stable()], [self.barracks(), self.stable(), self.armory()]):
+            commands, _ = policy.decide(scene(units=idle, extra_buildings=towers + extra, stone=50, wood=0, capacity=50))
+            stone = [c for c in commands if c["type"] == "Gather" and 300 <= c["payload"]["target_id"] < 400]
+            self.assertEqual(len(stone), 1, extra)
+        commands, _ = policy.decide(scene(units=idle, extra_buildings=towers + [self.barracks()], stone=0, wood=0, capacity=50))
+        self.assertEqual([c for c in commands if c["type"] == "Gather" and 300 <= c["payload"]["target_id"] < 400], [])
+
+    def test_trains_knights_from_a_complete_stable_and_respects_the_queue(self):
+        message = scene(units=self.base(), extra_buildings=[self.stable()], food=100, wood=50, capacity=50, pop=13)
+        commands, reasons = policy.decide(message)
+        self.assertEqual(commands, [{"type": "Train", "entity_ids": [61], "payload": {"unit_kind": "knight"}}])
+        self.assertEqual(reasons, ["TRAIN_KNIGHT"])
+        for case in (dict(food=99, wood=50), dict(food=100, wood=49)):
+            commands, _ = policy.decide(scene(units=self.base(), extra_buildings=[self.stable()], capacity=50, pop=13, **case))
+            self.assertEqual(self.trains(commands), [], case)
+        incomplete = scene(units=self.base(), extra_buildings=[self.stable(complete=False)], food=100, wood=50, capacity=50, pop=13)
+        self.assertEqual(self.trains(policy.decide(incomplete)[0]), [])
+        busy = [{"id": 90 + i, "kind": "knight", "remaining": 100} for i in range(2)]
+        message = scene(units=self.base(), extra_buildings=[self.stable(queue=busy)], food=100, wood=50, capacity=50, pop=15)
+        self.assertEqual(self.trains(policy.decide(message)[0]), [])
+
+    def test_trains_a_cannon_with_its_exact_cost_and_one_at_a_time(self):
+        extra = [self.barracks(), self.stable(), self.armory()]
+        message = scene(units=self.base(), extra_buildings=extra, wood=200, stone=150, capacity=50, pop=13)
+        commands, reasons = policy.decide(message)
+        self.assertEqual(commands, [{"type": "Train", "entity_ids": [62], "payload": {"unit_kind": "cannon"}}])
+        self.assertEqual(reasons, ["TRAIN_CANNON"])
+        for case in (dict(wood=199, stone=150), dict(wood=200, stone=149)):
+            commands, _ = policy.decide(scene(units=self.base(), extra_buildings=extra, capacity=50, pop=13, **case))
+            self.assertEqual(self.trains(commands), [], case)
+        queued = [{"id": 90, "kind": "cannon", "remaining": 100}]
+        extra = [self.barracks(), self.stable(), self.armory(queue=queued)]
+        message = scene(units=self.base(), extra_buildings=extra, wood=500, stone=500, capacity=50, pop=14)
+        self.assertEqual(self.trains(policy.decide(message)[0]), [])
+
+    def test_never_exceeds_the_cannon_limit(self):
+        cannons = [unit(100 + i, kind="cannon", hp=120, x=45.0, z=33.0 + i) for i in range(policy.MAX_CANNONS)]
+        message = scene(units=self.base() + cannons, extra_buildings=[self.armory()], wood=500, stone=500, capacity=50, pop=17)
+        self.assertNotIn("cannon", self.trains(policy.decide(message)[0]))
+
+    def test_keeps_wood_for_the_cannon_when_the_stone_is_ready(self):
+        extra = [self.barracks(), self.stable(), self.armory()]
+        message = scene(units=self.base(), extra_buildings=extra, food=500, wood=150, stone=150, capacity=50, pop=13)
+        self.assertEqual(self.trains(policy.decide(message)[0]), [])
+        message = scene(units=self.base(), extra_buildings=extra, food=500, wood=150, stone=100, capacity=50, pop=13)
+        self.assertEqual(self.trains(policy.decide(message)[0]), ["soldier", "knight"])
+        message = scene(units=self.base(), extra_buildings=extra, food=500, wood=250, stone=150, capacity=50, pop=13)
+        self.assertEqual(self.trains(policy.decide(message)[0]), ["cannon", "soldier"])
+
+    def test_knights_wait_for_the_cannon_before_the_expedition_charges(self):
+        army = soldiers(4) + soldiers(3, start=60, kind="knight") + soldiers(1, start=70, kind="cannon")
+        commands, reasons = policy.decide(scene(units=self.base() + army))
+        self.assertEqual(reasons, ["ATTACK"])
+        self.assertEqual(commands[0]["entity_ids"], [50, 51, 52, 53, 70])
+        self.assertEqual(commands[0]["payload"]["target_id"], 1)
+
+        for u in army:
+            if u["kind"] == "cannon":
+                u["x"] = 20.0
+        commands, _ = policy.decide(scene(units=self.base() + army))
+        self.assertEqual(commands[0]["entity_ids"], [50, 51, 52, 53, 60, 61, 62, 70])
+
+    def test_knights_charge_with_the_rest_when_there_are_no_cannons(self):
+        army = soldiers(5) + soldiers(3, start=60, kind="knight")
+        commands, _ = policy.decide(scene(units=self.base() + army))
+        self.assertEqual(commands[0]["entity_ids"], [50, 51, 52, 53, 54, 60, 61, 62])
+
+    def test_knights_do_not_wait_when_enemies_are_already_close_to_the_group(self):
+        army = soldiers(4) + soldiers(3, start=60, kind="knight") + soldiers(1, start=70, kind="cannon")
+        foe = unit(300, kind="soldier", owner=0, x=39.0, z=31.0, hp=100)
+        commands, _ = policy.decide(scene(units=self.base() + army + [foe]))
+        self.assertEqual(commands[0]["payload"]["target_id"], 300)
+        self.assertEqual(commands[0]["entity_ids"], [50, 51, 52, 53, 60, 61, 62, 70])
+
+    def test_every_new_decision_is_a_valid_contract_message(self):
+        extra = [self.barracks(), self.stable(), self.armory()]
+        for stone in (0, 100, 150, 300):
+            message = scene(units=self.base(), extra_buildings=extra, food=500, wood=500, stone=stone, capacity=50, pop=13)
+            outcome = json.loads(entry.handle_observe(json.dumps(message)))
+            self.assertTrue(outcome["ok"], outcome)
+            decision = dict(outcome["decision"], metrics={"policy_ms": 0.0, "convert_ms": 0.0})
+            self.assertEqual(contract.validate_message(decision), (None, ""))
+
+
 class StoneAndTowerTest(unittest.TestCase):
     def workers(self, count=8):
         return [unit(10 + i, activity="gathering", target=100) for i in range(count)]
 
-    def test_version_is_policy_0_4(self):
-        self.assertEqual(policy.VERSION, "policy-0.4")
+    def test_version_is_policy_0_6(self):
+        self.assertEqual(policy.VERSION, "policy-0.6")
 
     def test_sends_two_idle_villagers_to_stone_when_a_tower_is_missing(self):
         units = [unit(10 + i, activity="gathering", target=100) for i in range(4)]
@@ -423,13 +581,18 @@ class BatchTest(unittest.TestCase):
                      target=rng.choice([None, 100, 200]), carry=None)
                 for i in range(count)
             ]
-            units += soldiers(rng.randint(0, 10), kind=rng.choice(["soldier", "archer"]))
+            units += soldiers(rng.randint(0, 10), kind=rng.choice(["soldier", "archer", "knight", "cannon"]))
             extra = []
             if rng.random() < 0.7:
                 extra.append(building(60, "barracks", 1, 44, 14, complete=rng.random() < 0.7,
                                       queue=[{"id": 90, "kind": "soldier", "remaining": 50}] if rng.random() < 0.3 else None))
+            if rng.random() < 0.5:
+                extra.append(building(61, "stable", 1, 44, 18, complete=rng.random() < 0.7))
+            if rng.random() < 0.3:
+                extra.append(building(62, "armory", 1, 44, 22, complete=rng.random() < 0.7,
+                                      queue=[{"id": 91, "kind": "cannon", "remaining": 50}] if rng.random() < 0.3 else None))
             yield scene(
-                units=units, extra_buildings=extra, food=rng.randint(0, 400), wood=rng.randint(0, 400),
+                units=units, extra_buildings=extra, food=rng.randint(0, 400), wood=rng.randint(0, 400), stone=rng.randint(0, 400),
                 pop=len(units), capacity=max(len(units), rng.choice([10, 15, 20, 50])), tick=rng.randint(0, 5000),
             )
 
@@ -440,16 +603,17 @@ class BatchTest(unittest.TestCase):
             self.assertLessEqual(len(reasons), 8)
             me = message["players"][1]
             rules = message["rules"]
-            food = wood = pop = 0
+            food = wood = stone = pop = 0
             for c in commands:
                 if c["type"] == "Train":
                     cost = rules["unit_cost"][c["payload"]["unit_kind"]]
-                    food, wood, pop = food + cost["food"], wood + cost["wood"], pop + 1
+                    food, wood, stone, pop = food + cost["food"], wood + cost["wood"], stone + cost["stone"], pop + 1
                 elif c["type"] == "Build":
                     cost = rules["building_cost"][c["payload"]["building_kind"]]
-                    food, wood = food + cost["food"], wood + cost["wood"]
+                    food, wood, stone = food + cost["food"], wood + cost["wood"], stone + cost["stone"]
             self.assertLessEqual(food, me["food"])
             self.assertLessEqual(wood, me["wood"])
+            self.assertLessEqual(stone, me["stone"])
             self.assertLessEqual(me["pop"] + pop, me["pop_capacity"])
 
     def test_every_decision_is_a_valid_contract_message_and_deterministic(self):

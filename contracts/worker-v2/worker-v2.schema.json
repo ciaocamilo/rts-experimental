@@ -21,8 +21,8 @@
     "Coord": { "type": "number", "minimum": -1, "maximum": 1024 },
     "Count": { "type": "integer", "minimum": 0, "maximum": 1000000 },
     "Millis": { "type": "number", "minimum": 0, "maximum": 3600000 },
-    "UnitKind": { "enum": ["villager", "soldier", "archer"] },
-    "BuildingKind": { "enum": ["townCenter", "house", "barracks", "tower"] },
+    "UnitKind": { "enum": ["villager", "soldier", "archer", "knight", "cannon"] },
+    "BuildingKind": { "enum": ["townCenter", "house", "barracks", "tower", "stable", "armory"] },
     "ResourceKind": { "enum": ["food", "wood", "stone"] },
     "ErrorCode": {
       "enum": ["INVALID_MESSAGE", "INCOMPATIBLE_VERSION", "PAYLOAD_TOO_LARGE", "STALE_RESPONSE", "POLICY_ERROR", "LOAD_ERROR", "TIMEOUT"]
@@ -180,28 +180,38 @@
         "unit_cost": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["villager", "soldier", "archer"],
+          "required": ["villager", "soldier", "archer", "knight", "cannon"],
           "properties": {
             "villager": { "$ref": "#/$defs/CostView" },
             "soldier": { "$ref": "#/$defs/CostView" },
-            "archer": { "$ref": "#/$defs/CostView" }
+            "archer": { "$ref": "#/$defs/CostView" },
+            "knight": { "$ref": "#/$defs/CostView" },
+            "cannon": { "$ref": "#/$defs/CostView" }
           }
         },
         "building_cost": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["house", "barracks", "tower"],
-          "properties": { "house": { "$ref": "#/$defs/CostView" }, "barracks": { "$ref": "#/$defs/CostView" }, "tower": { "$ref": "#/$defs/CostView" } }
+          "required": ["house", "barracks", "tower", "stable", "armory"],
+          "properties": {
+            "house": { "$ref": "#/$defs/CostView" },
+            "barracks": { "$ref": "#/$defs/CostView" },
+            "tower": { "$ref": "#/$defs/CostView" },
+            "stable": { "$ref": "#/$defs/CostView" },
+            "armory": { "$ref": "#/$defs/CostView" }
+          }
         },
         "footprint": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["townCenter", "house", "barracks", "tower"],
+          "required": ["townCenter", "house", "barracks", "tower", "stable", "armory"],
           "properties": {
             "townCenter": { "$ref": "#/$defs/Count" },
             "house": { "$ref": "#/$defs/Count" },
             "barracks": { "$ref": "#/$defs/Count" },
-            "tower": { "$ref": "#/$defs/Count" }
+            "tower": { "$ref": "#/$defs/Count" },
+            "stable": { "$ref": "#/$defs/Count" },
+            "armory": { "$ref": "#/$defs/Count" }
           }
         }
       }
