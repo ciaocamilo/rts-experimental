@@ -166,13 +166,17 @@ Capturas de la escena `?fixture=artilleria&ai=0` (navegador integrado de VS Code
 
 *Bienvenida con las dos tarjetas de modo (`?mode=battle` preselecciona la de batalla).*
 
-![Ejército del jugador formado: cinco cañones, arqueros, soldados, caballeros y el comandante](docs/images/etapa10-ejercito.png)
+![Ejército del jugador formado: cañones, arqueros, soldados, caballeros y el comandante](docs/images/etapa10-ejercito.png)
 
 *Inicio del Modo batalla (`?mode=battle&welcome=0&ai=0`): el ejército formado, con el comandante delante, el contador de ejército y la miniatura con la niebla de guerra.*
 
 ![Mapa de batalla con montañas, bosques, río y puentes](docs/images/etapa10-mapa.png)
 
 *Escena `?fixture=batalla&ai=0` con la cámara abierta: montañas, bosques, río con puentes y el ejército propio en el extremo oeste; el rival no se ve.*
+
+| ![Ejército azul avanzando en formación junto a un bosque y un río, con el botón «Salir al menú»](docs/images/etapa10-marcha.png) | ![Explosión de un cañón entre caballeros azules y una batería de cañones rojos](docs/images/etapa10-combate.png) |
+|---|---|
+| *Partida en curso: el ejército azul avanza en formación hacia el puente del río, donde se concentra el rojo. Arriba a la derecha, el botón «Salir al menú».* | *Choque entre caballeros azules y una batería de cañones rojos: cráter y humo de un impacto, con el contador de ejército en la parte superior.* |
 
 - **Elección de modo:** la bienvenida muestra dos tarjetas, «Modo villa» y «Modo batalla» (clic, flechas izquierda y derecha o Tab), con el objetivo y los consejos de cada una. Durante la partida, el botón «Salir al menú» de la barra superior (con confirmación en una partida en curso) abandona la partida y vuelve a esta elección; elegir cualquier modo empieza una nueva. Tras una partida, «Volver al menú» en la ventana final hace lo mismo. `?mode=battle` preselecciona el modo batalla.
 - **Reglas:** sin edificios, aldeanos ni recursos. Cada bando tiene 8 cañones, 22 arqueros, 15 caballeros, 45 soldados y un comandante (91 unidades), formados en extremos opuestos del mapa y fuera de alcance de vista. Gana quien aniquila al ejército rival; a los 30 minutos (36 000 ticks) gana quien conserve más vida total y, si es igual, hay empate.
@@ -195,6 +199,9 @@ Capturas de la escena `?fixture=artilleria&ai=0` (navegador integrado de VS Code
 - **Sonido:** un cuerno de guerra suena al empezar la batalla y otro, más grave, al caer el comandante propio. Al morir un caballero o el comandante suena el grito de la persona, no el relincho; el cañón dispara con un estruendo más grave y explosivo.
 - **Modo villa:** la simulación del modo villa se comprobó idéntica a la de la etapa 9 (mismo hash de partida) hasta añadir los militares iniciales (un soldado, un arquero, un caballero y un cañón por bando): los ids de aldeanos, nodos y edificios no cambian y el hash cambia solo por esas unidades.
 
+| ![Modo villa: soldado rojo con escudo y espada y un cañón rival junto a una casa](docs/images/etapa10-villa-militares-1.png) | ![Modo villa: incursores rojos y un cañón junto a una casa en llamas, con el botón «Salir al menú»](docs/images/etapa10-villa-militares-2.png) |
+|---|---|
+| *Modo villa: un soldado rojo y un cañón rival se acercan a la aldea azul.* | *Unos instantes después: casa en llamas y el botón «Salir al menú» en la barra superior.* |
 ## Controles
 
 | Acción | Entrada |
