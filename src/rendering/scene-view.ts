@@ -1,21 +1,24 @@
 import * as THREE from "three";
 import { BALANCE, type BuildingKind, type ResourceKind, TICKS_PER_SECOND, type UnitKind } from "../content/balance";
-import type { Building, BuildingDestroyedEvent, GameState, ResourceNode, StrikeEvent, Unit } from "../core/types";
+import type { Building, BuildingDestroyedEvent, GameState, ImpactEvent, ResourceNode, StrikeEvent, Unit } from "../core/types";
 import type { CameraRig } from "../input/camera-rig";
+import { AirborneTracker, LAND_RECOVER_S, type Launch, launchOffset, launchProfile } from "./airborne";
 import { AssetLibrary, type Quality } from "./assets";
+import { ImpactFx, MuzzleFx } from "./blast";
 import { applyConstruction, type BuildingRig, buildBuilding, GeometryCache } from "./buildings";
-import { ArrowPool } from "./effects";
+import { ArrowPool, CannonballPool } from "./effects";
 import { type FlameRig, FlameFactory, updateFlames } from "./fire";
+import { type ChimneyRig, ChimneyFactory, updateChimney } from "./chimney";
 import { CollapseFx, PARTICLE_SCALE } from "./particles";
 import { barState, flameCount } from "./health";
 import { Lighting } from "./lighting";
 import { buildBushGeometries, buildTreeGeometries, Materials, VISUAL } from "./models";
 import { NodeFactory, type NodeRig, setNodeSpent } from "./nodes";
 import type { PortraitKit } from "./portrait";
-import { computePose, deathPose, deathState, type WorkKind } from "./pose";
+import { CANNON, CREW, cannonPose, computePose, crewPose, deathPose, deathState, gallopPose, type WorkKind } from "./pose";
 import { TerrainView } from "./terrain-view";
 import { type BridgeRect, walkHeight } from "./bridge";
-import { applyDeath, applyPose, UnitFactory, type UnitRig } from "./units";
+import { applyCannon, applyCrew, applyDeath, applyHorse, applyPose, setYaw, UnitFactory, type UnitRig } from "./units";
 
 const CAMERA_OFFSET = new THREE.Vector3(60, 70, 60);
 const MARKER_MS = 600;
@@ -31,6 +34,7 @@ const MAX_BODIES = 64;
 
 export type StrikeLike = StrikeEvent & { id: number };
 export type DestroyedLike = BuildingDestroyedEvent & { seq: number };
+export type ImpactLike = ImpactEvent & { seq: number };
 
 /** Altura del punto de disparo de la torre sobre el suelo (la plataforma bajo el tejado). */
 const TOWER_MUZZLE_Y = 2.9;
@@ -38,6 +42,21 @@ const TOWER_MUZZLE_Y = 2.9;
 const COLLAPSE_MIN_S = 0.8;
 const COLLAPSE_PER_CELL_S = 0.15;
 const DUST_PUFFS = 7;
+/** Velocidad (celdas/s) con la que el caballo está a galope completo, y rapidez con que se mezcla el aire de la marcha. */
+const GALLOP_SPEED = 5;
+const GAIT_BLEND_RATE = 5;
+/** Celdas recorridas por ciclo de zancada: a galope completo, 5 celdas/s dan unos 2,2 ciclos por segundo. */
+const STRIDE_LENGTH = 2.3;
+const REAR_S = 0.7;
+/** Velocidad con que el artillero cambia de puesto y baja la mecha (1/s). */
+const CREW_STATION_RATE = 7;
+const CREW_LIGHT_RATE = 12;
+const SHAKE_S = 0.25;
+const SHAKE_AMPLITUDE = 0.15;
+const BUILDING_SHAKE_S = 0.2;
+const BUILDING_SHAKE_AMPLITUDE = 0.05;
+/** Altura del centro de giro al volar por los aires: el caballero es más alto y el cañón más bajo. */
+const spinCentre = (rig: UnitRig): number => (rig.horse ? 0.8 : rig.cannon ? 0.5 : 0.55);
 
 export interface SyncContext {
   /** Pausa o fin de partida: detiene el tiempo de animación (RF-08). */
@@ -48,6 +67,10 @@ export interface SyncContext {
   strikes: readonly StrikeLike[];
   /** Edificios retirados recientemente; cada uno inicia su colapso una sola vez. */
   destroyed?: readonly DestroyedLike[];
+  /** Caídas de balas de cañón; cada una se procesa una sola vez. */
+  impacts?: readonly ImpactLike[];
+  /** Fracción del tick siguiente ya transcurrida; sitúa las balas entre dos estados. */
+  alpha?: number;
 }
 
 /** Edificio ya retirado del estado que aún se está derrumbando; es solo visual. */
@@ -85,6 +108,16 @@ interface UnitEntry extends Base {
   work: WorkKind | null;
   carry: ResourceKind | null;
   phase: number;
+  /** Ciclos de zancada acumulados, mezcla de la marcha (0 al paso, 1 al galope) y distancia rodada (cañón). */
+  stride: number;
+  gait: number;
+  rolled: number;
+  flying: boolean;
+  /** Artillero del cañón: orden de ataque vigente, ticks de recarga que faltan, puesto (0 cola, 1 culata) y mecha (0..1). */
+  attacking: boolean;
+  cooldown: number;
+  crewStation: number;
+  crewLight: number;
 }
 interface BuildingEntry extends Base {
   type: "building";
@@ -92,13 +125,19 @@ interface BuildingEntry extends Base {
   key: string;
   complete: boolean;
   flames: FlameRig | null;
+  chimney: ChimneyRig | null;
   kind: BuildingKind;
   phase: number;
+  baseX: number;
+  shakeAt: number;
 }
 /** Figura de una unidad caída: solo visual, ya no forma parte de las entidades del estado. */
 interface Body {
   rig: UnitRig;
   diedAt: number;
+  /** Si la unidad murió en el aire, el vuelo continúa y el cuerpo cae al aterrizar. */
+  launch: Launch | null;
+  base: { x: number; y: number; z: number };
 }
 interface NodeEntry extends Base {
   type: "node";
@@ -114,6 +153,12 @@ interface Bar {
   group: THREE.Group;
   fill: THREE.Mesh;
 }
+
+/** Altura de la barra de vida, anchura y radio del anillo de selección de las unidades que no son de talla humana. */
+const UNIT_LOOK: Partial<Record<UnitKind, { barY: number; barWidth: number; ringScale: number }>> = {
+  knight: { barY: 2.0, barWidth: 1.1, ringScale: 1.5 },
+  cannon: { barY: 1.5, barWidth: 1.2, ringScale: 2.4 },
+};
 
 /** Refleja el GameState en una escena Three.js; no decide reglas ni conserva estado de negocio. */
 export class SceneView {
@@ -132,6 +177,15 @@ export class SceneView {
   private readonly terrain: TerrainView;
   private readonly lighting: Lighting;
   private readonly arrows: ArrowPool;
+  private readonly cannonballs: CannonballPool;
+  private readonly muzzle: MuzzleFx;
+  private readonly impactFx: ImpactFx;
+  private readonly airborne = new AirborneTracker();
+  private readonly spinTmp = new THREE.Vector3();
+  private lastImpactSeq = 0;
+  private shakeAt = -Infinity;
+  private shakeAmplitude = 0;
+  private readonly reducedMotion: boolean;
   private readonly entityRoot = new THREE.Group();
   private readonly entries = new Map<number, Entry>();
   private bodies: Body[] = [];
@@ -140,6 +194,7 @@ export class SceneView {
   private lastDestroyedSeq = 0;
   private fxPaused = false;
   private readonly flameFactory: FlameFactory;
+  private readonly chimneyFactory: ChimneyFactory;
   private readonly collapseFx: CollapseFx | null;
   private readonly bars = new Map<number, Bar>();
   private readonly rings = new Map<number, THREE.Mesh>();
@@ -204,7 +259,12 @@ export class SceneView {
     this.nodes = new NodeFactory(this.assets, this.mat, trees);
     this.terrain = new TerrainView(this.assets, this.mat, trees, bushes);
     this.arrows = new ArrowPool(this.assets, this.mat);
+    this.cannonballs = new CannonballPool(this.assets);
+    this.muzzle = new MuzzleFx(this.assets, quality);
+    this.impactFx = new ImpactFx(this.assets, quality);
+    this.reducedMotion = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     this.flameFactory = new FlameFactory(this.assets, quality === "high");
+    this.chimneyFactory = new ChimneyFactory(this.assets, quality === "high");
     this.collapseFx = quality === "high" ? new CollapseFx(this.assets) : null;
     if (this.collapseFx) this.scene.add(this.collapseFx.group);
     this.dustGeometry = this.track(new THREE.SphereGeometry(0.5, 6, 5));
@@ -223,7 +283,7 @@ export class SceneView {
     this.ghostMaterial = this.track(new THREE.MeshBasicMaterial({ color: 0x4ade80, transparent: true, opacity: 0.5, depthWrite: false }));
     this.ghost = new THREE.Mesh(this.track(new THREE.BoxGeometry(1, 1, 1)), this.ghostMaterial);
     this.ghost.visible = false;
-    this.scene.add(this.terrain.group, this.entityRoot, this.arrows.group, this.marker, this.ghost);
+    this.scene.add(this.terrain.group, this.entityRoot, this.arrows.group, this.cannonballs.group, this.muzzle.group, this.impactFx.group, this.marker, this.ghost);
 
     this.resize();
     this.applyRig();
@@ -261,6 +321,12 @@ export class SceneView {
     for (const ring of this.rings.values()) this.scene.remove(ring);
     this.rings.clear();
     this.arrows.clear();
+    this.cannonballs.clear();
+    this.muzzle.clear();
+    this.impactFx.clear();
+    this.airborne.clear();
+    this.lastImpactSeq = 0;
+    this.shakeAt = -Infinity;
     this.lastStrikeId = 0;
     this.invalidBars.clear();
   }
@@ -268,13 +334,20 @@ export class SceneView {
   private removeEntry(id: number, entry: Entry): void {
     this.entityRoot.remove(entry.root);
     if (entry.type === "building" && entry.flames) this.flameFactory.release(entry.flames);
+    if (entry.type === "building" && entry.chimney) this.chimneyFactory.release(entry.chimney);
     this.entries.delete(id);
   }
 
   /** La unidad dejó de existir en el estado: su figura queda como cuerpo cosmético (P2-H09). */
   private layDown(entry: UnitEntry): void {
     entry.proxy.visible = false;
-    this.bodies.push({ rig: entry.rig, diedAt: this.animTime });
+    const id = entry.proxy.userData["id"] as number;
+    const launch = this.airborne.get(id) ?? null;
+    const flying = launch !== null && this.animTime - launch.startedAt < launch.profile.duration;
+    // Un cuerpo lanzado por una explosión sigue su vuelo y empieza a caer al aterrizar.
+    const diedAt = flying ? launch.startedAt + launch.profile.duration : this.animTime;
+    const base = { x: entry.pos.x, y: walkHeight(entry.pos.x, entry.pos.z, this.bridges), z: entry.pos.z };
+    this.bodies.push({ rig: entry.rig, diedAt, launch: flying ? launch : null, base });
     while (this.bodies.length > MAX_BODIES) this.entityRoot.remove(this.bodies.shift()!.rig.root);
   }
 
@@ -304,6 +377,8 @@ export class SceneView {
       live.add(u.id);
       this.syncUnit(u);
     }
+    // Antes de retirar entidades: las unidades muertas por la explosión aún existen aquí y heredan el lanzamiento.
+    this.consumeImpacts(ctx.impacts ?? []);
     const collapsing = new Set<number>();
     for (const event of ctx.destroyed ?? []) {
       if (event.seq <= this.lastDestroyedSeq) continue;
@@ -328,7 +403,39 @@ export class SceneView {
     }
 
     this.consumeStrikes(ctx.strikes);
+    this.cannonballs.sync(state.projectiles, state.tick, ctx.alpha ?? 0);
     this.lighting.mark(this.entityRoot);
+  }
+
+  /** Cada caída de bala: explosión, sacudida de cámara, edificios que tiemblan y unidades cercanas por los aires. */
+  private consumeImpacts(impacts: readonly ImpactLike[]): void {
+    for (const impact of impacts) {
+      if (impact.seq <= this.lastImpactSeq) continue;
+      this.lastImpactSeq = impact.seq;
+      this.impactFx.spawn(impact.at.x, impact.at.z, impact.seq, BALANCE.units.cannon.artillery?.splashRadius ?? 2);
+      if (!this.reducedMotion) {
+        this.shakeAt = this.animTime;
+        this.shakeAmplitude = SHAKE_AMPLITUDE;
+      }
+      const hitBuildings = new Set<number>();
+      for (const hit of impact.hits) if (hit.kind === "building") hitBuildings.add(hit.id);
+      for (const [id, entry] of this.entries) {
+        if (entry.type === "building") {
+          if (hitBuildings.has(id)) entry.shakeAt = this.animTime;
+          continue;
+        }
+        if (entry.type !== "unit") continue;
+        const dx = entry.sim.x - impact.at.x;
+        const dz = entry.sim.z - impact.at.z;
+        const d = Math.hypot(dx, dz);
+        const profile = launchProfile(d, id, impact.tick);
+        if (!profile) continue;
+        const angle = id * 2.399963;
+        const nx = d > 1e-3 ? dx / d : Math.cos(angle);
+        const nz = d > 1e-3 ? dz / d : Math.sin(angle);
+        this.airborne.launch(id, profile, nx, nz, this.animTime);
+      }
+    }
   }
 
   private syncTerrain(state: GameState): void {
@@ -379,8 +486,11 @@ export class SceneView {
         pickable: true,
         complete: b.complete,
         flames: null,
+        chimney: null,
         kind: b.kind,
         phase: b.id,
+        baseX: rig.root.position.x,
+        shakeAt: -Infinity,
       };
       this.entries.set(b.id, entry);
     }
@@ -400,9 +510,11 @@ export class SceneView {
     if (!entry) {
       const rig = this.units.create(u.kind, u.owner, this.quality === "high", u.gender === "female");
       rig.proxy.userData["id"] = u.id;
+      rig.facing.rotation.order = "YXZ";
       rig.root.position.set(u.pos.x, 0, u.pos.z);
       this.entityRoot.add(rig.root);
       const yaw = u.owner === 0 ? Math.PI * 0.75 : -Math.PI * 0.25;
+      const look = UNIT_LOOK[u.kind];
       entry = {
         type: "unit",
         rig,
@@ -411,9 +523,9 @@ export class SceneView {
         proxy: rig.proxy,
         hp: u.hp,
         max: def.hp,
-        barWidth: 0.9,
-        barY: VISUAL.unitHeight + VISUAL.barOffset,
-        ringScale: 1,
+        barWidth: look?.barWidth ?? 0.9,
+        barY: look?.barY ?? VISUAL.unitHeight + VISUAL.barOffset,
+        ringScale: look?.ringScale ?? 1,
         pickable: true,
         sim: { x: u.pos.x, z: u.pos.z },
         pos: { x: u.pos.x, z: u.pos.z },
@@ -424,10 +536,20 @@ export class SceneView {
         work: null,
         carry: null,
         phase: (u.id % 17) * 0.37,
+        stride: (u.id % 7) / 7,
+        gait: 0,
+        rolled: 0,
+        flying: false,
+        attacking: false,
+        cooldown: 0,
+        crewStation: 0,
+        crewLight: 0,
       };
       this.entries.set(u.id, entry);
     }
     entry.hp = u.hp;
+    entry.attacking = u.job?.type === "attack";
+    entry.cooldown = u.cooldown;
 
     const dx = u.pos.x - entry.sim.x;
     const dz = u.pos.z - entry.sim.z;
@@ -484,6 +606,13 @@ export class SceneView {
         this.tmpA.set(strike.from.x, strike.attackerKind === "tower" ? TOWER_MUZZLE_Y : 0.75, strike.from.z);
         this.tmpB.set(strike.to.x, targetHeight, strike.to.z);
         this.arrows.spawn(this.tmpA, this.tmpB, this.animTime);
+      }
+      if (strike.attackerKind === "cannon" && attacker?.type === "unit") {
+        // El cañón encara el blanco al instante y el fogonazo sale de la boca del tubo.
+        attacker.yaw = attacker.heading;
+        const sin = Math.sin(attacker.heading);
+        const cos = Math.cos(attacker.heading);
+        this.muzzle.fire(attacker.pos.x + sin * CANNON.muzzleZ, attacker.root.position.y + CANNON.muzzleY, attacker.pos.z + cos * CANNON.muzzleZ, sin, cos, strike.id);
       }
     }
   }
@@ -558,8 +687,11 @@ export class SceneView {
   private animateUnits(dt: number): void {
     const follow = 1 - Math.exp(-dt * SMOOTH_RATE);
     const turn = 1 - Math.exp(-dt * YAW_RATE);
-    for (const entry of this.entries.values()) {
+    const animDt = this.frozen ? 0 : dt;
+    const blend = 1 - Math.exp(-animDt * GAIT_BLEND_RATE);
+    for (const [id, entry] of this.entries) {
       if (entry.type !== "unit") continue;
+      const before = { x: entry.pos.x, z: entry.pos.z };
       const dx = entry.sim.x - entry.pos.x;
       const dz = entry.sim.z - entry.pos.z;
       if (dx * dx + dz * dz > SNAP_DISTANCE * SNAP_DISTANCE) {
@@ -569,11 +701,13 @@ export class SceneView {
         entry.pos.x += dx * follow;
         entry.pos.z += dz * follow;
       }
+      // Distancia visual recorrida en este fotograma: mueve las zancadas y las ruedas sin depender de los ticks.
+      const step = animDt > 0 && dx * dx + dz * dz <= SNAP_DISTANCE * SNAP_DISTANCE ? Math.hypot(entry.pos.x - before.x, entry.pos.z - before.z) : 0;
       entry.root.position.set(entry.pos.x, walkHeight(entry.pos.x, entry.pos.z, this.bridges), entry.pos.z);
       let delta = entry.heading - entry.yaw;
       delta = Math.atan2(Math.sin(delta), Math.cos(delta));
       entry.yaw += delta * turn;
-      entry.rig.facing.rotation.y = entry.yaw;
+      setYaw(entry.rig, entry.yaw);
 
       const walking = this.animTime < entry.moveUntil;
       let combatPhase: number | null = null;
@@ -582,10 +716,84 @@ export class SceneView {
         const elapsed = (this.animTime - entry.strikeAt) / interval;
         if (elapsed < 1.2) combatPhase = Math.min(1, elapsed + (entry.kind === "soldier" ? 0.15 : 0));
       }
-      applyPose(
-        entry.rig,
-        computePose({ role: entry.kind, t: this.animTime + entry.phase, walking, work: entry.work, carrying: entry.carry !== null, combatPhase }),
-      );
+      const t = this.animTime + entry.phase;
+      if (entry.kind === "knight") {
+        const speed = animDt > 0 ? step / animDt : 0;
+        entry.gait += (Math.min(1, speed / GALLOP_SPEED) - entry.gait) * blend;
+        entry.stride = (entry.stride + step / STRIDE_LENGTH) % 1;
+      } else if (entry.kind === "cannon") entry.rolled += step;
+      applyPose(entry.rig, computePose({ role: entry.kind, t, walking, work: entry.work, carrying: entry.carry !== null, combatPhase, gait: entry.gait }));
+      if (entry.rig.horse) {
+        // Se encabrita al atacar parado; el relincho lo pone el audio.
+        const sinceStrike = this.animTime - entry.strikeAt;
+        const rear = !walking && sinceStrike >= 0 && sinceStrike < REAR_S ? Math.sin((Math.PI * sinceStrike) / REAR_S) : 0;
+        applyHorse(entry.rig, gallopPose(entry.stride, entry.gait, { t, seed: id, rear }));
+      } else if (entry.rig.cannon) {
+        const sinceShot = entry.strikeAt > -Infinity ? this.animTime - entry.strikeAt : null;
+        applyCannon(entry.rig, cannonPose({ rolled: entry.rolled, sinceShot }));
+        // El artillero se coloca junto a la culata poco antes de cada tiro y se retira después del estampido.
+        const firing = sinceShot !== null && sinceShot < CREW.holdSeconds;
+        const ready = entry.attacking && !walking && entry.cooldown <= CREW.leadTicks;
+        const lightWanted = firing ? 1 : ready ? Math.min(1, Math.max(0, 1 - entry.cooldown / CREW.lightTicks)) : 0;
+        entry.crewStation += ((firing || ready ? 1 : 0) - entry.crewStation) * (1 - Math.exp(-animDt * CREW_STATION_RATE));
+        entry.crewLight += (lightWanted - entry.crewLight) * (1 - Math.exp(-animDt * CREW_LIGHT_RATE));
+        applyCrew(entry.rig, crewPose({ t, walking, rolled: entry.rolled, station: entry.crewStation, lighting: entry.crewLight, sinceShot }));
+      }
+      this.applyLaunch(id, entry);
+    }
+  }
+
+  /** Aplica o limpia el vuelo de una unidad lanzada por una explosión. */
+  private applyLaunch(id: number, entry: UnitEntry): void {
+    const launch = this.airborne.get(id);
+    const base = { x: entry.pos.x, y: entry.root.position.y, z: entry.pos.z };
+    if (launch && this.animTime - launch.startedAt < launch.profile.duration + LAND_RECOVER_S) {
+      this.lift(entry.rig, base, launch, spinCentre(entry.rig));
+      entry.flying = true;
+    } else if (entry.flying) {
+      this.land(entry.rig);
+      entry.flying = false;
+    }
+  }
+
+  /** Posición y giro de una figura en vuelo: parábola, empuje radial, volteretas alrededor de su centro y aplastamiento al caer. */
+  private lift(rig: UnitRig, base: { x: number; y: number; z: number }, launch: Launch, centre: number): void {
+    const { profile } = launch;
+    const t = Math.max(0, this.animTime - launch.startedAt);
+    const o = launchOffset(profile, Math.min(t, profile.duration));
+    const facing = rig.facing;
+    facing.rotation.x = o.pitch;
+    facing.rotation.z = o.roll;
+    this.spinTmp.set(0, centre, 0).applyEuler(facing.rotation);
+    facing.position.set(-this.spinTmp.x, centre - this.spinTmp.y, -this.spinTmp.z);
+    rig.root.position.set(base.x + launch.dirX * o.push, base.y + o.y, base.z + launch.dirZ * o.push);
+    const squash = t > profile.duration ? 1 - (t - profile.duration) / LAND_RECOVER_S : 0;
+    rig.bob.scale.y = 1 - 0.15 * Math.max(0, squash);
+    if (!rig.horse && !rig.cannon && t < profile.duration) {
+      const flail = Math.sin(t * 18);
+      rig.armL.rotation.set(-2.3 + 0.4 * flail, 0, 1.1);
+      rig.armR.rotation.set(-2.3 - 0.4 * flail, 0, -1.1);
+      rig.legL.rotation.set(0.5 * flail, 0, 0.3);
+      rig.legR.rotation.set(-0.5 * flail, 0, -0.3);
+    }
+    if (rig.shadow) {
+      const shadowBase = (rig.shadow.userData["base"] ??= rig.shadow.scale.clone()) as THREE.Vector3;
+      const shrink = 1 / (1 + 0.35 * o.y);
+      rig.shadow.position.y = 0.015 - o.y;
+      rig.shadow.scale.set(shadowBase.x * shrink, 1, shadowBase.z * shrink);
+    }
+  }
+
+  /** Devuelve la figura a su estado normal tras aterrizar. */
+  private land(rig: UnitRig): void {
+    rig.facing.rotation.x = 0;
+    rig.facing.rotation.z = 0;
+    rig.facing.position.set(0, 0, 0);
+    rig.bob.scale.y = 1;
+    if (rig.shadow) {
+      const base = rig.shadow.userData["base"] as THREE.Vector3 | undefined;
+      if (base) rig.shadow.scale.copy(base);
+      rig.shadow.position.y = 0.015;
     }
   }
 
@@ -599,6 +807,15 @@ export class SceneView {
         continue;
       }
       applyDeath(body.rig, deathPose(state.fall), state.fall);
+      const launch = body.launch;
+      if (launch) {
+        if (this.animTime < launch.startedAt + launch.profile.duration) this.lift(body.rig, body.base, launch, spinCentre(body.rig));
+        else {
+          this.land(body.rig);
+          body.rig.root.position.set(body.base.x, body.base.y, body.base.z);
+          body.launch = null;
+        }
+      }
       body.rig.root.scale.setScalar(Math.max(0.001, state.scale));
       keep.push(body);
     }
@@ -622,6 +839,10 @@ export class SceneView {
       entry.flames.group.visible = false;
       this.flameFactory.release(entry.flames);
       entry.flames = null;
+    }
+    if (entry.chimney) {
+      this.chimneyFactory.release(entry.chimney);
+      entry.chimney = null;
     }
     this.collapseFx?.spawn(entry.root.position.x, entry.root.position.z, footprint, entry.phase + entry.root.id, duration);
     entry.proxy.visible = false;
@@ -664,6 +885,30 @@ export class SceneView {
       keep.push(c);
     }
     this.collapses = keep;
+  }
+
+  /** Temblor breve de los edificios alcanzados por una bala. */
+  private animateBuildingShake(): void {
+    for (const entry of this.entries.values()) {
+      if (entry.type !== "building") continue;
+      const age = this.animTime - entry.shakeAt;
+      const active = age >= 0 && age < BUILDING_SHAKE_S;
+      entry.root.position.x = active ? entry.baseX + Math.sin(age * 95) * BUILDING_SHAKE_AMPLITUDE * (1 - age / BUILDING_SHAKE_S) : entry.baseX;
+    }
+  }
+
+  /** Humo constante de la fragua: solo en armerías terminadas y en calidad alta. */
+  private animateChimneys(): void {
+    for (const entry of this.entries.values()) {
+      if (entry.type !== "building" || entry.kind !== "armory") continue;
+      if (!entry.chimney) {
+        if (!entry.complete) continue;
+        entry.chimney = this.chimneyFactory.create(entry.phase);
+        if (!entry.chimney) continue;
+        entry.root.add(entry.chimney.group);
+      }
+      updateChimney(entry.chimney, entry.complete, this.animTime);
+    }
   }
 
   /** Llamas por umbral de vida; solo existen en edificios completos (P2-H08). */
@@ -715,7 +960,7 @@ export class SceneView {
   /** Fantasma de colocación; la validez la decide el núcleo, aquí solo se colorea. */
   showGhost(kind: BuildingKind, cellX: number, cellZ: number, valid: boolean): void {
     const w = BALANCE.buildings[kind].footprint;
-    const h = kind === "barracks" ? 1.6 : kind === "tower" ? 2.4 : 1.2;
+    const h = kind === "barracks" ? 1.6 : kind === "tower" ? 2.4 : kind === "stable" || kind === "armory" ? 1.5 : 1.2;
     this.ghost.scale.set(w, h, w);
     this.ghost.position.set(cellX + w / 2, h / 2, cellZ + w / 2);
     this.ghostMaterial.color.setHex(valid ? 0x4ade80 : 0xf87171);
@@ -727,8 +972,14 @@ export class SceneView {
   }
 
   private applyRig(): void {
-    this.camera.position.set(this.rig.x + CAMERA_OFFSET.x, CAMERA_OFFSET.y, this.rig.z + CAMERA_OFFSET.z);
-    this.camera.lookAt(this.rig.x, 0, this.rig.z);
+    // Sacudida de la explosión: desplaza la vista unas décimas de celda con decaimiento exponencial.
+    const age = this.animTime - this.shakeAt;
+    const shake = age >= 0 && age < SHAKE_S ? this.shakeAmplitude * Math.exp(-age * 12) : 0;
+    // Sin sacudida `age` puede ser infinito y 0 * sin(∞) daría NaN en la cámara.
+    const ox = shake > 0 ? shake * Math.sin(age * 83) : 0;
+    const oz = shake > 0 ? shake * Math.cos(age * 67) : 0;
+    this.camera.position.set(this.rig.x + CAMERA_OFFSET.x + ox, CAMERA_OFFSET.y, this.rig.z + CAMERA_OFFSET.z + oz);
+    this.camera.lookAt(this.rig.x + ox, 0, this.rig.z + oz);
     this.camera.zoom = this.rig.zoom;
     this.camera.updateProjectionMatrix();
     this.camera.updateMatrixWorld();
@@ -820,10 +1071,16 @@ export class SceneView {
     this.lighting.update(this.rig.x, this.rig.z, this.viewHeight / (2 * this.rig.zoom), this.camera.right / this.camera.top, this.animTime);
     this.animateUnits(dt);
     this.animateBodies();
+    this.airborne.prune(this.animTime);
+    this.animateBuildingShake();
     this.animateCollapses(this.fxPaused ? 0 : dt);
     this.collapseFx?.update(this.fxPaused ? 0 : dt);
     PARTICLE_SCALE.value = (this.canvas.clientHeight || window.innerHeight) / (this.viewHeight / this.rig.zoom);
+    this.muzzle.update(this.fxPaused ? 0 : dt);
+    this.impactFx.update(this.fxPaused ? 0 : dt);
+    this.cannonballs.update(this.fxPaused ? 0 : dt);
     this.animateFlames();
+    this.animateChimneys();
     this.arrows.update(this.animTime);
     this.terrain.update(this.animTime);
     this.fadeCrowns();
@@ -841,11 +1098,20 @@ export class SceneView {
   }
 
   /** Contadores del último fotograma, para la muestra de rendimiento. */
-  renderStats(): { calls: number; triangles: number; geometries: number; textures: number; arrows: number; trees: number } {
+  renderStats(): { calls: number; triangles: number; geometries: number; textures: number; arrows: number; shells: number; airborne: number; trees: number } {
     const { render, memory } = this.renderer.info;
     let nodeTrees = 0;
     for (const e of this.entries.values()) if (e.type === "node" && e.rig.kind === "wood") nodeTrees++;
-    return { calls: render.calls, triangles: render.triangles, geometries: memory.geometries, textures: memory.textures, arrows: this.arrows.active, trees: this.terrain.scenery.trees.length + nodeTrees };
+    return {
+      calls: render.calls,
+      triangles: render.triangles,
+      geometries: memory.geometries,
+      textures: memory.textures,
+      arrows: this.arrows.active,
+      shells: this.cannonballs.active,
+      airborne: this.airborne.active(this.animTime),
+      trees: this.terrain.scenery.trees.length + nodeTrees,
+    };
   }
 
   /** Nombre de la GPU activa si el navegador lo expone (RNF-05). */

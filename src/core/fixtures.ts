@@ -3,7 +3,7 @@ import { BALANCE } from "../content/balance";
 import { addBuilding, addTerrain, addUnit, createEmptyState, createInitialState } from "./state";
 import type { Command, EntityId, GameState, PlayerId } from "./types";
 
-export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa" | "sonidos" | "realismo" | "rio" | "retratos";
+export type FixtureName = "corridor20" | "crossing" | "crowd100" | "skirmish" | "objetivo" | "defensa" | "sonidos" | "realismo" | "rio" | "retratos" | "artilleria";
 
 export interface Fixture {
   state: GameState;
@@ -268,11 +268,31 @@ function createPortraitScene(): Fixture {
   return { state, commands: [], groups: [] };
 }
 
+/**
+ * Banco de pruebas de P9 para caballería y artillería: un establo, una armería, tres caballeros y dos cañones frente a
+ * un grupo de aldeanos rivales (con mucha vida para que aguanten varias andanadas), una casa y un cuartel; sin IA.
+ */
+function createArtilleryScene(): Fixture {
+  const state = createInitialState(1, false);
+  addBuilding(state, 0, "stable", 12, 34);
+  addBuilding(state, 0, "armory", 16.5, 34);
+  const knights = [0, 1, 2].map((i) => addUnit(state, 0, "knight", 17 + i * 1.5, 27).id);
+  for (let i = 0; i < 2; i++) addUnit(state, 0, "cannon", 19.5, 29.5 + i * 2).hp = 800;
+  for (let i = 0; i < 9; i++) {
+    const v = addUnit(state, 1, "villager", 24.2 + (i % 3) * 0.7, 28.4 + Math.floor(i / 3) * 0.7);
+    v.hp = 900;
+  }
+  addBuilding(state, 1, "house", 26.5, 32).hp = 900;
+  addBuilding(state, 1, "barracks", 22.5, 24).hp = 900;
+  return { state, commands: [move(knights, 24.5, 22.5)], groups: [] };
+}
+
 /** Escenarios de P0-B (§6): corredor de 3 celdas, cruce de grupos y carga de 100 unidades. */
 export function createFixture(name: FixtureName, options: { final?: FinalOption } = {}): Fixture {
   seq = 0;
   if (name === "objetivo") return createTargetScene();
   if (name === "retratos") return createPortraitScene();
+  if (name === "artilleria") return createArtilleryScene();
   if (name === "rio") return createRiverScene();
   if (name === "realismo") return createRealismScene();
   if (name === "sonidos") return createSoundScene(options.final);

@@ -2,7 +2,7 @@ import { FixedStepper } from "../core/fixed-step";
 import type { Fixture } from "../core/fixtures";
 import { createInitialState } from "../core/state";
 import { stepSimulation } from "../core/simulation";
-import type { BuildingDestroyedEvent, Command, CommandResult, DeathEvent, GameState, SpawnEvent, StrikeEvent, WorkEvent } from "../core/types";
+import type { BuildingDestroyedEvent, Command, CommandResult, DeathEvent, GameState, ImpactEvent, SpawnEvent, StrikeEvent, WorkEvent } from "../core/types";
 
 /** Se conservan solo los ataques recientes: la vista los consume en el mismo cuadro. */
 const STRIKE_LOG_LIMIT = 256;
@@ -45,7 +45,10 @@ export class GameSession {
   readonly deathLog: Logged<DeathEvent>[] = [];
   readonly spawnLog: Logged<SpawnEvent>[] = [];
   readonly workLog: Logged<WorkEvent>[] = [];
+  /** Impactos de artillería; los consumen la vista y el audio. */
+  readonly impactLog: Logged<ImpactEvent>[] = [];
   private strikeSeq = 0;
+  private impactSeq = 0;
   private destroyedSeq = 0;
   private deathSeq = 0;
   private spawnSeq = 0;
@@ -99,7 +102,7 @@ export class GameSession {
     const commands = this.pending;
     this.pending = [];
     const started = this.tickObserver ? performance.now() : 0;
-    const { tick, results, strikes, destroyed, deaths, spawns, works } = stepSimulation(this.state, commands);
+    const { tick, results, strikes, impacts, destroyed, deaths, spawns, works } = stepSimulation(this.state, commands);
     this.tickObserver?.(performance.now() - started);
     for (const strike of strikes) this.strikeLog.push({ ...strike, id: ++this.strikeSeq });
     if (this.strikeLog.length > STRIKE_LOG_LIMIT) this.strikeLog.splice(0, this.strikeLog.length - STRIKE_LOG_LIMIT);
@@ -108,7 +111,8 @@ export class GameSession {
     for (const event of deaths) this.deathLog.push({ ...event, seq: ++this.deathSeq });
     for (const event of spawns) this.spawnLog.push({ ...event, seq: ++this.spawnSeq });
     for (const event of works) this.workLog.push({ ...event, seq: ++this.workSeq });
-    for (const log of [this.deathLog, this.spawnLog, this.workLog]) {
+    for (const event of impacts) this.impactLog.push({ ...event, seq: ++this.impactSeq });
+    for (const log of [this.deathLog, this.spawnLog, this.workLog, this.impactLog]) {
       if (log.length > AUDIO_LOG_LIMIT) log.splice(0, log.length - AUDIO_LOG_LIMIT);
     }
     for (const command of commands) {

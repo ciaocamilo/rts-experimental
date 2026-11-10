@@ -52,6 +52,15 @@ describe("T-08 partida completa de la IA sin intervención humana", () => {
     expect(run.firstAttackTick[1]!).toBeLessThan(TWELVE_MINUTES);
   });
 
+  it("P9: construye establo y armería, entrena caballeros y cañones y los usa en la expedición", () => {
+    expect(countOf(run, 1, "stable")).toBe(1);
+    expect(countOf(run, 1, "armory")).toBe(1);
+    const issued = (kind: string) => run.session.commandLog.filter((e) => e.command.type === "Train" && e.command.kind === kind).length;
+    expect(issued("knight")).toBeGreaterThan(0);
+    expect(issued("cannon")).toBeGreaterThan(0);
+    expect(run.session.state.outcome).toMatchObject({ winner: 1, reason: "TOWN_CENTER_DESTROYED" });
+  });
+
   it("no emite órdenes que la simulación rechace por recursos, población, cola o propiedad", () => {
     for (const code of FORBIDDEN_REJECTIONS) expect(run.rejections[code] ?? 0, code).toBe(0);
   });
@@ -95,5 +104,10 @@ describe("T-10 reproducibilidad y T-16 determinismo de la política", () => {
     expect(run.violations).toEqual([]);
     for (const code of FORBIDDEN_REJECTIONS) expect(run.rejections[code] ?? 0, code).toBe(0);
     expect(replayMatch(5, run.session.commandLog, state.tick)).toBe(run.hash);
+    for (const player of [0, 1] as const) {
+      for (const kind of ["knight", "cannon"]) {
+        expect(run.session.commandLog.some((e) => e.command.player === player && e.command.type === "Train" && e.command.kind === kind), `${player} ${kind}`).toBe(true);
+      }
+    }
   }, 240_000);
 });

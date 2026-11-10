@@ -1,7 +1,8 @@
-"""Política estratégica policy-0.4 (P6).
+"""Política estratégica policy-0.6 (P9, sobre la de P6).
 
 Función pura y sin estado: la misma observación produce los mismos comandos. No usa reloj ni azar.
-Prioridades, de mayor a menor: defender, reasignar aldeanos, casa, aldeanos, cuartel, torre, militares, ataque.
+Prioridades, de mayor a menor: defender, reasignar aldeanos, casa, aldeanos, cuartel, establo, armería, torre,
+cañón, militares, ataque.
 Cada comando que se emite descuenta de una estimación local de recursos y población, de modo que
 varios comandos del mismo lote no gastan dos veces lo mismo. Como máximo se emiten 4 comandos.
 
@@ -12,12 +13,17 @@ automática a los militares que ya están peleando (`defending`).
 Novedades de P6: el objetivo principal sigue siendo el centro urbano, pero la expedición ataca una torre
 enemiga completa que «vea» (a VISION_RADIUS celdas o menos de algún militar) si está más cerca del grupo
 que el centro urbano (motivo ATTACK_TOWER).
+
+Novedades de P9: construye un establo (con un cuartel terminado) y después una armería; entrena caballeros
+sin límite y hasta MAX_CANNONS cañones, reservando madera para el cañón cuando ya hay piedra; busca piedra
+también para la armería y los cañones; y en la expedición los caballeros esperan a que el cañón más
+adelantado esté a ESCORT_DISTANCE del objetivo. El caballero y el cañón del rival cuentan como militares.
 """
 
 import math
 from collections import deque
 
-VERSION = "policy-0.4"
+VERSION = "policy-0.6"
 
 MAX_COMMANDS = 4
 MAX_ENTITIES = 100
@@ -26,6 +32,10 @@ TARGET_VILLAGERS = 12
 FOOD_SHARE_PERCENT = 60
 MIN_VILLAGERS_FOR_BARRACKS = 6
 MIN_VILLAGERS_FOR_TOWER = 8
+MIN_VILLAGERS_FOR_STABLE = 8
+MIN_VILLAGERS_FOR_ARMORY = 8
+MAX_CANNONS = 4
+ESCORT_DISTANCE = 14
 STONE_WORKERS = 2
 MAX_TOWERS = 4
 VISION_RADIUS = 14
@@ -41,7 +51,7 @@ PLACEMENT_CHOICES = 4
 NODE_CHOICES = 3
 DECISION_TICKS = 20
 
-_MILITARY = ("soldier", "archer")
+_MILITARY = ("soldier", "archer", "knight", "cannon")
 _IDLE_ACTIVITIES = ("idle", "blocked")
 _NEIGHBORS = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
 
@@ -273,7 +283,11 @@ def _attack(plan, military, enemy_units, enemy_buildings):
                 reason = "ATTACK_TOWER"
     if target is None:
         return
-    ids = [m["id"] for m in military if m["target_id"] != target["id"]][:MAX_ENTITIES]
+    # P9: los cañones son lentos; los caballeros esperan a que lleguen a ESCORT_DISTANCE del objetivo para no llegar solos.
+    target_pos = (target["x"], target["z"]) if "x" in target else _center(target, plan.rules)
+    cannons = [m for m in military if m["kind"] == "cannon"]
+    hold = not foes and bool(cannons) and min(_dist((c["x"], c["z"]), target_pos) for c in cannons) > ESCORT_DISTANCE
+    ids = [m["id"] for m in military if m["target_id"] != target["id"] and not (hold and m["kind"] == "knight")][:MAX_ENTITIES]
     if ids:
         plan.emit({"type": "Attack", "entity_ids": ids, "payload": {"target_id": target["id"]}}, reason)
 
@@ -371,21 +385,64 @@ def decide(observation):
         and len(villagers) >= MIN_VILLAGERS_FOR_BARRACKS
         and wood_left >= cost["barracks"]["wood"]
     )
+    if want_barracks:
+        wood_left -= cost["barracks"]["wood"]
+
+    # P9: el establo exige un cuartel terminado; la armería, un establo ya empezado.
+    stables = [b for b in my_buildings if b["kind"] == "stable"]
+    armories = [b for b in my_buildings if b["kind"] == "armory"]
+    ready_barracks = [b for b in barracks if b["complete"]]
+    want_stable = (
+        not stables
+        and bool(ready_barracks)
+        and len(villagers) >= MIN_VILLAGERS_FOR_STABLE
+        and wood_left >= cost["stable"]["wood"]
+    )
+    if want_stable:
+        wood_left -= cost["stable"]["wood"]
+    armory_pending = bool(stables) and not armories
+    want_armory = (
+        armory_pending
+        and bool(ready_barracks)
+        and len(villagers) >= MIN_VILLAGERS_FOR_ARMORY
+        and wood_left >= cost["armory"]["wood"]
+        and plan.stone >= cost["armory"]["stone"]
+    )
+
+    ready_armories = [b for b in armories if b["complete"]]
+    cannon_cost = rules["unit_cost"]["cannon"]
+    cannons = sum(1 for u in military if u["kind"] == "cannon") + sum(
+        1 for b in armories for q in b["queue"] if q["kind"] == "cannon"
+    )
+    cannon_wanted = bool(ready_armories) and cannons < MAX_CANNONS
 
     tower_stone = cost["tower"]["stone"]
+    # La piedra se reserva para el primer cañón y la armería antes que para más torres.
+    tower_reserve = cannon_cost["stone"] if cannon_wanted else 0
+    if armory_pending and towers:
+        tower_reserve = max(tower_reserve, cost["armory"]["stone"])
     want_tower = (
         len(towers) < MAX_TOWERS
         and not any(not t["complete"] for t in towers)
         and len(villagers) >= MIN_VILLAGERS_FOR_TOWER
-        and plan.stone >= tower_stone
+        and plan.stone >= tower_stone + (tower_reserve if towers else 0)
     )
-    # Se junta piedra solo mientras falta para la próxima torre.
-    stone_wanted = len(towers) < MAX_TOWERS and len(villagers) >= MIN_VILLAGERS_FOR_TOWER and plan.stone < tower_stone
+    # Se junta piedra mientras falte para la próxima torre, la armería o el próximo cañón.
+    stone_target = 0
+    if len(towers) < MAX_TOWERS:
+        stone_target = tower_stone
+    if armory_pending:
+        stone_target = max(stone_target, cost["armory"]["stone"])
+    if cannon_wanted:
+        stone_target = max(stone_target, cannon_cost["stone"])
+    stone_wanted = len(villagers) >= MIN_VILLAGERS_FOR_TOWER and plan.stone < stone_target
 
     unattended = [b for b in sites if not any(v["target_id"] == b["id"] for v in villagers)]
     reserved = []
     pool = _builder_order(villagers, working)
-    for _ in range(len(unattended) + int(want_house) + int(want_barracks) + int(want_tower)):
+    for _ in range(
+        len(unattended) + int(want_house) + int(want_barracks) + int(want_stable) + int(want_armory) + int(want_tower)
+    ):
         if pool:
             reserved.append(pool.pop(0))
     reserved_ids = {v["id"] for v in reserved}
@@ -445,6 +502,23 @@ def decide(observation):
                 size = rules["footprint"]["barracks"]
                 plan.placed.append((cell[0], cell[1], size, size))
 
+    for kind, wanted in (("stable", want_stable), ("armory", want_armory)):
+        if not (wanted and builders and plan.wood >= cost[kind]["wood"] and plan.stone >= cost[kind]["stone"]):
+            continue
+        cell = _choose_cell(plan, town_center, kind)
+        if cell is None:
+            continue
+        payload = {"building_kind": kind, "cell_x": cell[0], "cell_z": cell[1]}
+        if plan.emit(
+            {"type": "Build", "entity_ids": [builders[0]["id"]], "payload": payload},
+            "BUILD_" + kind.upper(),
+            wood=cost[kind]["wood"],
+            stone=cost[kind]["stone"],
+        ):
+            builders.pop(0)
+            size = rules["footprint"][kind]
+            plan.placed.append((cell[0], cell[1], size, size))
+
     if want_tower and builders and plan.stone >= tower_stone:
         cell = _choose_cell(plan, town_center, "tower", forward=True)
         if cell is not None:
@@ -458,7 +532,23 @@ def decide(observation):
                 size = rules["footprint"]["tower"]
                 plan.placed.append((cell[0], cell[1], size, size))
 
-    ready_barracks = [b for b in barracks if b["complete"]]
+    # P9: el cañón va primero; si ya hay piedra pero falta madera, el cuartel y el establo la dejan reservada.
+    cannon_reserve = 0
+    if cannon_wanted:
+        hall = min(ready_armories, key=lambda b: (len(b["queue"]), b["id"]))
+        if not hall["queue"] and plan.pop + 1 <= plan.capacity and plan.stone >= cannon_cost["stone"]:
+            if plan.food >= cannon_cost["food"] and plan.wood >= cannon_cost["wood"]:
+                plan.emit(
+                    {"type": "Train", "entity_ids": [hall["id"]], "payload": {"unit_kind": "cannon"}},
+                    "TRAIN_CANNON",
+                    food=cannon_cost["food"],
+                    wood=cannon_cost["wood"],
+                    stone=cannon_cost["stone"],
+                    pop=1,
+                )
+            elif not hall["queue"]:
+                cannon_reserve = cannon_cost["wood"]
+
     if ready_barracks:
         hall = min(ready_barracks, key=lambda b: (len(b["queue"]), b["id"]))
         if len(hall["queue"]) <= MILITARY_QUEUE_MAX:
@@ -470,7 +560,11 @@ def decide(observation):
                     archers += q["kind"] == "archer"
             kind = "archer" if archers < soldiers // 2 else "soldier"
             unit_cost = rules["unit_cost"][kind]
-            if plan.food >= unit_cost["food"] and plan.wood >= unit_cost["wood"] and plan.pop + 1 <= plan.capacity:
+            if (
+                plan.food >= unit_cost["food"]
+                and plan.wood - unit_cost["wood"] >= cannon_reserve
+                and plan.pop + 1 <= plan.capacity
+            ):
                 plan.emit(
                     {"type": "Train", "entity_ids": [hall["id"]], "payload": {"unit_kind": kind}},
                     "TRAIN_MILITARY",
@@ -478,6 +572,24 @@ def decide(observation):
                     wood=unit_cost["wood"],
                     pop=1,
                 )
+
+    ready_stables = [b for b in stables if b["complete"]]
+    if ready_stables:
+        hall = min(ready_stables, key=lambda b: (len(b["queue"]), b["id"]))
+        knight_cost = rules["unit_cost"]["knight"]
+        if (
+            len(hall["queue"]) <= MILITARY_QUEUE_MAX
+            and plan.food >= knight_cost["food"]
+            and plan.wood - knight_cost["wood"] >= cannon_reserve
+            and plan.pop + 1 <= plan.capacity
+        ):
+            plan.emit(
+                {"type": "Train", "entity_ids": [hall["id"]], "payload": {"unit_kind": "knight"}},
+                "TRAIN_KNIGHT",
+                food=knight_cost["food"],
+                wood=knight_cost["wood"],
+                pop=1,
+            )
 
     if not defending:
         _attack(plan, military, enemy_units, enemy_buildings)

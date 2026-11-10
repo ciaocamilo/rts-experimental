@@ -30,7 +30,7 @@ import { Minimap } from "./ui/minimap";
 import { ToastCenter } from "./ui/toasts";
 import { WelcomeDialog } from "./ui/welcome";
 
-const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos", "realismo", "rio", "retratos"];
+const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos", "realismo", "rio", "retratos", "artilleria"];
 
 function supported(): boolean {
   if (typeof Worker === "undefined" || typeof WebAssembly === "undefined") return false;
@@ -329,7 +329,7 @@ function start(): void {
 
     view.setSelection(selection.units, selection.inspected);
     minimap.draw(s, view.viewFootprint());
-    view.sync(s, { frozen: session.paused || s.matchStatus === "ended", paused: session.paused, strikes: session.strikeLog, destroyed: session.destroyedLog });
+    view.sync(s, { frozen: session.paused || s.matchStatus === "ended", paused: session.paused, strikes: session.strikeLog, destroyed: session.destroyedLog, impacts: session.impactLog, alpha: session.alpha });
     if (audio && engine && !audioFault) {
       // Un fallo del audio nunca detiene ni pausa la partida.
       try {

@@ -12,7 +12,7 @@
     "expected": {
      "pyodide": "0.27.7",
      "python": "3.12",
-     "policy": "policy-0.4"
+     "policy": "policy-0.6"
     },
     "config": {
      "max_commands": 4
@@ -30,7 +30,7 @@
     "versions": {
      "pyodide": "0.27.7",
      "python": "3.12.7",
-     "policy": "policy-0.4"
+     "policy": "policy-0.6"
     },
     "timings_ms": {
      "pyodide_load": 1400.5,
@@ -51,9 +51,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -226,6 +226,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -243,13 +253,341 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
+     }
+    },
+    "previous_results": [
+     {
+      "command_id": "6:0",
+      "accepted": true,
+      "code": null
+     },
+     {
+      "command_id": "6:1",
+      "accepted": false,
+      "code": "NOT_IMPLEMENTED"
+     }
+    ]
+   }
+  },
+  {
+   "name": "observe con caballero, cañón, establo y armería",
+   "valid": true,
+   "message": {
+    "type": "OBSERVE",
+    "protocol_version": 2,
+    "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
+    "worker_generation": 1,
+    "request_id": 7,
+    "observation_tick": 140,
+    "player_id": 1,
+    "seed": 1,
+    "game_version": "p9.0.0",
+    "map_version": "map-0.5 (128x64, río, bosques)",
+    "balance_version": "balance-0.8",
+    "players": [
+     {
+      "id": 0,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     },
+     {
+      "id": 1,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     }
+    ],
+    "units": [
+     {
+      "id": 2,
+      "owner": 0,
+      "kind": "villager",
+      "x": 13.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "idle",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 5,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "gathering",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": {
+       "kind": "food",
+       "amount": 4
+      },
+      "target_id": 8,
+      "defending": false
+     },
+     {
+      "id": 6,
+      "owner": 1,
+      "kind": "villager",
+      "x": 49,
+      "z": 32.5,
+      "hp": 40,
+      "task": "moving",
+      "activity": "moving",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 7,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 33,
+      "hp": 40,
+      "task": "blocked",
+      "activity": "blocked",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": "STUCK",
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 20,
+      "owner": 0,
+      "kind": "knight",
+      "x": 40.5,
+      "z": 31,
+      "hp": 100,
+      "task": "moving",
+      "activity": "moving",
+      "dest": {
+       "x": 44.5,
+       "z": 31.5
+      },
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 21,
+      "owner": 0,
+      "kind": "cannon",
+      "x": 41.5,
+      "z": 33,
+      "hp": 120,
+      "task": "idle",
+      "activity": "attacking",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": 5,
+      "defending": false
+     }
+    ],
+    "buildings": [
+     {
+      "id": 1,
+      "owner": 0,
+      "kind": "townCenter",
+      "cell_x": 8,
+      "cell_z": 30,
+      "hp": 3000,
+      "complete": true,
+      "build_done": 0,
+      "queue": []
+     },
+     {
+      "id": 4,
+      "owner": 1,
+      "kind": "townCenter",
+      "cell_x": 116,
+      "cell_z": 30,
+      "hp": 3000,
+      "complete": true,
+      "build_done": 0,
+      "queue": [
+       {
+        "id": 9,
+        "kind": "villager",
+        "remaining": 120
+       }
+      ]
+     },
+     {
+      "id": 22,
+      "owner": 0,
+      "kind": "stable",
+      "cell_x": 20,
+      "cell_z": 30,
+      "hp": 600,
+      "complete": true,
+      "build_done": 500,
+      "queue": [
+       {
+        "id": 23,
+        "kind": "knight",
+        "remaining": 100
+       }
+      ]
+     },
+     {
+      "id": 24,
+      "owner": 0,
+      "kind": "armory",
+      "cell_x": 24,
+      "cell_z": 30,
+      "hp": 700,
+      "complete": true,
+      "build_done": 700,
+      "queue": [
+       {
+        "id": 25,
+        "kind": "cannon",
+        "remaining": 300
+       }
+      ]
+     }
+    ],
+    "resource_nodes": [
+     {
+      "id": 8,
+      "kind": "food",
+      "cell_x": 15,
+      "cell_z": 22,
+      "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
+     }
+    ],
+    "map": {
+     "width": 128,
+     "depth": 64,
+     "terrain": [
+      {
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
+      },
+      {
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
+      }
+     ]
+    },
+    "rules": {
+     "max_population": 50,
+     "queue_limit": 5,
+     "house_housing": 5,
+     "unit_cost": {
+      "villager": {
+       "food": 50,
+       "wood": 0,
+       "stone": 0
+      },
+      "soldier": {
+       "food": 60,
+       "wood": 20,
+       "stone": 0
+      },
+      "archer": {
+       "food": 40,
+       "wood": 50,
+       "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
+      }
+     },
+     "building_cost": {
+      "house": {
+       "food": 0,
+       "wood": 50,
+       "stone": 0
+      },
+      "barracks": {
+       "food": 0,
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
+      }
+     },
+     "footprint": {
+      "townCenter": 4,
+      "house": 2,
+      "barracks": 3,
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -278,9 +616,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -326,6 +664,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -343,13 +691,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": []
@@ -366,7 +726,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -401,7 +761,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [],
     "reason_codes": [],
     "metrics": {
@@ -421,7 +781,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -483,7 +843,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -546,7 +906,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -579,7 +939,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -614,6 +974,73 @@
    }
   },
   {
+   "name": "decision con Build de establo y armería y Train de caballero y cañón",
+   "valid": true,
+   "message": {
+    "type": "DECISION",
+    "protocol_version": 2,
+    "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
+    "worker_generation": 1,
+    "request_id": 7,
+    "observation_tick": 140,
+    "player_id": 1,
+    "policy_version": "policy-0.6",
+    "commands": [
+     {
+      "command_id": "7:0",
+      "type": "Build",
+      "entity_ids": [
+       5
+      ],
+      "payload": {
+       "building_kind": "stable",
+       "cell_x": 40,
+       "cell_z": 20
+      }
+     },
+     {
+      "command_id": "7:1",
+      "type": "Build",
+      "entity_ids": [
+       5
+      ],
+      "payload": {
+       "building_kind": "armory",
+       "cell_x": 44,
+       "cell_z": 20
+      }
+     },
+     {
+      "command_id": "7:2",
+      "type": "Train",
+      "entity_ids": [
+       4
+      ],
+      "payload": {
+       "unit_kind": "knight"
+      }
+     },
+     {
+      "command_id": "7:3",
+      "type": "Train",
+      "entity_ids": [
+       4
+      ],
+      "payload": {
+       "unit_kind": "cannon"
+      }
+     }
+    ],
+    "reason_codes": [
+     "GATHER"
+    ],
+    "metrics": {
+     "policy_ms": 1.5,
+     "convert_ms": 0.25
+    }
+   }
+  },
+  {
    "name": "observe con unidad defendiéndose y carga de piedra",
    "valid": true,
    "message": {
@@ -625,9 +1052,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -800,6 +1227,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -817,13 +1254,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -876,9 +1325,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -1051,6 +1500,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -1068,13 +1527,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -1103,7 +1574,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -1139,7 +1610,7 @@
     "expected": {
      "pyodide": "0.27.7",
      "python": "3.12",
-     "policy": "policy-0.4"
+     "policy": "policy-0.6"
     },
     "config": {
      "max_commands": 4
@@ -1179,9 +1650,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -1354,6 +1825,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -1371,13 +1852,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -1407,9 +1900,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -1582,6 +2075,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -1599,13 +2102,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -1636,9 +2151,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -1812,6 +2327,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -1829,13 +2354,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -1865,9 +2402,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -2022,6 +2559,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -2039,13 +2586,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -2075,9 +2634,9 @@
     "observation_tick": 140,
     "player_id": 2,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -2250,6 +2809,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -2267,13 +2836,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -2303,9 +2884,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -2478,6 +3059,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -2495,13 +3086,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -2531,9 +3134,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -2706,6 +3309,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -2723,13 +3336,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -2759,9 +3384,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -2934,6 +3559,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -2951,13 +3586,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -2987,9 +3634,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -3162,6 +3809,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -3179,13 +3836,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -3215,9 +3884,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -3390,6 +4059,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -3407,13 +4086,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -3443,9 +4134,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -3618,6 +4309,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -3635,13 +4336,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -3671,9 +4384,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -3854,9 +4567,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -4029,6 +4742,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -4046,13 +4769,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -4082,9 +4817,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -4256,6 +4991,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -4273,13 +5018,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -4309,9 +5066,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -4509,6 +5266,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -4526,13 +5293,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -4562,9 +5341,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -4732,6 +5511,16 @@
        "food": 60,
        "wood": 20,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -4749,13 +5538,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -4785,9 +5586,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -4959,6 +5760,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -4976,13 +5787,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -5012,9 +5835,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -5186,6 +6009,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -5203,13 +6036,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -5239,9 +6084,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -5414,6 +6259,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -5426,13 +6281,764 @@
        "food": 0,
        "wood": 150,
        "stone": 0
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
+     }
+    },
+    "previous_results": [
+     {
+      "command_id": "6:0",
+      "accepted": true,
+      "code": null
+     },
+     {
+      "command_id": "6:1",
+      "accepted": false,
+      "code": "NOT_IMPLEMENTED"
+     }
+    ]
+   }
+  },
+  {
+   "name": "observe sin coste del cañón",
+   "valid": false,
+   "code": "INVALID_MESSAGE",
+   "message": {
+    "type": "OBSERVE",
+    "protocol_version": 2,
+    "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
+    "worker_generation": 1,
+    "request_id": 7,
+    "observation_tick": 140,
+    "player_id": 1,
+    "seed": 1,
+    "game_version": "p9.0.0",
+    "map_version": "map-0.5 (128x64, río, bosques)",
+    "balance_version": "balance-0.8",
+    "players": [
+     {
+      "id": 0,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     },
+     {
+      "id": 1,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     }
+    ],
+    "units": [
+     {
+      "id": 2,
+      "owner": 0,
+      "kind": "villager",
+      "x": 13.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "idle",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 5,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "gathering",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": {
+       "kind": "food",
+       "amount": 4
+      },
+      "target_id": 8,
+      "defending": false
+     },
+     {
+      "id": 6,
+      "owner": 1,
+      "kind": "villager",
+      "x": 49,
+      "z": 32.5,
+      "hp": 40,
+      "task": "moving",
+      "activity": "moving",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 7,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 33,
+      "hp": 40,
+      "task": "blocked",
+      "activity": "blocked",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": "STUCK",
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     }
+    ],
+    "buildings": [
+     {
+      "id": 1,
+      "owner": 0,
+      "kind": "townCenter",
+      "cell_x": 8,
+      "cell_z": 30,
+      "hp": 3000,
+      "complete": true,
+      "build_done": 0,
+      "queue": []
+     },
+     {
+      "id": 4,
+      "owner": 1,
+      "kind": "townCenter",
+      "cell_x": 116,
+      "cell_z": 30,
+      "hp": 3000,
+      "complete": true,
+      "build_done": 0,
+      "queue": [
+       {
+        "id": 9,
+        "kind": "villager",
+        "remaining": 120
+       }
+      ]
+     }
+    ],
+    "resource_nodes": [
+     {
+      "id": 8,
+      "kind": "food",
+      "cell_x": 15,
+      "cell_z": 22,
+      "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
+     }
+    ],
+    "map": {
+     "width": 128,
+     "depth": 64,
+     "terrain": [
+      {
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
+      },
+      {
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
+      }
+     ]
+    },
+    "rules": {
+     "max_population": 50,
+     "queue_limit": 5,
+     "house_housing": 5,
+     "unit_cost": {
+      "villager": {
+       "food": 50,
+       "wood": 0,
+       "stone": 0
+      },
+      "soldier": {
+       "food": 60,
+       "wood": 20,
+       "stone": 0
+      },
+      "archer": {
+       "food": 40,
+       "wood": 50,
+       "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      }
+     },
+     "building_cost": {
+      "house": {
+       "food": 0,
+       "wood": 50,
+       "stone": 0
+      },
+      "barracks": {
+       "food": 0,
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
+      }
+     },
+     "footprint": {
+      "townCenter": 4,
+      "house": 2,
+      "barracks": 3,
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
+     }
+    },
+    "previous_results": [
+     {
+      "command_id": "6:0",
+      "accepted": true,
+      "code": null
+     },
+     {
+      "command_id": "6:1",
+      "accepted": false,
+      "code": "NOT_IMPLEMENTED"
+     }
+    ]
+   }
+  },
+  {
+   "name": "observe sin coste de la armería",
+   "valid": false,
+   "code": "INVALID_MESSAGE",
+   "message": {
+    "type": "OBSERVE",
+    "protocol_version": 2,
+    "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
+    "worker_generation": 1,
+    "request_id": 7,
+    "observation_tick": 140,
+    "player_id": 1,
+    "seed": 1,
+    "game_version": "p9.0.0",
+    "map_version": "map-0.5 (128x64, río, bosques)",
+    "balance_version": "balance-0.8",
+    "players": [
+     {
+      "id": 0,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     },
+     {
+      "id": 1,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     }
+    ],
+    "units": [
+     {
+      "id": 2,
+      "owner": 0,
+      "kind": "villager",
+      "x": 13.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "idle",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 5,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "gathering",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": {
+       "kind": "food",
+       "amount": 4
+      },
+      "target_id": 8,
+      "defending": false
+     },
+     {
+      "id": 6,
+      "owner": 1,
+      "kind": "villager",
+      "x": 49,
+      "z": 32.5,
+      "hp": 40,
+      "task": "moving",
+      "activity": "moving",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 7,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 33,
+      "hp": 40,
+      "task": "blocked",
+      "activity": "blocked",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": "STUCK",
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     }
+    ],
+    "buildings": [
+     {
+      "id": 1,
+      "owner": 0,
+      "kind": "townCenter",
+      "cell_x": 8,
+      "cell_z": 30,
+      "hp": 3000,
+      "complete": true,
+      "build_done": 0,
+      "queue": []
+     },
+     {
+      "id": 4,
+      "owner": 1,
+      "kind": "townCenter",
+      "cell_x": 116,
+      "cell_z": 30,
+      "hp": 3000,
+      "complete": true,
+      "build_done": 0,
+      "queue": [
+       {
+        "id": 9,
+        "kind": "villager",
+        "remaining": 120
+       }
+      ]
+     }
+    ],
+    "resource_nodes": [
+     {
+      "id": 8,
+      "kind": "food",
+      "cell_x": 15,
+      "cell_z": 22,
+      "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
+     }
+    ],
+    "map": {
+     "width": 128,
+     "depth": 64,
+     "terrain": [
+      {
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
+      },
+      {
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
+      }
+     ]
+    },
+    "rules": {
+     "max_population": 50,
+     "queue_limit": 5,
+     "house_housing": 5,
+     "unit_cost": {
+      "villager": {
+       "food": 50,
+       "wood": 0,
+       "stone": 0
+      },
+      "soldier": {
+       "food": 60,
+       "wood": 20,
+       "stone": 0
+      },
+      "archer": {
+       "food": 40,
+       "wood": 50,
+       "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
+      }
+     },
+     "building_cost": {
+      "house": {
+       "food": 0,
+       "wood": 50,
+       "stone": 0
+      },
+      "barracks": {
+       "food": 0,
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      }
+     },
+     "footprint": {
+      "townCenter": 4,
+      "house": 2,
+      "barracks": 3,
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
+     }
+    },
+    "previous_results": [
+     {
+      "command_id": "6:0",
+      "accepted": true,
+      "code": null
+     },
+     {
+      "command_id": "6:1",
+      "accepted": false,
+      "code": "NOT_IMPLEMENTED"
+     }
+    ]
+   }
+  },
+  {
+   "name": "observe sin huella del establo",
+   "valid": false,
+   "code": "INVALID_MESSAGE",
+   "message": {
+    "type": "OBSERVE",
+    "protocol_version": 2,
+    "session_id": "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c",
+    "worker_generation": 1,
+    "request_id": 7,
+    "observation_tick": 140,
+    "player_id": 1,
+    "seed": 1,
+    "game_version": "p9.0.0",
+    "map_version": "map-0.5 (128x64, río, bosques)",
+    "balance_version": "balance-0.8",
+    "players": [
+     {
+      "id": 0,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     },
+     {
+      "id": 1,
+      "food": 200,
+      "wood": 200,
+      "stone": 0,
+      "pop": 3,
+      "pop_capacity": 10
+     }
+    ],
+    "units": [
+     {
+      "id": 2,
+      "owner": 0,
+      "kind": "villager",
+      "x": 13.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "idle",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 5,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 31,
+      "hp": 40,
+      "task": "idle",
+      "activity": "gathering",
+      "dest": null,
+      "blocked_reason": null,
+      "carry": {
+       "kind": "food",
+       "amount": 4
+      },
+      "target_id": 8,
+      "defending": false
+     },
+     {
+      "id": 6,
+      "owner": 1,
+      "kind": "villager",
+      "x": 49,
+      "z": 32.5,
+      "hp": 40,
+      "task": "moving",
+      "activity": "moving",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": null,
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     },
+     {
+      "id": 7,
+      "owner": 1,
+      "kind": "villager",
+      "x": 50.5,
+      "z": 33,
+      "hp": 40,
+      "task": "blocked",
+      "activity": "blocked",
+      "dest": {
+       "x": 48.5,
+       "z": 32.5
+      },
+      "blocked_reason": "STUCK",
+      "carry": null,
+      "target_id": null,
+      "defending": false
+     }
+    ],
+    "buildings": [
+     {
+      "id": 1,
+      "owner": 0,
+      "kind": "townCenter",
+      "cell_x": 8,
+      "cell_z": 30,
+      "hp": 3000,
+      "complete": true,
+      "build_done": 0,
+      "queue": []
+     },
+     {
+      "id": 4,
+      "owner": 1,
+      "kind": "townCenter",
+      "cell_x": 116,
+      "cell_z": 30,
+      "hp": 3000,
+      "complete": true,
+      "build_done": 0,
+      "queue": [
+       {
+        "id": 9,
+        "kind": "villager",
+        "remaining": 120
+       }
+      ]
+     }
+    ],
+    "resource_nodes": [
+     {
+      "id": 8,
+      "kind": "food",
+      "cell_x": 15,
+      "cell_z": 22,
+      "remaining": 500
+     },
+     {
+      "id": 10,
+      "kind": "stone",
+      "cell_x": 15,
+      "cell_z": 46,
+      "remaining": 500
+     }
+    ],
+    "map": {
+     "width": 128,
+     "depth": 64,
+     "terrain": [
+      {
+       "x": 61,
+       "z": 0,
+       "w": 6,
+       "h": 29
+      },
+      {
+       "x": 61,
+       "z": 35,
+       "w": 6,
+       "h": 29
+      }
+     ]
+    },
+    "rules": {
+     "max_population": 50,
+     "queue_limit": 5,
+     "house_housing": 5,
+     "unit_cost": {
+      "villager": {
+       "food": 50,
+       "wood": 0,
+       "stone": 0
+      },
+      "soldier": {
+       "food": 60,
+       "wood": 20,
+       "stone": 0
+      },
+      "archer": {
+       "food": 40,
+       "wood": 50,
+       "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
+      }
+     },
+     "building_cost": {
+      "house": {
+       "food": 0,
+       "wood": 50,
+       "stone": 0
+      },
+      "barracks": {
+       "food": 0,
+       "wood": 150,
+       "stone": 0
+      },
+      "tower": {
+       "food": 0,
+       "wood": 0,
+       "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
+      }
+     },
+     "footprint": {
+      "townCenter": 4,
+      "house": 2,
+      "barracks": 3,
+      "tower": 2,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -5462,9 +7068,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -5637,6 +7243,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -5654,13 +7270,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -5690,9 +7318,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -5865,6 +7493,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -5882,13 +7520,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -5918,9 +7568,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -6085,6 +7735,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -6102,13 +7762,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -6138,9 +7810,9 @@
     "observation_tick": 140,
     "player_id": 1,
     "seed": 1,
-    "game_version": "p8.0.0",
+    "game_version": "p9.0.0",
     "map_version": "map-0.5 (128x64, río, bosques)",
-    "balance_version": "balance-0.7",
+    "balance_version": "balance-0.8",
     "players": [
      {
       "id": 0,
@@ -13759,6 +15431,16 @@
        "food": 40,
        "wood": 50,
        "stone": 0
+      },
+      "knight": {
+       "food": 100,
+       "wood": 50,
+       "stone": 0
+      },
+      "cannon": {
+       "food": 0,
+       "wood": 200,
+       "stone": 150
       }
      },
      "building_cost": {
@@ -13776,13 +15458,25 @@
        "food": 0,
        "wood": 0,
        "stone": 300
+      },
+      "stable": {
+       "food": 0,
+       "wood": 175,
+       "stone": 0
+      },
+      "armory": {
+       "food": 0,
+       "wood": 200,
+       "stone": 100
       }
      },
      "footprint": {
       "townCenter": 4,
       "house": 2,
       "barracks": 3,
-      "tower": 2
+      "tower": 2,
+      "stable": 3,
+      "armory": 3
      }
     },
     "previous_results": [
@@ -13825,7 +15519,7 @@
     "expected": {
      "pyodide": "0.27.7",
      "python": "3.12",
-     "policy": "policy-0.4"
+     "policy": "policy-0.6"
     },
     "config": {
      "max_commands": 5
@@ -13860,7 +15554,7 @@
     "versions": {
      "pyodide": "0.27.7",
      "python": "3.12.7",
-     "policy": "policy-0.4"
+     "policy": "policy-0.6"
     },
     "timings_ms": {
      "pyodide_load": 1400.5,
@@ -13909,7 +15603,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -13973,7 +15667,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": {},
     "reason_codes": [
      "GATHER"
@@ -13996,7 +15690,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14033,7 +15727,7 @@
     "request_id": "7",
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14069,7 +15763,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14105,7 +15799,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14141,7 +15835,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14176,7 +15870,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14207,7 +15901,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14242,7 +15936,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14277,7 +15971,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14312,7 +16006,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14348,7 +16042,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14381,7 +16075,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14516,7 +16210,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14550,7 +16244,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "abc",
@@ -14582,7 +16276,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",
@@ -14618,7 +16312,7 @@
     "request_id": 7,
     "observation_tick": 140,
     "player_id": 1,
-    "policy_version": "policy-0.4",
+    "policy_version": "policy-0.6",
     "commands": [
      {
       "command_id": "7:0",

@@ -3,7 +3,7 @@
 export const PROTOCOL_VERSION = 2;
 export const PYODIDE_VERSION = "0.27.7";
 export const PYTHON_VERSION_PREFIX = "3.12";
-export const POLICY_VERSION = "policy-0.4";
+export const POLICY_VERSION = "policy-0.6";
 
 export const MAX_OBSERVATION_BYTES = 1024 * 1024;
 export const MAX_RESPONSE_BYTES = 64 * 1024;
@@ -47,7 +47,7 @@ export interface ReadyMessage {
 export interface UnitView {
   id: number;
   owner: PlayerIdWire;
-  kind: "villager" | "soldier" | "archer";
+  kind: "villager" | "soldier" | "archer" | "knight" | "cannon";
   x: number;
   z: number;
   hp: number;
@@ -63,14 +63,14 @@ export interface UnitView {
 
 export interface QueueItemView {
   id: number;
-  kind: "villager" | "soldier" | "archer";
+  kind: "villager" | "soldier" | "archer" | "knight" | "cannon";
   remaining: number;
 }
 
 export interface BuildingView {
   id: number;
   owner: PlayerIdWire;
-  kind: "townCenter" | "house" | "barracks" | "tower";
+  kind: "townCenter" | "house" | "barracks" | "tower" | "stable" | "armory";
   cell_x: number;
   cell_z: number;
   hp: number;
@@ -89,9 +89,9 @@ export interface RulesView {
   max_population: number;
   queue_limit: number;
   house_housing: number;
-  unit_cost: Record<"villager" | "soldier" | "archer", CostView>;
-  building_cost: Record<"house" | "barracks" | "tower", CostView>;
-  footprint: Record<"townCenter" | "house" | "barracks" | "tower", number>;
+  unit_cost: Record<"villager" | "soldier" | "archer" | "knight" | "cannon", CostView>;
+  building_cost: Record<"house" | "barracks" | "tower" | "stable" | "armory", CostView>;
+  footprint: Record<"townCenter" | "house" | "barracks" | "tower" | "stable" | "armory", number>;
 }
 
 export interface ResourceNodeView {
@@ -138,8 +138,8 @@ export type WireCommand =
   | (CommandBase & { type: "Move"; payload: { x: number; z: number } })
   | (CommandBase & { type: "Stop"; payload: Record<string, never> })
   | (CommandBase & { type: "Gather" | "Attack" | "ResumeBuild"; payload: { target_id: number } })
-  | (CommandBase & { type: "Build"; payload: { building_kind: "townCenter" | "house" | "barracks" | "tower"; cell_x: number; cell_z: number } })
-  | (CommandBase & { type: "Train"; payload: { unit_kind: "villager" | "soldier" | "archer" } })
+  | (CommandBase & { type: "Build"; payload: { building_kind: "townCenter" | "house" | "barracks" | "tower" | "stable" | "armory"; cell_x: number; cell_z: number } })
+  | (CommandBase & { type: "Train"; payload: { unit_kind: "villager" | "soldier" | "archer" | "knight" | "cannon" } })
   | (CommandBase & { type: "CancelBuild"; payload: Record<string, never> })
   | (CommandBase & { type: "CancelTraining"; payload: { queue_item_id: number } });
 

@@ -101,7 +101,7 @@ export function frac(x: number): number {
 }
 
 /** Generador determinista barato para efectos cosméticos (no toca la aleatoriedad de la simulación). */
-function hash(seed: number): () => number {
+export function hash(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -117,7 +117,7 @@ const DEBRIS_PER_BURST = 30;
 const DUST_PER_BURST = 26;
 export const DUST_LIFE_S = 2.5;
 const DEBRIS_LIFE_S = 2.4;
-const GRAVITY = 15;
+export const GRAVITY = 15;
 
 interface Debris {
   slot: number;

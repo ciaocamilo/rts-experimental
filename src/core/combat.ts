@@ -1,5 +1,6 @@
 import { BALANCE, MAX_ACTIVE_TICKS } from "../content/balance";
 import type { Cell, NavGrid } from "../navigation/grid";
+import { launchProjectile } from "./artillery";
 import { clearTask, unitComponent, walkTo } from "./movement";
 import { buildingRect, distanceToRect, findApproachCell, type CellRect } from "./spatial";
 import type { Building, EntityId, GameState, IdleReason, MainBuildingFinal, PlayerId, StrikeEvent, Unit, Vec2 } from "./types";
@@ -17,6 +18,8 @@ const RAY_STEP = 0.1;
 const AIM_INSET = 0.01;
 /** Separación lateral entre flechas de un mismo disparo múltiple. */
 const ARROW_SPREAD = 0.3;
+/** Holgura al elegir la celda de retirada de la artillería: queda algo más lejos del mínimo y algo más cerca del máximo. */
+const RETREAT_MARGIN = 0.4;
 
 export const isBuilding = (t: Target): t is Building => "queue" in t;
 
@@ -72,8 +75,66 @@ export function hasLineOfFire(grid: NavGrid, from: Vec2, to: Vec2, ignore: CellR
 }
 
 function canStrike(grid: NavGrid, unit: Unit, target: Target): boolean {
-  if (edgeDistance(unit, target) > BALANCE.units[unit.kind].range) return false;
+  const def = BALANCE.units[unit.kind];
+  const d = edgeDistance(unit, target);
+  if (d > def.range) return false;
+  if (def.artillery) {
+    // La bala del cañón es parabólica: pasa por encima de obstáculos, pero no puede caer sobre quien está demasiado cerca.
+    return d >= def.artillery.minRange;
+  }
   return hasLineOfFire(grid, unit.pos, aimPoint(unit, target), isBuilding(target) ? buildingRect(target) : null);
+}
+
+/** Artillería con el objetivo dentro de su distancia mínima: no puede disparar y debe retroceder. */
+function tooClose(unit: Unit, target: Target): boolean {
+  const art = BALANCE.units[unit.kind].artillery;
+  return art !== undefined && edgeDistance(unit, target) < art.minRange;
+}
+
+/** Distancia entre bordes desde un punto cualquiera (para evaluar celdas de retirada). */
+function clearanceFrom(p: Vec2, radius: number, target: Target): number {
+  if (isBuilding(target)) return distanceToRect(p, buildingRect(target)) - radius;
+  return Math.hypot(target.pos.x - p.x, target.pos.z - p.z) - radius - BALANCE.units[target.kind].radius;
+}
+
+/**
+ * La artillería retrocede hasta una celda de su misma región desde la que el objetivo queda a distancia de tiro.
+ * Elige la más cercana (desempate z, x) y cuenta como reintento cada vez que tiene que reanudar la marcha.
+ */
+function retreat(state: GameState, grid: NavGrid, unit: Unit, target: Target): IdleReason | null {
+  if (unit.task === "blocked") return "UNREACHABLE";
+  if (unit.task === "moving") return null;
+  const job = unit.job;
+  if (job?.type === "attack") {
+    job.retries += 1;
+    if (job.retries > MAX_CHASE_RETRIES) return "UNREACHABLE";
+  }
+  const def = BALANCE.units[unit.kind];
+  const art = def.artillery!;
+  const comp = unitComponent(grid, unit);
+  const near = art.minRange + RETREAT_MARGIN;
+  const far = def.range - RETREAT_MARGIN;
+  const span = Math.ceil(def.range);
+  const cx = Math.floor(unit.pos.x);
+  const cz = Math.floor(unit.pos.z);
+  let best: Cell | null = null;
+  let bestD = Infinity;
+  for (let z = cz - span; z <= cz + span; z++) {
+    for (let x = cx - span; x <= cx + span; x++) {
+      if (grid.isBlocked(x, z) || grid.componentAt(x, z) !== comp) continue;
+      const centre = { x: x + 0.5, z: z + 0.5 };
+      const clear = clearanceFrom(centre, def.radius, target);
+      if (clear < near || clear > far) continue;
+      const d = (centre.x - unit.pos.x) ** 2 + (centre.z - unit.pos.z) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = { x, z };
+      }
+    }
+  }
+  if (!best) return "UNREACHABLE";
+  walkTo(state, unit, best);
+  return null;
 }
 
 function reachable(grid: NavGrid, unit: Unit, target: Target): boolean {
@@ -88,16 +149,18 @@ export function canEngage(grid: NavGrid, unit: Unit, target: Target): boolean {
 }
 
 function acquire(state: GameState, grid: NavGrid, unit: Unit): Target | null {
-  const candidates: { target: Target; d: number }[] = [];
+  const candidates: { target: Target; d: number; close: number }[] = [];
+  // La artillería ve hasta donde alcanza su tiro; quien está dentro de su distancia mínima se considera el último.
+  const reach = Math.max(BALANCE.combat.acquireRange, BALANCE.units[unit.kind].artillery ? BALANCE.units[unit.kind].range : 0);
   const consider = (target: Target): void => {
     if (target.owner === unit.owner || target.hp <= 0) return;
     if (unit.avoid && unit.avoid.targetId === target.id && unit.avoid.until > state.tick) return;
     const d = edgeDistance(unit, target);
-    if (d <= BALANCE.combat.acquireRange) candidates.push({ target, d });
+    if (d <= reach) candidates.push({ target, d, close: tooClose(unit, target) ? 1 : 0 });
   };
   state.units.forEach(consider);
   state.buildings.forEach(consider);
-  candidates.sort((a, b) => a.d - b.d || a.target.id - b.target.id);
+  candidates.sort((a, b) => a.close - b.close || a.d - b.d || a.target.id - b.target.id);
   return candidates.find((c) => canEngage(grid, unit, c.target))?.target ?? null;
 }
 
@@ -279,6 +342,13 @@ export function updateCombat(state: GameState, grid: NavGrid): StrikeEvent[] {
       continue;
     }
 
+    if (tooClose(unit, target)) {
+      // Demasiado cerca para disparar: retrocede en vez de perseguir.
+      const failure = retreat(state, grid, unit, target);
+      if (failure) stopAttack(state, grid, unit, failure);
+      continue;
+    }
+
     if (job.anchor && Math.hypot(unit.pos.x - job.anchor.x, unit.pos.z - job.anchor.z) > BALANCE.combat.leashRange) {
       // Fuera de la correa: abandona el objetivo y regresa al destino interrumpido o al punto de adquisición.
       unit.job = null;
@@ -332,6 +402,24 @@ export function updateCombat(state: GameState, grid: NavGrid): StrikeEvent[] {
       continue;
     }
     const def = BALANCE.units[attacker.kind];
+    if (def.artillery) {
+      // El daño llega con la bala: el disparo solo la crea y avisa a la vista.
+      const aim = aimPoint(attacker, target);
+      const shot = launchProjectile(state, attacker, aim);
+      events.push({
+        tick: shot.launchTick,
+        attackerId: attacker.id,
+        attackerOwner: attacker.owner,
+        attackerKind: attacker.kind,
+        targetId: target.id,
+        targetOwner: target.owner,
+        from: { ...shot.from },
+        to: { ...shot.to },
+        flightTicks: shot.impactTick - shot.launchTick,
+      });
+      attacker.cooldown = def.attackIntervalTicks;
+      continue;
+    }
     events.push({
       tick: state.tick + 1,
       attackerId: attacker.id,

@@ -179,6 +179,30 @@ export interface GameState {
   lastCommandSeq: number;
   /** Bajas acumuladas de la partida. */
   losses: Losses;
+  /** P9: balas de cañón en vuelo; el daño de área se aplica al llegar `impactTick`. */
+  projectiles: Projectile[];
+}
+
+/** Bala en vuelo. Cae en `to` aunque el objetivo se mueva o el cañón haya muerto. */
+export interface Projectile {
+  id: EntityId;
+  owner: PlayerId;
+  attackerId: EntityId;
+  from: Vec2;
+  to: Vec2;
+  /** Tick del disparo (el del `StrikeEvent`). */
+  launchTick: number;
+  impactTick: number;
+}
+
+/** Caída de una bala con el daño ya aplicado; solo la consumen la vista y el audio. */
+export interface ImpactEvent {
+  tick: number;
+  attackerId: EntityId;
+  attackerOwner: PlayerId;
+  at: Vec2;
+  from: Vec2;
+  hits: { id: EntityId; kind: "unit" | "building"; killed: boolean; damage: number }[];
 }
 
 export type CommandType =
@@ -232,6 +256,8 @@ export interface StepResult {
   results: CommandResult[];
   /** Ataques válidos de este tick; solo los consume el renderizador y no forman parte del estado. */
   strikes: StrikeEvent[];
+  /** P9: caídas de balas de cañón de este tick. */
+  impacts: ImpactEvent[];
   /** Edificios que dejaron el estado lógico en este tick; solo los consume la vista (colapso visual). */
   destroyed: BuildingDestroyedEvent[];
   /** Eventos de salida para el audio; no forman parte del estado ni del hash. */
@@ -292,4 +318,6 @@ export interface StrikeEvent {
   targetOwner: PlayerId;
   from: Vec2;
   to: Vec2;
+  /** Solo en disparos de cañón: ticks de vuelo de la bala. */
+  flightTicks?: number;
 }

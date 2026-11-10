@@ -6,8 +6,8 @@ import type { AssetLibrary, Quality } from "./assets";
 import { applyConstruction, type BuildingRig, buildBuilding, type GeometryCache } from "./buildings";
 import type { Materials } from "./models";
 import { type NodeFactory, type NodeRig, setNodeSpent } from "./nodes";
-import { computePose } from "./pose";
-import { applyPose, type UnitFactory, type UnitRig } from "./units";
+import { cannonPose, computePose, gallopPose } from "./pose";
+import { applyCannon, applyHorse, applyPose, type UnitFactory, type UnitRig } from "./units";
 
 /** Piezas del visor principal que el retrato reutiliza: geometrías y materiales compartidos, nada nuevo por entidad. */
 export interface PortraitKit {
@@ -171,6 +171,8 @@ export class PortraitView {
       rig.proxy.visible = false;
       rig.facing.rotation.y = 0;
       applyPose(rig, computePose({ role: rig.role, t: 0, walking: false, work: null, carrying: false, combatPhase: null }));
+      if (rig.horse) applyHorse(rig, gallopPose(0, 0));
+      if (rig.cannon) applyCannon(rig, cannonPose({ rolled: 0, sinceShot: null }));
       return { root: rig.root, apply: () => undefined };
     }
     if (info.type === "building") {

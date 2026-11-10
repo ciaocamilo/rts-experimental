@@ -13,7 +13,7 @@ const HUMAN = 0 as const;
 const DRAG_THRESHOLD_PX = 5;
 /** Intervalo máximo entre reevaluaciones del cursor con el ratón quieto (cambios de selección o unidades en movimiento). */
 const CURSOR_REFRESH_SEC = 0.1;
-const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel", tower: "torre" };
+const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel", tower: "torre", stable: "establo", armory: "armería" };
 
 const KEY_MAP: Record<string, keyof PanKeys> = {
   KeyW: "up",

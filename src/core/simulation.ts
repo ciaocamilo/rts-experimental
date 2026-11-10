@@ -1,3 +1,4 @@
+import { resolveProjectiles } from "./artillery";
 import { resolveMatch, updateCombat } from "./combat";
 import { refreshCapacity, removeDead, snapshotMainBuildings, updateJobs, updateProduction } from "./economy";
 import { invalidateBlockedPaths, issueMove, issueStop, moveUnits, processPathQueue } from "./movement";
@@ -57,6 +58,7 @@ export function stepSimulation(state: GameState, commands: readonly Command[] = 
       tick: state.tick,
       results: commands.map((c) => reject(c, "MATCH_ENDED")),
       strikes: [],
+      impacts: [],
       destroyed: [],
       deaths: [],
       spawns: [],
@@ -83,6 +85,8 @@ export function stepSimulation(state: GameState, commands: readonly Command[] = 
   const works = updateJobs(state, grid);
   const spawns = updateProduction(state, grid);
   const strikes = updateCombat(state, grid);
+  // Las balas caen después de los disparos del tick: los atacantes alcanzados siguen golpeando en el mismo tick.
+  const impacts = resolveProjectiles(state);
   // La instantánea de los edificios principales se toma antes de retirar entidades, con la vida que causa el fin de partida.
   const mainBuildings = snapshotMainBuildings(state);
   const { lostCenters, destroyed, deaths } = removeDead(state);
@@ -90,5 +94,5 @@ export function stepSimulation(state: GameState, commands: readonly Command[] = 
 
   state.tick += 1;
   resolveMatch(state, lostCenters, mainBuildings);
-  return { tick: state.tick, results, strikes, destroyed, deaths, spawns, works };
+  return { tick: state.tick, results, strikes, impacts, destroyed, deaths, spawns, works };
 }

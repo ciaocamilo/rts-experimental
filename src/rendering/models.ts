@@ -10,7 +10,7 @@ export type SurfaceMaterial = THREE.MeshLambertMaterial | THREE.MeshStandardMate
 
 /** Catálogo visual: alturas de ancla para barras y marcas, independientes de la lógica. */
 export const VISUAL = {
-  buildingHeight: { townCenter: 4.4, house: 2.1, barracks: 2.9, tower: 3.9 },
+  buildingHeight: { townCenter: 4.4, house: 2.1, barracks: 2.9, tower: 3.9, stable: 3, armory: 3 },
   unitHeight: 1.1,
   barOffset: 0.3,
 } as const;
@@ -50,6 +50,10 @@ export class Materials {
   readonly flag: readonly [THREE.MeshLambertMaterial, THREE.MeshLambertMaterial];
   readonly mark: readonly [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial];
   readonly shadow;
+  /** Color de vértice (caballos del establo). */
+  readonly animal;
+  /** Brasa de la fragua: no recibe luz. */
+  readonly ember;
 
   constructor(a: AssetLibrary) {
     const t = a.textures;
@@ -98,6 +102,8 @@ export class Materials {
     // Marca independiente del color (RF-10): anillo blanco para el jugador, rombo hueco oscuro para el rival.
     this.mark = [a.basic({ color: 0xffffff }), a.basic({ color: 0x111111 })];
     this.shadow = a.basic({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });
+    this.animal = a.lambert({ vertexColors: true });
+    this.ember = a.basic({ color: 0xff6a1f });
   }
 }
 

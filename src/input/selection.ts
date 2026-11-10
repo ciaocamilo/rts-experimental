@@ -80,8 +80,8 @@ export type Side = "player" | "enemy" | "nature";
 
 export const SIDE_LABEL: Record<Side, string> = { player: "JUGADOR", enemy: "ENEMIGO", nature: "NATURALEZA" };
 
-const UNIT_LABEL = { villager: "Aldeano", soldier: "Soldado", archer: "Arquero" } as const;
-const BUILDING_LABEL = { townCenter: "Centro urbano", house: "Casa", barracks: "Cuartel", tower: "Torre" } as const;
+const UNIT_LABEL = { villager: "Aldeano", soldier: "Soldado", archer: "Arquero", knight: "Caballero", cannon: "Cañón" } as const;
+const BUILDING_LABEL = { townCenter: "Centro urbano", house: "Casa", barracks: "Cuartel", tower: "Torre", stable: "Establo", armory: "Armería" } as const;
 const NODE_LABEL = { food: "Arbusto", wood: "Árbol", stone: "Roca" } as const;
 
 /** Ficha de una entidad para el retrato: texto en español y valores de las barras, sin tocar el estado. */
@@ -165,18 +165,34 @@ export function describeSelection(state: GameState, id: EntityId, player: Player
 export interface CombatStats {
   attack: number;
   range: number | null;
+  /** true si el daño se reparte en un área alrededor del impacto (cañón). */
+  area?: boolean;
+  /** Distancia mínima de disparo en celdas (solo la artillería). */
+  minRange?: number;
 }
 
 /** Ataque (daño × `arrows` flechas) y alcance del arma de una unidad; null si no hace daño. */
 export function combatStats(kind: UnitKind, arrows = 1): CombatStats | null {
   const def = BALANCE.units[kind];
   if (def.damage <= 0) return null;
-  return { attack: def.damage * arrows, range: def.range > 1 ? def.range : null };
+  return {
+    attack: def.damage * arrows,
+    range: def.range > 1 ? def.range : null,
+    ...(def.artillery ? { area: true, minRange: def.artillery.minRange } : {}),
+  };
 }
 
 /** Texto para lectores de pantalla y descripciones: "Ataque 8, alcance 5". */
 export function combatLabel(c: CombatStats): string {
-  return c.range === null ? `Ataque ${c.attack}` : `Ataque ${c.attack}, alcance ${num(c.range)}`;
+  const attack = c.area ? `Ataque ${c.attack} en área` : `Ataque ${c.attack}`;
+  if (c.range === null) return attack;
+  return c.minRange ? `${attack}, alcance ${num(c.range)}, distancia mínima ${num(c.minRange)}` : `${attack}, alcance ${num(c.range)}`;
+}
+
+/** Texto corto del alcance para la tarjeta: "5" o, con distancia mínima, "2,5–7,5". */
+export function rangeText(c: CombatStats): string {
+  if (c.range === null) return "";
+  return c.minRange ? `${num(c.minRange)}–${num(c.range)}` : num(c.range);
 }
 
 const num = (n: number): string => String(n).replace(".", ",");
