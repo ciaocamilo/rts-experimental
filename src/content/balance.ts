@@ -6,8 +6,8 @@ export const MAX_CATCHUP_STEPS = 5;
 // P7: 30 minutos × 60 s × 20 ticks.
 export const MAX_ACTIVE_TICKS = 36_000;
 
-export type UnitKind = "villager" | "soldier" | "archer";
-export type BuildingKind = "townCenter" | "house" | "barracks" | "tower";
+export type UnitKind = "villager" | "soldier" | "archer" | "knight" | "cannon";
+export type BuildingKind = "townCenter" | "house" | "barracks" | "tower" | "stable" | "armory";
 export type ResourceKind = "food" | "wood" | "stone";
 
 export interface Cost {
@@ -15,6 +15,21 @@ export interface Cost {
   readonly wood: number;
   /** P3: la piedra solo se gasta en la torre (300). */
   readonly stone: number;
+}
+
+/** P9: datos del disparo parabólico con daño de área (solo el cañón). */
+export interface ArtilleryDef {
+  /** Radio del daño de área, en celdas, medido desde el punto de impacto hasta el borde del objetivo. */
+  readonly splashRadius: number;
+  /** Fracción del daño que recibe un objetivo en el borde del radio (1 en el centro). */
+  readonly edgeDamageRatio: number;
+  /** Multiplicador del daño contra edificios. */
+  readonly buildingMultiplier: number;
+  readonly shotSpeedCellsPerSec: number;
+  /** Distancia mínima de disparo, en celdas, medida entre bordes: más cerca el cañón no puede disparar y retrocede. */
+  readonly minRange: number;
+  readonly minFlightTicks: number;
+  readonly maxFlightTicks: number;
 }
 
 export interface UnitDef {
@@ -26,6 +41,7 @@ export interface UnitDef {
   readonly attackIntervalTicks: number;
   readonly range: number;
   readonly radius: number;
+  readonly artillery?: ArtilleryDef;
 }
 
 export interface BuildingDef {
@@ -88,8 +104,22 @@ export const BALANCE: Balance = {
     villager: { cost: { food: 50, wood: 0, stone: 0 }, trainTicks: s(10), hp: 40, speedCellsPerSec: 2.5, damage: 5, attackIntervalTicks: s(1.5), range: 0.5, radius: 0.3 },
     soldier: { cost: { food: 60, wood: 20, stone: 0 }, trainTicks: s(12), hp: 100, speedCellsPerSec: 2.5, damage: 10, attackIntervalTicks: s(1), range: 0.5, radius: 0.3 },
     archer: { cost: { food: 40, wood: 50, stone: 0 }, trainTicks: s(15), hp: 60, speedCellsPerSec: 2.5, damage: 8, attackIntervalTicks: s(1.5), range: 5, radius: 0.3 },
-  },
-  buildings: {
+        // P9: el caballero ataca como el soldado y se desplaza al doble de velocidad.
+        knight: { cost: { food: 100, wood: 50, stone: 0 }, trainTicks: s(18), hp: 100, speedCellsPerSec: 5, damage: 10, attackIntervalTicks: s(1), range: 0.5, radius: 0.4 },
+        // P9: la bala cae en parábola y hace daño de área. Alcance 7,5 (50 % más que el arquero) y distancia mínima de 2,5.
+        cannon: {
+          cost: { food: 0, wood: 200, stone: 150 },
+          trainTicks: s(30),
+          hp: 120,
+          speedCellsPerSec: 1.5,
+          damage: 50,
+          attackIntervalTicks: s(3),
+          range: 7.5,
+          radius: 0.5,
+          artillery: { splashRadius: 2, edgeDamageRatio: 0.5, buildingMultiplier: 2, shotSpeedCellsPerSec: 12, minRange: 2.5, minFlightTicks: 4, maxFlightTicks: 14 },
+        },
+      },
+      buildings: {
     // El centro urbano dispara como la torre, pero con 3 flechas por disparo (triple daño).
     // P8: centro urbano y torre tienen el doble de vida que en P7 (1500 y 800).
     townCenter: { cost: { food: 0, wood: 0, stone: 0 }, buildTicks: 0, hp: 3000, footprint: 4, housing: 0, constructible: false, trains: ["villager"], weapon: "archer", arrows: 3 },
@@ -97,7 +127,10 @@ export const BALANCE: Balance = {
     barracks: { cost: { food: 0, wood: 150, stone: 0 }, buildTicks: s(25), hp: 600, footprint: 3, housing: 0, constructible: true, trains: ["soldier", "archer"], weapon: null },
     // P3: la torre usa el daño, la cadencia y el alcance del arquero (`weapon`); sin alcance mínimo.
     tower: { cost: { food: 0, wood: 0, stone: 300 }, buildTicks: s(30), hp: 1600, footprint: 2, housing: 0, constructible: true, trains: [], weapon: "archer" },
-  },
+        // P9: el establo entrena caballeros y la armería fabrica cañones.
+        stable: { cost: { food: 0, wood: 175, stone: 0 }, buildTicks: s(25), hp: 600, footprint: 3, housing: 0, constructible: true, trains: ["knight"], weapon: null },
+        armory: { cost: { food: 0, wood: 200, stone: 100 }, buildTicks: s(35), hp: 700, footprint: 3, housing: 0, constructible: true, trains: ["cannon"], weapon: null },
+      },
 };
 
 export function validateBalance(balance: Balance): void {
@@ -137,6 +170,18 @@ export function validateBalance(balance: Balance): void {
     check(`${kind}.attackIntervalTicks`, def.attackIntervalTicks);
     check(`${kind}.range`, def.range);
     check(`${kind}.radius`, def.radius, 0.001);
+    if (def.artillery) {
+      const a = def.artillery;
+      check(`${kind}.artillery.splashRadius`, a.splashRadius, 0.001);
+      check(`${kind}.artillery.edgeDamageRatio`, a.edgeDamageRatio, 0.001);
+      check(`${kind}.artillery.buildingMultiplier`, a.buildingMultiplier, 0.001);
+      check(`${kind}.artillery.shotSpeedCellsPerSec`, a.shotSpeedCellsPerSec, 0.001);
+      check(`${kind}.artillery.minFlightTicks`, a.minFlightTicks, 1);
+      check(`${kind}.artillery.maxFlightTicks`, a.maxFlightTicks, a.minFlightTicks);
+      check(`${kind}.artillery.minRange`, a.minRange);
+      if (a.minRange >= def.range) throw new Error(`Balance inválido: ${kind}.artillery.minRange=${a.minRange} no es menor que el alcance ${def.range}`);
+      if (a.edgeDamageRatio > 1) throw new Error(`Balance inválido: ${kind}.artillery.edgeDamageRatio=${a.edgeDamageRatio}`);
+    }
   }
   for (const [kind, def] of Object.entries(balance.buildings)) {
     check(`${kind}.cost.food`, def.cost.food);

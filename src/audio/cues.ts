@@ -1,6 +1,6 @@
 import { BALANCE } from "../content/balance";
 import { flameCount } from "../rendering/health";
-import type { BuildingDestroyedEvent, DeathEvent, GameState, SpawnEvent, StrikeEvent, WorkEvent } from "../core/types";
+import type { BuildingDestroyedEvent, DeathEvent, GameState, ImpactEvent, SpawnEvent, StrikeEvent, WorkEvent } from "../core/types";
 import { createRng, type Rng } from "./dsp";
 import { CUES, PLAYER_ONLY_CUES, type CueId } from "./voices";
 
@@ -37,6 +37,8 @@ export interface AudioFrame {
   spawns: readonly Seq<SpawnEvent>[];
   works: readonly Seq<WorkEvent>[];
   destroyed: readonly Seq<BuildingDestroyedEvent>[];
+  /** Impactos de artillería; ausentes en los marcos que no los traen. */
+  impacts?: readonly Seq<ImpactEvent>[];
   project: Projector;
 }
 
@@ -77,7 +79,7 @@ const WORK_CUE = { build: "hammer", wood: "axe", stone: "pick", food: "forage" }
 /** Traduce los eventos de la simulación en solicitudes de sonido; sin Web Audio. */
 export class CueTranslator {
   private rng: Rng;
-  private cursors = { strike: 0, death: 0, spawn: 0, work: 0, destroyed: 0 };
+  private cursors = { strike: 0, death: 0, spawn: 0, work: 0, destroyed: 0, impact: 0 };
   private endTick: number | null = null;
   private lastVariant = new Map<string, number>();
 
@@ -87,7 +89,7 @@ export class CueTranslator {
 
   /** Reinicia cursores y estado del fin de partida (nueva sesión). */
   reset(): void {
-    this.cursors = { strike: 0, death: 0, spawn: 0, work: 0, destroyed: 0 };
+    this.cursors = { strike: 0, death: 0, spawn: 0, work: 0, destroyed: 0, impact: 0 };
     this.endTick = null;
     this.rng = createRng(this.seed);
     this.lastVariant.clear();
@@ -156,7 +158,11 @@ export class CueTranslator {
         continue;
       }
       if (!visible(s.from)) continue;
-      const cue: CueId = s.attackerKind === "soldier" ? "sword" : s.attackerKind === "archer" ? "arrow" : "blow";
+      if (s.attackerKind === "cannon") {
+        emit("cannon", s.from, this.choose("cannon", CUES.cannon.variants));
+        continue;
+      }
+      const cue: CueId = s.attackerKind === "soldier" || s.attackerKind === "knight" ? "sword" : s.attackerKind === "archer" ? "arrow" : "blow";
       if (cue === "arrow") shoot(s, this.choose(cue, CUES[cue].variants), 0);
       else emit(cue, s.from, this.choose(cue, CUES[cue].variants));
     }
@@ -168,6 +174,7 @@ export class CueTranslator {
       if (!visible(d.pos)) continue;
       const [group, offset] = d.kind !== "villager" ? ["death:m", 3] : d.gender === "female" ? ["death:f", 6] : ["death:v", 0];
       emit("death", d.pos, this.choose(group, 3, offset));
+      if (d.kind === "knight") emit("neigh", d.pos, this.choose("neigh", CUES.neigh.variants), 0.05);
     }
     this.cursors.death = lastSeq(frame.deaths, this.cursors.death);
 
@@ -176,9 +183,19 @@ export class CueTranslator {
       if (!audibleFor("door", sp.owner)) continue;
       const b = frame.state.buildings.find((x) => x.id === sp.buildingId);
       const at = b ? buildingCenter(b.cell, BALANCE.buildings[b.kind].footprint) : sp.pos;
-      if (visible(at)) emit("door", at, 0);
+      if (visible(at)) {
+        emit("door", at, 0);
+        if (sp.kind === "knight") emit("neigh", at, this.choose("neigh", CUES.neigh.variants), 0.15);
+      }
     }
     this.cursors.spawn = lastSeq(frame.spawns, this.cursors.spawn);
+
+    // El retardo del vuelo ya está en el tick del impacto: el estruendo suena cuando la bala llega.
+    for (const im of frame.impacts ?? []) {
+      if (im.seq <= this.cursors.impact) continue;
+      if (visible(im.at)) emit("blast", im.at, this.choose("blast", CUES.blast.variants));
+    }
+    if (frame.impacts) this.cursors.impact = lastSeq(frame.impacts, this.cursors.impact);
 
     const gathered = new Set<CueId>();
     for (const w of frame.works) {

@@ -1,6 +1,6 @@
 import { BALANCE, type BuildingKind, type UnitKind } from "../content/balance";
 import type { EntityId, GameState } from "../core/types";
-import { combatLabel, describeSelection, type Selection, type SelectionInfo, type Side } from "../input/selection";
+import { combatLabel, describeSelection, rangeText, type Selection, type SelectionInfo, type Side } from "../input/selection";
 
 export interface PanelActions {
   build(kind: BuildingKind): void;
@@ -11,9 +11,9 @@ export interface PanelActions {
 }
 
 const HUMAN = 0;
-const UNIT_NAME: Record<UnitKind, string> = { villager: "aldeano", soldier: "soldado", archer: "arquero" };
-const UNIT_PLURAL: Record<UnitKind, string> = { villager: "aldeanos", soldier: "soldados", archer: "arqueros" };
-const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel", tower: "torre" };
+const UNIT_NAME: Record<UnitKind, string> = { villager: "aldeano", soldier: "soldado", archer: "arquero", knight: "caballero", cannon: "cañón" };
+const UNIT_PLURAL: Record<UnitKind, string> = { villager: "aldeanos", soldier: "soldados", archer: "arqueros", knight: "caballeros", cannon: "cañones" };
+const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel", tower: "torre", stable: "establo", armory: "armería" };
 const RESOURCES = ["food", "wood", "stone"] as const;
 type Resource = (typeof RESOURCES)[number];
 type Cost = { food: number; wood: number; stone: number };
@@ -57,6 +57,10 @@ const ICONS: Record<string, string> = {
   house: '<path d="M3 12 12 4l9 8h-2.5v8h-13v-8z"/>',
   barracks: '<path d="M3 20V9l9-5 9 5v11h-6v-6H9v6z"/><path d="M12 4V1h4v2h-4" fill="none" stroke="currentColor" stroke-width="1.5"/>',
   tower: '<path d="M7 21V8H5V3h3v2h2V3h4v2h2V3h3v5h-2v13z"/>',
+  stable: '<path d="M3 20V10l9-6 9 6v10h-4v-7H7v7z"/><path d="M9 20v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  armory: '<path d="M3 20v-6h18v6z"/><path d="M5 12h9l3-2h3v2h-3l-1 2H5z"/><circle cx="8" cy="17" r="1.6" fill="none" stroke="currentColor" stroke-width="1.2"/>',
+  knight: '<path d="M3 20c0-6 2-9 6-10l2-4 3 3 5 1-1 3-3 1v6h-2v-4H9v4z"/>',
+  cannon: '<path d="M3 12l12-4 3 4-12 4z"/><circle cx="8" cy="18" r="3"/><circle cx="20" cy="7" r="1.8"/>',
   villager: '<circle cx="12" cy="7" r="3"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8z"/><path d="M6 6h12" stroke="currentColor" stroke-width="2"/>',
   soldier: '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/>',
   archer: '<path d="M6 3c8 2 12 8 12 9s-4 7-12 9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 12h15m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="2"/>',
@@ -200,7 +204,7 @@ export class CommandPanel {
       c.stats.title = info.combat ? combatLabel(info.combat) : "";
       c.attackValue.textContent = info.combat ? String(info.combat.attack) : "";
       c.rangeBox.hidden = info.combat?.range == null;
-      c.rangeValue.textContent = info.combat?.range == null ? "" : String(info.combat.range).replace(".", ",");
+      c.rangeValue.textContent = info.combat ? rangeText(info.combat) : "";
       c.work.hidden = info.progress === null;
       if (info.progress !== null) c.workFill.style.width = `${Math.round(info.progress * 100)}%`;
       c.lines.textContent = info.lines.join("\n");
@@ -212,7 +216,7 @@ export class CommandPanel {
     if (selection.units.size > 1) {
       const counts = new Map<UnitKind, number>();
       for (const u of state.units) if (selection.units.has(u.id)) counts.set(u.kind, (counts.get(u.kind) ?? 0) + 1);
-      const detail = (["villager", "soldier", "archer"] as const).filter((k) => counts.has(k)).map((k) => `${counts.get(k)} ${UNIT_PLURAL[k]}`);
+      const detail = (["villager", "soldier", "archer", "knight", "cannon"] as const).filter((k) => counts.has(k)).map((k) => `${counts.get(k)} ${UNIT_PLURAL[k]}`);
       text = `${selection.units.size} unidades seleccionadas\n${detail.join(" · ")}`;
     } else text = "Seleccione unidades o un edificio propio";
     if (text === this.infoText) return;
@@ -254,7 +258,7 @@ export class CommandPanel {
 
     if (hasVillager) {
       const row = this.row("Construir:");
-      for (const kind of ["house", "barracks", "tower"] as const) {
+      for (const kind of ["house", "barracks", "stable", "armory", "tower"] as const) {
         const b = this.button(BUILDING_NAME[kind], `build:${kind}`, paused, kind, BALANCE.buildings[kind].cost);
         if (placing === kind) b.classList.add("active");
         row.append(b);

@@ -395,6 +395,72 @@ function defeat(rng: Rng): Float32Array {
   return finish(wet, sr);
 }
 
+/** Disparo de cañón: chasquido seco, estampido grave que baja de tono, retumbo de pólvora y eco corto del campo. */
+function cannon(variant: number, rng: Rng): Float32Array {
+  const sr = HI;
+  const seconds = 1.3;
+  const out = makeBuffer(seconds, sr);
+  const n = out.length;
+  addInto(out, highNoise(rng, n, sr, 2500, 0.006), 0, 0.8);
+  addInto(out, thump(150 - 10 * variant, 38, 0.5, sr, 0.11), 0, 1.2);
+  addInto(out, lowNoise(rng, n, sr, 700 - 60 * variant, 0.18), 0, 1);
+  addInto(out, bandNoise(rng, n, sr, 180, 0.8, 0.4), samples(0.05, sr), 0.6);
+  const echo = Math.round((0.28 + 0.04 * variant) * sr);
+  addInto(out, filter("lowpass", out.slice(0, n - echo), sr, 900), echo, 0.22);
+  softClip(out, 2);
+  return finish(out, sr, 0.95);
+}
+
+/** Impacto de bala: golpe sordo con subgrave, crujido de escombros que cae en ráfagas dispersas y retumbo que decae. */
+function blast(variant: number, rng: Rng): Float32Array {
+  const sr = HI;
+  const seconds = 1.35;
+  const out = makeBuffer(seconds, sr);
+  const n = out.length;
+  addInto(out, thump(90 - 8 * variant, 26, 0.6, sr, 0.14), 0, 1.3);
+  addInto(out, lowNoise(rng, n, sr, 500, 0.28), 0, 1);
+  addInto(out, brownNoise(rng, n), 0, 0.15);
+  const debris = makeBuffer(seconds, sr);
+  const bursts = 9 + 2 * variant;
+  for (let i = 0; i < bursts; i++) {
+    const at = 0.04 + rng.range(0, 0.5) * (1 + i / bursts);
+    const burst = bandNoise(rng, samples(0.05, sr), sr, 1500 + rng.range(0, 2500), 1.2, 0.012);
+    addInto(debris, burst, Math.round(at * sr), 0.5 * (1 - i / (bursts + 2)));
+  }
+  addInto(out, debris, 0, 0.55);
+  addInto(out, highNoise(rng, n, sr, 3000, 0.004), 0, 0.5);
+  softClip(out, 1.8);
+  return finish(out, sr, 0.95);
+}
+
+/** Relincho: voz glotal aguda que sube de golpe, vibra como un trino y cae, con formantes abiertos y soplo nasal. */
+function neigh(variant: number, rng: Rng): Float32Array {
+  const sr = LO;
+  const seconds = 0.8 + 0.03 * variant;
+  const n = samples(seconds, sr);
+  const base = 520 + 70 * variant;
+  const f0At = (t: number): number => {
+    const rise = 1 + 0.9 * smooth(t / 0.1);
+    const fall = 1 - 0.55 * Math.pow(Math.max(0, (t - 0.25) / (seconds - 0.25)), 1.1);
+    const trill = 1 + 0.06 * Math.sin(2 * Math.PI * 17 * t) * smooth((t - 0.15) / 0.2);
+    return base * rise * fall * trill;
+  };
+  const formantsAt = (t: number): readonly number[] => {
+    const m = smooth(t / 0.5);
+    return [800 - 250 * m, 1500 - 400 * m, 2800];
+  };
+  const voiced = normalize(formantFilter(glottalSource(rng, f0At, seconds, sr, 0.03, 0.06), sr, formantsAt, [1, 0.8, 0.45], 5), 1);
+  addInto(voiced, filter("bandpass", whiteNoise(rng, n), sr, 1800, 1.2), 0, 0.18);
+  const fadeAt = seconds - 0.2;
+  for (let i = 0; i < n; i++) {
+    const t = i / sr;
+    const fade = t > fadeAt ? 0.5 * (1 + Math.cos((Math.PI * (t - fadeAt)) / 0.2)) : 1;
+    voiced[i]! *= Math.min(1, t / 0.02) * fade;
+  }
+  softClip(voiced, 1.6);
+  return finish(voiced, sr, 0.85);
+}
+
 const variantsOf = (count: number, make: (variant: number, rng: Rng) => Float32Array, seed: number): Float32Array[] =>
   Array.from({ length: count }, (_, v) => make(v, createRng(seed + v * 101)));
 
@@ -468,5 +534,8 @@ export function buildSfxBank(seed = 1): SfxBank {
     defeat: entry(LO, [defeat(createRng(seed + 12))]),
     fire: entry(LO, [fire(rng)]),
     bird: entry(LO, variantsOf(CUES.bird.variants, bird, seed + 14)),
+    cannon: entry(HI, variantsOf(CUES.cannon.variants, cannon, seed + 15)),
+    blast: entry(HI, variantsOf(CUES.blast.variants, blast, seed + 16)),
+    neigh: entry(LO, variantsOf(CUES.neigh.variants, neigh, seed + 17)),
   };
 }

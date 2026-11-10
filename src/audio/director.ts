@@ -5,7 +5,7 @@ import type { AudioEngine } from "./engine";
 import type { CueId } from "./voices";
 
 /** Cues cuya aparición en pantalla indica un combate visible: las aves callan un rato. */
-const COMBAT_CUES: readonly CueId[] = ["sword", "arrow", "arrowHit", "blow", "death", "collapse"];
+const COMBAT_CUES: readonly CueId[] = ["sword", "arrow", "arrowHit", "blow", "death", "collapse", "cannon", "blast"];
 
 /** Une la sesión, la vista y el motor: el audio solo lee y nunca altera la partida. */
 export class AudioDirector {
@@ -29,6 +29,7 @@ export class AudioDirector {
       spawns: session.spawnLog,
       works: session.workLog,
       destroyed: session.destroyedLog,
+      impacts: session.impactLog,
       project,
     });
     for (const request of requests) this.engine.play(request);

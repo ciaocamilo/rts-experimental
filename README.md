@@ -25,7 +25,7 @@ Prototipo de estrategia en tiempo real (RTS) que se ejecuta en el navegador. Un 
 
 - **Partida 1 contra 1** sobre un mapa de 128x64 celdas con terreno, rocas, bosques y un río de lado a lado con un puente central (6 celdas) como único cruce. Cada bando parte con doce casas y dos torres ya construidas.
 - **Economía:** aldeanos y aldeanas que recolectan comida, madera y piedra, construyen casas, cuarteles y torres, y entrenan unidades con cola de producción y límite de población.
-- **Combate:** soldados y arqueros con rango, enfriamiento y ataque automático a menos de 6 celdas; las torres disparan flechas. Los centros urbanos (3 000 de vida) y las torres (1 600) resisten el doble que en las primeras etapas. Gana quien destruye el centro urbano rival; el límite es de 30 minutos (36 000 ticks) y, si ninguno cae, hay empate.
+- **Combate:** soldados, arqueros, caballeros y cañones con rango, enfriamiento y ataque automático a menos de 6 celdas; las torres disparan flechas y los cañones, balas de daño de área. Los centros urbanos (3 000 de vida) y las torres (1 600) resisten el doble que en las primeras etapas. Gana quien destruye el centro urbano rival; el límite es de 30 minutos (36 000 ticks) y, si ninguno cae, hay empate.
 - **IA en Python:** una política sin estado decide hasta 4 órdenes cada segundo. Se ejecuta en un worker aislado y se comunica con el juego mediante un contrato de mensajes versionado (`contracts/worker-v2`). La IA nunca modifica la simulación directamente: sus decisiones se validan y se agendan como órdenes para el siguiente tick.
 - **Núcleo determinista:** la simulación es TypeScript puro, avanza a 20 ticks por segundo y puede reproducirse solo con la semilla y el registro de órdenes.
 - **Aspecto procedural:** edificios medievales y personajes humanoides por rol, agua con shader, iluminación con sombras, fuego y humo por daño, derrumbes con escombros, hierba y bosques con viento. No hay recursos gráficos externos.
@@ -53,6 +53,7 @@ El proyecto se construye con **desarrollo guiado por especificaciones (SDD, Spec
 | 6 | Interfaz, río con puente, aldea inicial y ajustes de sonido |
 | 7 | Bosques, aves, retratos de selección, 12 casas por bando, partida de 30 minutos, ventana final y barra de castillo |
 | 8 | Identidad y pantalla: favicon y título de pestaña, bienvenida, pantalla completa, vista inicial sobre la ciudad, cursores de acción, botones de ladrillo y doble vida en centros urbanos y torres |
+| 9 | Caballería y artillería: establo (con caballos a la vista) y armería abierta con chimenea, caballero (galope doble de rápido con caballo animado) y cañón (alcance de 7,5 con distancia mínima, artillero que enciende la mecha, bala parabólica con daño de área, fogonazo, estruendo y unidades lanzadas por los aires) |
 
 Las etapas 3 y 4 no tienen captura propia: la defensa (torres con flechas) se ve en la imagen de portada y el sonido no se puede mostrar en imágenes. Las capturas de las etapas 0 a 2 conservan el aspecto de aquel momento para mostrar la evolución.
 
@@ -137,6 +138,27 @@ Botones superiores de ladrillo, con el botón de pantalla completa a la izquierd
 - **Botones de ladrillo:** mosaico SVG generado por código, texto crema con contraste mínimo de 4,5:1 y fila que se parte en varias líneas si la ventana es estrecha.
 - **Vida doble:** los centros urbanos pasan de 1 500 a 3 000 y las torres de 800 a 1 600, para ambos bandos.
 
+### Etapa 9: caballería y artillería
+
+Capturas de la escena `?fixture=artilleria&ai=0` (navegador integrado de VS Code).
+
+![Escena de artillería: dos cañones disparan sobre aldeanos y edificios rivales mientras tres caballeros cabalgan](docs/images/etapa9-artilleria.png)
+
+| Caballeros al galope | Cañones |
+|---|---|
+| ![Tres caballeros a caballo](docs/images/etapa9-caballeria.png) | ![Dos cañones con tubo, ruedas y bandera](docs/images/etapa9-canones.png) |
+
+![El establo con sus caballos y la armería abierta con la fragua y el humo de su chimenea](docs/images/etapa9-edificios.png)
+
+- **Establo** (175 de madera, 600 de vida): nave abierta con tres cuadras donde se ven **cuatro caballos** (castaño, oscuro y tordo; uno pasta fuera). Entrena **caballeros** (100 de comida y 50 de madera, 18 s). El caballero ataca igual que el soldado (daño 10, cada segundo, cuerpo a cuerpo) pero se desplaza al doble de velocidad (5 celdas/s). Tiene un caballo propio: cuerpo, cuello, cabeza, crin, cola, silla y cuatro patas articuladas con galope de cuatro tiempos, fase de suspensión, cabeceo, respiración y cola al viento; al parar se queda al paso, relincha al nacer y al morir y la espada suena al golpear.
+- **Armería** (200 de madera y 100 de piedra, 700 de vida): taller abierto por el frente y un costado, con fragua de brasas, yunque, un tubo sobre caballetes y balas apiladas, y una **chimenea que echa humo constante** (apagada en calidad baja). Fabrica **cañones** (200 de madera y 150 de piedra, 30 s), la unidad más cara. Tienen 120 de vida, avanzan despacio (1,5 celdas/s) y disparan cada 3 s con un alcance de **7,5 celdas** (un 50 % más que el arquero) pero con una **distancia mínima de 2,5**: si el blanco está más cerca, el cañón retrocede antes de disparar.
+- **Artillero:** cada cañón lo lleva una persona que lo empuja desde la cola al desplazarse y, antes de cada tiro, pasa junto a la culata y acerca la mecha encendida a la pólvora; tras el estampido se tapa un oído y se retira. Es solo un efecto visual: no es una unidad aparte, no cuenta población y desaparece con el cañón.
+- **Bala y daño de área:** la bala sale de la boca del tubo, sigue una parábola rápida (12 celdas/s; entre 4 y 14 ticks de vuelo) y cae en el punto donde estaba el blanco al disparar. Hace 50 de daño en el centro, que baja hasta 25 en el borde del radio de 2 celdas; a los edificios les hace el doble. No hay fuego amigo, y la bala ya disparada impacta aunque el cañón muera.
+- **Efectos:** el disparo tiene fogonazo con destello, chispas, humo y polvo, retroceso del tubo y respingo de la cureña; el impacto levanta una onda de choque, bola de fuego, humo, escombros, polvo y marcas de quemadura, y sacude la cámara y los edificios cercanos. Las unidades a menos de 2,5 celdas salen despedidas dando volteretas (solo efecto visual: no cambia las reglas ni el estado).
+- **Sonido:** tres efectos nuevos sintetizados, el disparo del cañón, el estruendo del impacto y el relincho del caballo, con variantes y límite de voces simultáneas.
+- **IA:** la política (policy-0.6) construye un establo y una armería, entrena caballeros y cañones (hasta 4), busca piedra para ellos, reserva madera para el cañón y hace que los caballeros esperen a que el cañón esté a unas 14 celdas del objetivo antes de cargar; también cuenta caballeros y cañones rivales como amenazas. El contrato con el worker sigue en la versión 2 (la observación ya llevaba todo; `rules` añade costes y huellas de las unidades y edificios nuevos) y la bala no se envía a Python. La IA solo se verificó con pruebas y partidas sin interfaz, no en el navegador.
+- **Interfaz:** el panel ofrece construir establo y armería con sus costes, retratos 3D del caballero y del cañón, y la ayuda (H) describe las unidades nuevas.
+
 ## Controles
 
 | Acción | Entrada |
@@ -176,6 +198,7 @@ Parámetros de URL útiles:
 | `?fixture=rio&ai=0` | Escena de la etapa 6: dos grupos de 20 unidades se cruzan por el puente y tres aldeanos intentan construir sobre el puente, junto a él y en la orilla |
 | `?fixture=retratos&ai=0` | Escena de la etapa 7: unidades propias y rivales con vidas variadas, casa, cuartel y torre propios y rivales, y una obra de casa al 45 % |
 | `?fixture=sonidos&ai=0` | Escena breve para oír todos los efectos (martillo, espada, flecha e impacto de flecha incluidos); añade `&final=victoria` o `&final=derrota` para oír los sonidos de fin de partida |
+| `?fixture=artilleria&ai=0` | Escena de la etapa 9: establo y armería propios, tres caballeros que cabalgan, dos cañones que disparan sobre nueve aldeanos y dos edificios rivales |
 | `?fixture=objetivo` | Escena de carga con IA: 100 unidades, 20 edificios y combate |
 | `?fixture=corridor20`, `crossing`, `crowd100`, `skirmish` | Escenas de prueba de navegación y combate, sin IA |
 
@@ -204,7 +227,7 @@ src/
   ui/           Panel de órdenes con tarjeta de selección, avisos temporales, miniatura, ventana final (end-dialog.ts), bienvenida (welcome.ts), pantalla completa (fullscreen.ts), barra de castillo y botones de ladrillo (castle-bar.ts)
   audio/        Efectos, aves de fondo (ambient.ts) y música sintetizados con Web Audio; solo lee los eventos de la simulación
   diagnostics/  Métricas de rendimiento e informe exportable
-python/policy/  Política de la IA (policy-0.4)
+python/policy/  Política de la IA (policy-0.6)
 contracts/      Esquemas y fixtures del contrato del worker
 tests/          Pruebas unitarias, de integración y de escenarios
 ```
@@ -215,9 +238,9 @@ Pila tecnológica: Vite 6, TypeScript 7 (modo estricto), Three.js 0.186, Pyodide
 
 ## Estado y mediciones
 
-Incrementos completados: etapas 0 y 1 (base, navegación, IA en worker, economía, combate, rival completo y estabilización) y etapas 2 a 8 (mejoras visuales, defensa y recursos, sonido, realismo audiovisual, interfaz y mundo, bosques, retratos y castillo, identidad y pantalla).
+Incrementos completados: etapas 0 y 1 (base, navegación, IA en worker, economía, combate, rival completo y estabilización) y etapas 2 a 9 (mejoras visuales, defensa y recursos, sonido, realismo audiovisual, interfaz y mundo, bosques, retratos y castillo, identidad y pantalla, caballería y artillería).
 
-Pruebas: 447 de TypeScript y 59 de Python.
+Pruebas: 504 de TypeScript y 73 de Python.
 
 Medición en un equipo con Ryzen 5 5600H y RTX 3050, Chromium, 1366x768, escena `objetivo` durante unos 6 minutos (anterior a la etapa 2 y no repetida con el aspecto actual):
 
@@ -235,6 +258,8 @@ En la etapa 7 solo se midió la fluidez de la partida por defecto en el navegado
 En simulación sin navegador (horizonte de 36 000 ticks), con la vida doble y cuatro aldeanos iniciales por bando (etapa 8): la IA gana al jugador pasivo en el tick 9 987 (6 178 en la etapa 7) y dos IA enfrentadas (semilla 5) llegan al límite y empatan en el tick 36 000 (en la etapa 7 terminaban en el tick 24 596), sin violaciones de reglas. No se comprobó la reproducción de esa partida concreta; la prueba de estabilidad sí reproduce con el mismo hash una partida de 36 000 ticks con centros urbanos indestructibles.
 
 En la etapa 8 la verificación en el navegador integrado se limitó a lo visible (bienvenida, vista inicial, botones, pantalla completa y cursores de hacha, cesta y pico); el cursor de espada solo se probó con pruebas unitarias y no se midió el rendimiento.
+
+En la etapa 9 la IA usa las unidades nuevas, así que las cifras cambian: gana al jugador pasivo en el tick 10 283 (9 987 en la etapa 8; construye establo y armería y entrena caballeros y cañones, sin órdenes rechazadas) y dos IA enfrentadas (semilla 5) siguen sin resolverse: a 24 000 ticks nadie ha ganado y con centros urbanos indestructibles llegan al límite de 36 000 con empate, sin violaciones de reglas, cada una con caballeros y cañones. En el navegador integrado se comprobó visualmente la escena `artilleria` (caballeros, cañones, disparo, impacto y unidades lanzadas); el panel de diagnóstico marcó una mediana de 60 FPS y un tick p95 de 0,2 ms en esa escena, una medición breve y sin repetir en una partida larga. No se comprobó en el navegador una partida contra la IA nueva. El sonido nuevo solo se probó con pruebas automáticas, no al oído.
 
 ## Limitaciones conocidas
 

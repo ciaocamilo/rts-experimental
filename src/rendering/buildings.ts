@@ -2,7 +2,11 @@ import * as THREE from "three";
 import type { BuildingKind } from "../content/balance";
 import type { AssetLibrary } from "./assets";
 import { mergeParts, type Part } from "./merge";
+import { STABLE_COATS, stableHorseGeometry } from "./mounts";
 import { gableRoof, type Materials, rhombusMarkGeometry, ringMarkGeometry, texBox, VISUAL } from "./models";
+
+/** Boca de la chimenea de la armería, en coordenadas locales del edificio: de aquí sale el humo constante. */
+export const CHIMNEY_TOP = [0.85, 2.9, -0.6] as const;
 
 export interface BuildingRig {
   root: THREE.Group;
@@ -166,6 +170,80 @@ function build(kind: BuildingKind, owner: 0 | 1, mat: Materials, cache: Geometry
     roofOf(roof, 2.8, 2.6, 0.8, mat.roofSlate, mat.planks);
     pole(roof, 0.9, [-1.3, 0.35, 0]);
     flag(roof, 0.6, 0.4, [-1.0, 1.0, 0]);
+  } else if (kind === "stable") {
+    // Establo: cobertizo abierto por delante con tres cuadras, un caballo en cada una, pesebre corrido y paja.
+    foundationTop = 0.25;
+    wallsHeight = 1.5;
+    box(foundation, 2.7, 0.25, 2.5, mat.stone, [0, 0.125, 0], 0.8);
+
+    box(walls, 2.5, 1.5, 0.14, mat.planks, [0, 0.75, -1.08], 0.7);
+    for (const x of [1.19, -1.19]) {
+      box(walls, 0.12, 0.6, 2.3, mat.planks, [x, 0.3, 0], 0.7);
+      box(walls, 0.1, 0.08, 2.3, mat.bark, [x, 1.43, 0]);
+    }
+    for (const [x, z] of [[1.25, 1.15], [-1.25, 1.15], [1.25, -1.15], [-1.25, -1.15]] as const) box(walls, 0.2, 1.55, 0.2, mat.bark, [x, 0.775, z]);
+    for (const x of [-0.4, 0.4]) {
+      box(walls, 0.07, 0.55, 1.5, mat.planks, [x, 0.275, 0.3], 0.7);
+      box(walls, 0.09, 0.07, 1.5, mat.bark, [x, 0.58, 0.3]);
+    }
+    box(walls, 2.5, 0.12, 0.12, mat.bark, [0, 1.43, 1.17]);
+    box(walls, 0.5, 0.07, 0.06, mat.team[owner], [0, 1.41, 1.24]);
+    put(walls, cache.get("horseshoe", () => new THREE.TorusGeometry(0.11, 0.025, 5, 10, Math.PI * 1.5).rotateZ(Math.PI * 0.75)), mat.steel, [0, 1.23, 1.22]);
+    box(walls, 2.2, 0.16, 0.26, mat.bark, [0, 0.08, 1.0]);
+    box(walls, 2.1, 0.06, 0.18, mat.straw, [0, 0.17, 1.0]);
+    for (const [x, z] of [[-1.05, 1.52], [-0.78, 1.62]] as const) box(walls, 0.34, 0.26, 0.28, mat.straw, [x, 0.13, z]);
+    // Tres caballos miran hacia el pesebre, cada uno con la cabeza a una altura distinta, y un cuarto pasta delante.
+    const horses = [
+      { coat: STABLE_COATS[0]!, x: -0.8, z: 0.35, neck: 0.2, yaw: 0.12, scale: 0.9 },
+      { coat: STABLE_COATS[1]!, x: 0, z: 0.35, neck: -0.12, yaw: 0, scale: 0.9 },
+      { coat: STABLE_COATS[2]!, x: 0.8, z: 0.35, neck: 0.55, yaw: -0.12, scale: 0.9 },
+      { coat: STABLE_COATS[0]!, x: 1.0, z: 1.55, neck: 0.9, yaw: 1.2, scale: 0.8 },
+    ];
+    horses.forEach((h, i) => put(walls, cache.get(`stable-horse:${i}`, () => stableHorseGeometry(h.coat, { neck: h.neck, scale: h.scale, yaw: h.yaw })), mat.animal, [h.x, 0, h.z]));
+
+    roofOf(roof, 2.9, 2.7, 0.95, mat.roofTile, mat.planks);
+    box(roof, 0.5, 0.3, 0.06, mat.planks, [0, 0.35, 1.36]);
+    pole(roof, 0.9, [-1.3, 0.4, 0]);
+    flag(roof, 0.55, 0.36, [-1.02, 1.1, 0]);
+  } else if (kind === "armory") {
+    // Armería: taller abierto de piedra por delante y por el costado, con fragua bajo la chimenea, yunque, un cañón en
+    // construcción sobre caballetes y pila de balas.
+    foundationTop = 0.3;
+    wallsHeight = 1.3;
+    box(foundation, 2.7, 0.3, 2.5, mat.stone, [0, 0.15, 0], 0.8);
+
+    box(walls, 2.5, 1.3, 0.2, mat.stone, [0, 0.65, -1.05], 0.7);
+    box(walls, 0.2, 1.3, 2.3, mat.stone, [-1.15, 0.65, 0], 0.7);
+    for (const [x, z] of [[1.25, 1.15], [-1.25, 1.15], [-1.25, -1.15], [1.25, -1.15], [1.25, 0]] as const) box(walls, 0.24, 1.35, 0.24, mat.steelDark, [x, 0.675, z]);
+    box(walls, 2.5, 0.12, 0.1, mat.steelDark, [0, 1.2, 1.17]);
+    box(walls, 0.1, 0.1, 2.3, mat.steelDark, [1.2, 1.25, 0]);
+    box(walls, 0.5, 0.07, 0.06, mat.team[owner], [0, 1.2, 1.24]);
+    // Fragua: hogar de piedra con brasas delante del conducto.
+    box(walls, 0.9, 0.45, 0.7, mat.stone, [0.8, 0.225, -0.7]);
+    box(walls, 0.4, 0.85, 0.4, mat.stone, [0.85, 0.875, -0.6]);
+    box(walls, 0.6, 0.04, 0.25, mat.ember, [0.8, 0.47, -0.42]);
+    // Yunque sobre un tocón.
+    box(walls, 0.34, 0.3, 0.34, mat.bark, [-0.1, 0.15, 0.2]);
+    box(walls, 0.16, 0.1, 0.14, mat.steelDark, [-0.1, 0.34, 0.2]);
+    box(walls, 0.46, 0.1, 0.2, mat.steelDark, [-0.1, 0.44, 0.2]);
+    box(walls, 0.2, 0.06, 0.1, mat.steelDark, [0.2, 0.45, 0.2]);
+    // Cañón en construcción sobre dos caballetes.
+    put(walls, cache.get("armory-barrel", () => new THREE.CylinderGeometry(0.11, 0.15, 0.95, 10).rotateX(Math.PI / 2)), mat.steelDark, [-0.72, 0.4, -0.35]);
+    for (const z of [-0.65, -0.05]) box(walls, 0.34, 0.22, 0.08, mat.bark, [-0.72, 0.11, z]);
+    // Banco de trabajo contra el muro.
+    box(walls, 0.9, 0.08, 0.4, mat.planks, [-0.55, 0.62, -0.78]);
+    for (const x of [-0.95, -0.15]) box(walls, 0.07, 0.6, 0.34, mat.bark, [x, 0.3, -0.78]);
+    const ball = cache.get("ball-pile", () => new THREE.SphereGeometry(0.09, 7, 5));
+    for (const [x, z] of [[1.0, 1.0], [0.84, 1.0], [0.68, 1.0], [0.92, 1.12], [0.76, 1.12]] as const) put(walls, ball, mat.steelDark, [x, 0.09, z]);
+    put(walls, ball, mat.steelDark, [0.84, 0.22, 1.05]);
+    box(walls, 0.5, 0.22, 0.3, mat.steelDark, [-1.0, 0.11, 1.5]);
+    box(walls, 0.3, 0.12, 0.2, mat.steelDark, [-1.0, 0.26, 1.5]);
+
+    roofOf(roof, 2.9, 2.7, 0.8, mat.roofSlate, mat.stone);
+    box(roof, 0.4, 1.0, 0.4, mat.stone, [0.85, 0.7, -0.6]);
+    box(roof, 0.5, 0.08, 0.5, mat.steelDark, [0.85, 1.22, -0.6]);
+    pole(roof, 0.8, [-1.3, 0.3, 0.0]);
+    flag(roof, 0.55, 0.36, [-1.02, 0.95, 0]);
   } else {
     // Torre de piedra: base ancha, fuste cónico, plataforma de madera con parapeto y techo de pizarra.
     foundationTop = 0.3;

@@ -66,6 +66,7 @@ export function createEmptyState(seed: number, mapWidth: number = MAP_WIDTH, map
     nextEntityId: 1,
     lastCommandSeq: 0,
     losses: { units: [0, 0], buildings: [0, 0] },
+    projectiles: [],
   };
 }
 
