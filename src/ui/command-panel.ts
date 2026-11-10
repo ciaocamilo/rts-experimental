@@ -11,8 +11,8 @@ export interface PanelActions {
 }
 
 const HUMAN = 0;
-const UNIT_NAME: Record<UnitKind, string> = { villager: "aldeano", soldier: "soldado", archer: "arquero", knight: "caballero", cannon: "cañón" };
-const UNIT_PLURAL: Record<UnitKind, string> = { villager: "aldeanos", soldier: "soldados", archer: "arqueros", knight: "caballeros", cannon: "cañones" };
+const UNIT_NAME: Record<UnitKind, string> = { villager: "aldeano", soldier: "soldado", archer: "arquero", knight: "caballero", cannon: "cañón", commander: "comandante" };
+const UNIT_PLURAL: Record<UnitKind, string> = { villager: "aldeanos", soldier: "soldados", archer: "arqueros", knight: "caballeros", cannon: "cañones", commander: "comandantes" };
 const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel", tower: "torre", stable: "establo", armory: "armería" };
 const RESOURCES = ["food", "wood", "stone"] as const;
 type Resource = (typeof RESOURCES)[number];

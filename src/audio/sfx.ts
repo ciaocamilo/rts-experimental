@@ -395,19 +395,42 @@ function defeat(rng: Rng): Float32Array {
   return finish(wet, sr);
 }
 
-/** Disparo de cañón: chasquido seco, estampido grave que baja de tono, retumbo de pólvora y eco corto del campo. */
+/** Cuerno de guerra: dos notas graves de ataque lento (≈ 3 s). La variante 1, más grave y descendente, anuncia la caída del comandante propio. */
+function warHorn(variant: number, rng: Rng): Float32Array {
+  const sr = LO;
+  const out = makeBuffer(3.2, sr);
+  const hz = (m: number): number => 440 * Math.pow(2, (m - 69) / 12);
+  const line: readonly (readonly [number, number, number])[] = variant === 0 ? [[43, 0, 1.2], [50, 1.3, 1.7]] : [[41, 0, 1.2], [36, 1.3, 1.7]];
+  for (const [midi, at, len] of line) {
+    place(out, horn(hz(midi), len, sr, rng), at, sr, 0.95);
+    place(out, horn(hz(midi) * 2, len, sr, rng), at, sr, 0.25);
+  }
+  place(out, drone(hz(variant === 0 ? 31 : 29), 3, sr, rng), 0, sr, 0.35);
+  const wet = reverb(out, sr, 0.2, 0, 0.4);
+  for (let i = 0; i < wet.length; i++) wet[i]! *= Math.max(0, 1 - Math.max(0, i / sr - 2.5) / 0.7);
+  return finish(wet, sr);
+}
+
+/**
+ * Disparo de cañón, grave y explosivo: onda de choque (ruido filtrado de ataque instantáneo), golpe de bombo que cae de
+ * tono, subgrave largo, cuerpo de pólvora en graves, retumbo que decae y eco del campo. La energía se concentra bajo 100 Hz.
+ */
 function cannon(variant: number, rng: Rng): Float32Array {
   const sr = HI;
-  const seconds = 1.3;
+  const seconds = 1.5;
   const out = makeBuffer(seconds, sr);
   const n = out.length;
-  addInto(out, highNoise(rng, n, sr, 2500, 0.006), 0, 0.8);
-  addInto(out, thump(150 - 10 * variant, 38, 0.5, sr, 0.11), 0, 1.2);
-  addInto(out, lowNoise(rng, n, sr, 700 - 60 * variant, 0.18), 0, 1);
-  addInto(out, bandNoise(rng, n, sr, 180, 0.8, 0.4), samples(0.05, sr), 0.6);
-  const echo = Math.round((0.28 + 0.04 * variant) * sr);
-  addInto(out, filter("lowpass", out.slice(0, n - echo), sr, 900), echo, 0.22);
-  softClip(out, 2);
+  addInto(out, lowNoise(rng, n, sr, 3500, 0.008), 0, 0.9);
+  addInto(out, highNoise(rng, n, sr, 1800, 0.003), 0, 0.35);
+  addInto(out, thump(140 - 8 * variant, 46, 0.22, sr, 0.05), 0, 1.1);
+  addInto(out, thump(95 - 6 * variant, 34, 0.8, sr, 0.17), 0, 1.3);
+  addInto(out, lowNoise(rng, n, sr, 320 - 30 * variant, 0.16), samples(0.004, sr), 1);
+  addInto(out, bandNoise(rng, n, sr, 100, 0.8, 0.4), samples(0.03, sr), 0.8);
+  addInto(out, filter("lowpass", brownNoise(rng, n), sr, 130), 0, 1.1);
+  const echo = Math.round((0.3 + 0.04 * variant) * sr);
+  addInto(out, filter("lowpass", out.slice(0, n - echo), sr, 400), echo, 0.28);
+  for (let i = 0; i < n; i++) out[i]! *= Math.exp(-i / (sr * 0.8)) * (1 + 0.5 * Math.exp(-i / (sr * 0.06)));
+  softClip(out, 1.8);
   return finish(out, sr, 0.95);
 }
 
@@ -433,31 +456,56 @@ function blast(variant: number, rng: Rng): Float32Array {
   return finish(out, sr, 0.95);
 }
 
-/** Relincho: voz glotal aguda que sube de golpe, vibra como un trino y cae, con formantes abiertos y soplo nasal. */
+/** Forma de cada relincho: tono inicial, pico del chillido, tiempos de subida y sostén, tono final, ritmo del traqueteo y si acaba en resoplido. */
+const NEIGH_SHAPES = [
+  { seconds: 1.1, start: 430, peak: 880, rise: 0.2, hold: 0.3, low: 330, pulse: 24, snort: true },
+  { seconds: 1.0, start: 470, peak: 980, rise: 0.16, hold: 0.22, low: 380, pulse: 30, snort: true },
+  { seconds: 1.2, start: 400, peak: 820, rise: 0.26, hold: 0.42, low: 300, pulse: 21, snort: false },
+  { seconds: 0.95, start: 520, peak: 1040, rise: 0.14, hold: 0.18, low: 420, pulse: 34, snort: true },
+] as const;
+
+/**
+ * Relincho: golpe de aliento, chillido que sube rápido hasta un pico brillante y se sostiene con vibrato irregular, y
+ * descenso con traqueteo (pulsos de amplitud, subarmónico caótico y formantes que se cierran), a veces con resoplido final.
+ */
 function neigh(variant: number, rng: Rng): Float32Array {
   const sr = LO;
-  const seconds = 0.8 + 0.03 * variant;
+  const shape = NEIGH_SHAPES[variant % NEIGH_SHAPES.length]!;
+  const { seconds, start, peak, rise, hold, low, pulse, snort } = shape;
   const n = samples(seconds, sr);
-  const base = 520 + 70 * variant;
+  const holdEnd = rise + hold;
+  const wobble = rng.range(0, 6);
   const f0At = (t: number): number => {
-    const rise = 1 + 0.9 * smooth(t / 0.1);
-    const fall = 1 - 0.55 * Math.pow(Math.max(0, (t - 0.25) / (seconds - 0.25)), 1.1);
-    const trill = 1 + 0.06 * Math.sin(2 * Math.PI * 17 * t) * smooth((t - 0.15) / 0.2);
-    return base * rise * fall * trill;
+    const up = start * Math.pow(peak / start, smooth(t / rise));
+    const down = Math.min(1, Math.max(0, (t - holdEnd) / (seconds - holdEnd - 0.1)));
+    const sweep = down > 0 ? peak * Math.pow(low / peak, Math.pow(down, 0.85)) : up;
+    const vib = 1 + 0.035 * Math.sin(2 * Math.PI * 6.8 * t + wobble) * smooth((t - 0.1) / 0.15) + 0.015 * Math.sin(2 * Math.PI * 13.1 * t + 2 * wobble);
+    return sweep * vib;
   };
   const formantsAt = (t: number): readonly number[] => {
-    const m = smooth(t / 0.5);
-    return [800 - 250 * m, 1500 - 400 * m, 2800];
+    const m = smooth((t - holdEnd) / 0.5);
+    const o = smooth(t / rise);
+    return [(600 + 300 * o) * (1 - 0.25 * m), (1500 + 600 * o) * (1 - 0.3 * m), 3300 - 500 * m];
   };
-  const voiced = normalize(formantFilter(glottalSource(rng, f0At, seconds, sr, 0.03, 0.06), sr, formantsAt, [1, 0.8, 0.45], 5), 1);
-  addInto(voiced, filter("bandpass", whiteNoise(rng, n), sr, 1800, 1.2), 0, 0.18);
-  const fadeAt = seconds - 0.2;
+  const voiced = normalize(formantFilter(glottalSource(rng, f0At, seconds, sr, 0.025, 0.08), sr, formantsAt, [1, 0.85, 0.5], 4), 1);
+  const rough = normalize(formantFilter(glottalSource(rng, (t) => 0.5 * f0At(t), seconds, sr, 0.06, 0.15), sr, formantsAt, [1, 0.85, 0.5], 4), 1);
+  const breath = filter("bandpass", whiteNoise(rng, n), sr, 2400, 0.7);
+  const voiceEnd = seconds - (snort ? 0.2 : 0.02);
   for (let i = 0; i < n; i++) {
     const t = i / sr;
-    const fade = t > fadeAt ? 0.5 * (1 + Math.cos((Math.PI * (t - fadeAt)) / 0.2)) : 1;
-    voiced[i]! *= Math.min(1, t / 0.02) * fade;
+    const down = smooth((t - holdEnd) / 0.3);
+    const rattle = 1 - 0.7 * down * (0.5 + 0.5 * Math.sin(2 * Math.PI * pulse * t));
+    const fade = t > voiceEnd - 0.15 ? 0.5 * (1 + Math.cos(Math.PI * Math.min(1, (t - (voiceEnd - 0.15)) / 0.15))) : 1;
+    const level = Math.min(1, t / 0.03) * fade * (1 - 0.15 * smooth((t - holdEnd) / 0.4));
+    voiced[i] = (voiced[i]! + rough[i]! * 0.35 * down + breath[i]! * 0.22 * (0.4 + 0.6 * smooth(t / rise))) * level * rattle;
   }
-  softClip(voiced, 1.6);
+  const gust = samples(0.07, sr);
+  addInto(voiced, multiply(filter("bandpass", whiteNoise(rng, gust), sr, 1500, 0.8), pluckEnv(gust, sr, 0.015, 0.025)), 0, 0.6);
+  if (snort) {
+    const len = samples(0.28, sr);
+    addInto(voiced, multiply(filter("bandpass", whiteNoise(rng, len), sr, 1400, 0.6), pluckEnv(len, sr, 0.03, 0.07)), Math.round((voiceEnd - 0.05) * sr), 1.1);
+  }
+  softClip(voiced, 1.5);
   return finish(voiced, sr, 0.85);
 }
 
@@ -537,5 +585,6 @@ export function buildSfxBank(seed = 1): SfxBank {
     cannon: entry(HI, variantsOf(CUES.cannon.variants, cannon, seed + 15)),
     blast: entry(HI, variantsOf(CUES.blast.variants, blast, seed + 16)),
     neigh: entry(LO, variantsOf(CUES.neigh.variants, neigh, seed + 17)),
+    horn: entry(LO, variantsOf(CUES.horn.variants, warHorn, seed + 18)),
   };
 }

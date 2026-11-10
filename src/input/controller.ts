@@ -2,15 +2,18 @@ import type { GameSession } from "../app/session";
 import { BALANCE, type BuildingKind } from "../content/balance";
 import { currentGrid } from "../core/obstacles";
 import { previewPlacement } from "../core/placement";
-import type { Command } from "../core/types";
+import type { Command, EntityId } from "../core/types";
 import type { SceneView } from "../rendering/scene-view";
 import { REJECT_TEXT } from "../ui/messages";
 import { type CameraRig, EDGE_MARGIN_PX, EDGE_SPEED_FACTOR, edgePan, type PanKeys } from "./camera-rig";
 import { type CursorKind, cursorCss, cursorFor, resolveRightClick, selectionCaps } from "./cursors";
-import { boxSelect, clearSelection, clickSelect, type Selection } from "./selection";
+import { boxSelect, clearSelection, clickSelect, selectArmy, selectCommander, selectSameTypeNearby, type Selection } from "./selection";
 
 const HUMAN = 0 as const;
 const DRAG_THRESHOLD_PX = 5;
+/** Dos clics sobre la misma unidad dentro de este margen (ms y px) cuentan como doble clic. */
+const DOUBLE_CLICK_MS = 350;
+const DOUBLE_CLICK_PX = 8;
 /** Intervalo máximo entre reevaluaciones del cursor con el ratón quieto (cambios de selección o unidades en movimiento). */
 const CURSOR_REFRESH_SEC = 0.1;
 const BUILDING_NAME: Record<BuildingKind, string> = { townCenter: "centro urbano", house: "casa", barracks: "cuartel", tower: "torre", stable: "establo", armory: "armería" };
@@ -44,6 +47,7 @@ export class InputController {
   private edge: PanKeys = { up: false, down: false, left: false, right: false };
   private readonly abort = new AbortController();
   private drag: { x: number; y: number; shift: boolean; active: boolean } | null = null;
+  private lastClick: { time: number; x: number; y: number; hit: EntityId } | null = null;
   private placement: BuildingKind | null = null;
   private pointer: { x: number; y: number } | null = null;
   private hover: { x: number; y: number } | null = null;
@@ -205,6 +209,16 @@ export class InputController {
     if (dir) {
       this.keys[dir] = down;
       e.preventDefault();
+    } else if (down && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && (e.code === "KeyE" || e.code === "KeyC") && this.hooks.getSession().state.mode === "battle") {
+      const state = this.hooks.getSession().state;
+      if (e.code === "KeyE") {
+        const count = selectArmy(this.hooks.selection, state, HUMAN);
+        if (count === 0) this.hooks.notify("No queda ejército");
+      } else {
+        const at = selectCommander(this.hooks.selection, state, HUMAN);
+        if (at) this.rig.centerOn(at.x, at.z);
+        else this.hooks.notify("El comandante ha caído");
+      }
     } else if (down && e.code === "Escape") {
       if (this.placement) {
         this.cancelPlacement();
@@ -254,7 +268,16 @@ export class InputController {
     this.cancelDrag();
     const state = this.hooks.getSession().state;
     if (!d.active) {
-      clickSelect(this.hooks.selection, state, this.view.pickEntity(e.clientX, e.clientY), d.shift, HUMAN);
+      const hit = this.view.pickEntity(e.clientX, e.clientY);
+      const prev = this.lastClick;
+      const double =
+        hit !== null && prev !== null && prev.hit === hit && e.timeStamp - prev.time <= DOUBLE_CLICK_MS && Math.hypot(e.clientX - prev.x, e.clientY - prev.y) <= DOUBLE_CLICK_PX;
+      if (double && selectSameTypeNearby(this.hooks.selection, state, hit, d.shift, HUMAN) > 0) {
+        this.lastClick = null;
+        return;
+      }
+      this.lastClick = hit === null ? null : { time: e.timeStamp, x: e.clientX, y: e.clientY, hit };
+      clickSelect(this.hooks.selection, state, hit, d.shift, HUMAN);
       return;
     }
     const x0 = Math.min(d.x, e.clientX);

@@ -23,8 +23,9 @@ describe("escenario inicial (RF-01, §4.2)", () => {
       expect(state.buildings.filter((b) => b.owner === owner && b.kind === "tower")).toHaveLength(2);
     }
     expect(state.buildings.every((b) => b.complete)).toBe(true);
-    expect(populationOf(state, 0)).toBe(4);
-    expect(populationOf(state, 1)).toBe(4);
+    // 4 aldeanos + 1 soldado, 1 arquero, 1 caballero y 1 cañón iniciales (P10-R29).
+    expect(populationOf(state, 0)).toBe(8);
+    expect(populationOf(state, 1)).toBe(8);
   });
 
   it("crea 16 nodos de madera, 8 de alimento y 8 de piedra por bando con 500 unidades (P3)", () => {

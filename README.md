@@ -23,7 +23,8 @@ Prototipo de estrategia en tiempo real (RTS) que se ejecuta en el navegador. Un 
 
 ## Resumen
 
-- **Partida 1 contra 1** sobre un mapa de 128x64 celdas con terreno, rocas, bosques y un río de lado a lado con un puente central (6 celdas) como único cruce. Cada bando parte con doce casas y dos torres ya construidas.
+- **Dos modos de juego**, elegidos en la ventana de bienvenida: **Modo villa** (economía, edificios y ejércitos, descrito abajo) y **Modo batalla** (solo ejércitos, etapa 10).
+- **Modo villa: partida 1 contra 1** sobre un mapa de 128x64 celdas con terreno, rocas, bosques y un río de lado a lado con un puente central (6 celdas) como único cruce. Cada bando parte con doce casas y dos torres ya construidas, cuatro aldeanos y un pequeño destacamento (un soldado, un arquero, un caballero y un cañón).
 - **Economía:** aldeanos y aldeanas que recolectan comida, madera y piedra, construyen casas, cuarteles y torres, y entrenan unidades con cola de producción y límite de población.
 - **Combate:** soldados, arqueros, caballeros y cañones con rango, enfriamiento y ataque automático a menos de 6 celdas; las torres disparan flechas y los cañones, balas de daño de área. Los centros urbanos (3 000 de vida) y las torres (1 600) resisten el doble que en las primeras etapas. Gana quien destruye el centro urbano rival; el límite es de 30 minutos (36 000 ticks) y, si ninguno cae, hay empate.
 - **IA en Python:** una política sin estado decide hasta 4 órdenes cada segundo. Se ejecuta en un worker aislado y se comunica con el juego mediante un contrato de mensajes versionado (`contracts/worker-v2`). La IA nunca modifica la simulación directamente: sus decisiones se validan y se agendan como órdenes para el siguiente tick.
@@ -54,7 +55,7 @@ El proyecto se construye con **desarrollo guiado por especificaciones (SDD, Spec
 | 7 | Bosques, aves, retratos de selección, 12 casas por bando, partida de 30 minutos, ventana final y barra de castillo |
 | 8 | Identidad y pantalla: favicon y título de pestaña, bienvenida, pantalla completa, vista inicial sobre la ciudad, cursores de acción, botones de ladrillo y doble vida en centros urbanos y torres |
 | 9 | Caballería y artillería: establo (con caballos a la vista) y armería abierta con chimenea, caballero (galope doble de rápido con caballo animado) y cañón (alcance de 7,5 con distancia mínima, artillero que enciende la mecha, bala parabólica con daño de área, fogonazo, estruendo y unidades lanzadas por los aires) |
-
+| 10 | Modo batalla: segundo modo de juego sin edificios ni aldeanos, con montañas, valles, bosques y ríos, ejércitos de 91 unidades por bando (con comandante), niebla de guerra, victoria por aniquilación y una IA que planifica la batalla y deja al comandante al frente. El modo existente pasa a llamarse «Modo villa» |
 Las etapas 3 y 4 no tienen captura propia: la defensa (torres con flechas) se ve en la imagen de portada y el sonido no se puede mostrar en imágenes. Las capturas de las etapas 0 a 2 conservan el aspecto de aquel momento para mostrar la evolución.
 
 ### Etapas 0 y 1: base, navegación y combate
@@ -150,7 +151,7 @@ Capturas de la escena `?fixture=artilleria&ai=0` (navegador integrado de VS Code
 
 ![El establo con sus caballos y la armería abierta con la fragua y el humo de su chimenea](docs/images/etapa9-edificios.png)
 
-- **Establo** (175 de madera, 600 de vida): nave abierta con tres cuadras donde se ven **cuatro caballos** (castaño, oscuro y tordo; uno pasta fuera). Entrena **caballeros** (100 de comida y 50 de madera, 18 s). El caballero ataca igual que el soldado (daño 10, cada segundo, cuerpo a cuerpo) pero se desplaza al doble de velocidad (5 celdas/s). Tiene un caballo propio: cuerpo, cuello, cabeza, crin, cola, silla y cuatro patas articuladas con galope de cuatro tiempos, fase de suspensión, cabeceo, respiración y cola al viento; al parar se queda al paso, relincha al nacer y al morir y la espada suena al golpear.
+- **Establo** (175 de madera, 600 de vida): nave abierta con tres cuadras donde se ven **cuatro caballos** (castaño, oscuro y tordo; uno pasta fuera). Entrena **caballeros** (100 de comida y 50 de madera, 18 s). El caballero ataca igual que el soldado (daño 10, cada segundo, cuerpo a cuerpo) pero se desplaza al doble de velocidad (5 celdas/s). Tiene un caballo propio: cuerpo, cuello, cabeza, crin, cola, silla y cuatro patas articuladas con galope de cuatro tiempos, fase de suspensión, cabeceo, respiración y cola al viento; al parar se queda al paso, relincha al nacer (al morir suena la persona, no el caballo) y la espada suena al golpear.
 - **Armería** (200 de madera y 100 de piedra, 700 de vida): taller abierto por el frente y un costado, con fragua de brasas, yunque, un tubo sobre caballetes y balas apiladas, y una **chimenea que echa humo constante** (apagada en calidad baja). Fabrica **cañones** (200 de madera y 150 de piedra, 30 s), la unidad más cara. Tienen 120 de vida, avanzan despacio (1,5 celdas/s) y disparan cada 3 s con un alcance de **7,5 celdas** (un 50 % más que el arquero) pero con una **distancia mínima de 2,5**: si el blanco está más cerca, el cañón retrocede antes de disparar.
 - **Artillero:** cada cañón lo lleva una persona que lo empuja desde la cola al desplazarse y, antes de cada tiro, pasa junto a la culata y acerca la mecha encendida a la pólvora; tras el estampido se tapa un oído y se retira. Es solo un efecto visual: no es una unidad aparte, no cuenta población y desaparece con el cañón.
 - **Bala y daño de área:** la bala sale de la boca del tubo, sigue una parábola rápida (12 celdas/s; entre 4 y 14 ticks de vuelo) y cae en el punto donde estaba el blanco al disparar. Hace 50 de daño en el centro, que baja hasta 25 en el borde del radio de 2 celdas; a los edificios les hace el doble. No hay fuego amigo, y la bala ya disparada impacta aunque el cañón muera.
@@ -159,6 +160,41 @@ Capturas de la escena `?fixture=artilleria&ai=0` (navegador integrado de VS Code
 - **IA:** la política (policy-0.6) construye un establo y una armería, entrena caballeros y cañones (hasta 4), busca piedra para ellos, reserva madera para el cañón y hace que los caballeros esperen a que el cañón esté a unas 14 celdas del objetivo antes de cargar; también cuenta caballeros y cañones rivales como amenazas. El contrato con el worker sigue en la versión 2 (la observación ya llevaba todo; `rules` añade costes y huellas de las unidades y edificios nuevos) y la bala no se envía a Python. La IA solo se verificó con pruebas y partidas sin interfaz, no en el navegador.
 - **Interfaz:** el panel ofrece construir establo y armería con sus costes, retratos 3D del caballero y del cañón, y la ayuda (H) describe las unidades nuevas.
 
+### Etapa 10: Modo batalla
+
+![Bienvenida con el Modo batalla seleccionado](docs/images/etapa10-menu.png)
+
+*Bienvenida con las dos tarjetas de modo (`?mode=battle` preselecciona la de batalla).*
+
+![Ejército del jugador formado: cinco cañones, arqueros, soldados, caballeros y el comandante](docs/images/etapa10-ejercito.png)
+
+*Inicio del Modo batalla (`?mode=battle&welcome=0&ai=0`): el ejército formado, con el comandante delante, el contador de ejército y la miniatura con la niebla de guerra.*
+
+![Mapa de batalla con montañas, bosques, río y puentes](docs/images/etapa10-mapa.png)
+
+*Escena `?fixture=batalla&ai=0` con la cámara abierta: montañas, bosques, río con puentes y el ejército propio en el extremo oeste; el rival no se ve.*
+
+- **Elección de modo:** la bienvenida muestra dos tarjetas, «Modo villa» y «Modo batalla» (clic, flechas izquierda y derecha o Tab), con el objetivo y los consejos de cada una. Durante la partida, el botón «Salir al menú» de la barra superior (con confirmación en una partida en curso) abandona la partida y vuelve a esta elección; elegir cualquier modo empieza una nueva. Tras una partida, «Volver al menú» en la ventana final hace lo mismo. `?mode=battle` preselecciona el modo batalla.
+- **Reglas:** sin edificios, aldeanos ni recursos. Cada bando tiene 8 cañones, 22 arqueros, 15 caballeros, 45 soldados y un comandante (91 unidades), formados en extremos opuestos del mapa y fuera de alcance de vista. Gana quien aniquila al ejército rival; a los 30 minutos (36 000 ticks) gana quien conserve más vida total y, si es igual, hay empate.
+- **Comandante:** como un caballero con **cuatro veces** su ataque (40) y su vida (400, que con la resistencia del modo suben a 1 200), con uniforme de gala (penacho alto, coraza con ribetes dorados, hombreras, gola y capa con estandarte) y un caballo mayor con gualdrapa del bando.
+- **Resistencia del modo:** en batalla, soldados, arqueros, caballeros, cañones y comandante tienen el triple de vida que en villa (300, 180, 300, 360 y 1 200) para que la batalla dure más. El modo villa no cambia.
+- **Escenario:** mapa de 128x64 celdas con simetría de giro de 180° para que ningún bando tenga ventaja: montañas (con varias cumbres, roca, ladera y nieve) y bosques infranqueables, valles transitables con sendero y flores, y un río principal con tres puentes al que desemboca un afluente continuo por mitad (la conexión entre ejércitos se comprueba al arrancar).
+
+![Montaña con roca y nieve junto al valle](docs/images/etapa10-montanas.png)
+
+![Río principal con puentes y el afluente que desemboca en él](docs/images/etapa10-rio-valle.png)
+
+- **Niebla de guerra:** la escena se oscurece fuera de lo que ven tus unidades; lo ya explorado queda atenuado y lo desconocido casi negro. Las unidades normales ven 14 celdas y el **comandante 30**, un campo muy amplio. Un enemigo solo se ve dentro de esos radios (se oculta en la escena y en la miniatura, que también se oscurece) y la IA recibe la misma información que el jugador. `?fog=0` desactiva el velo visual (solo depuración).
+
+![Niebla de guerra: el comandante ilumina un gran círculo de terreno](docs/images/etapa10-niebla.png)
+- **IA:** la política (policy-0.9) analiza el balance de fuerzas con lo que ve y elige un plan (marchar, mantener la línea, asaltar o replegarse sobre los cañones) según una personalidad (ofensiva, defensiva o envolvente) fijada por la semilla. Reparte órdenes por rol: el comandante lidera al frente y se retira si su vida baja del 40 % (si muere, el caballero más sano ocupa su lugar), los cañones disparan desde detrás de la línea, y soldados, arqueros y caballeros marchan, flanquean y asaltan. «Mantener la línea» ya no deja a nadie parado: toda unidad con un enemigo visible a 11 celdas o menos lo ataca, y los cañones sin infantería avanzan hacia el enemigo. Una orden de ataque repetida sobre el mismo blanco ya no reinicia la persecución (antes la IA repetía ~75 % de sus órdenes y la tropa trastabillaba). El contrato con el worker sigue en la versión 2. En simulación sin navegador gana 20 de 20 partidas a la carga ingenua (10 como cada jugador, semillas 1 a 10) y las partidas IA contra IA terminan en unos 1 100 a 1 450 ticks.
+- **Tiendas de campaña:** cinco por bando detrás de cada ejército, como escenario fijo e indestructible (bloquean el paso; no son edificios ni se pueden atacar), con banderín azul o rojo según el bando.
+- **Formación:** en batalla, un grupo que recibe una orden de mover avanza trasladando su forma (cada unidad conserva su puesto relativo) y al paso de la más lenta; al atacar cada una recupera su velocidad.
+- **Interfaz:** contador de ejército (comandante, caballeros, soldados, arqueros, cañones y enemigos a la vista) en lugar de los recursos, ayuda distinta por modo, y ventana final con el resultado y las bajas de cada ejército.
+- **Controles nuevos:** E selecciona todo el ejército y C selecciona el comandante y centra la cámara en él.
+- **Sonido:** un cuerno de guerra suena al empezar la batalla y otro, más grave, al caer el comandante propio. Al morir un caballero o el comandante suena el grito de la persona, no el relincho; el cañón dispara con un estruendo más grave y explosivo.
+- **Modo villa:** la simulación del modo villa se comprobó idéntica a la de la etapa 9 (mismo hash de partida) hasta añadir los militares iniciales (un soldado, un arquero, un caballero y un cañón por bando): los ids de aldeanos, nodos y edificios no cambian y el hash cambia solo por esas unidades.
+
 ## Controles
 
 | Acción | Entrada |
@@ -166,12 +202,13 @@ Capturas de la escena `?fixture=artilleria&ai=0` (navegador integrado de VS Code
 | Pantalla completa | Tecla F o botón con icono de esquinas |
 | Cámara | WASD o flechas, o cursor en el borde de la pantalla (24 px, 1,5 veces más rápido; hacia abajo, en el borde inferior de la pantalla, sobre la barra de abajo); rueda para acercar o alejar (hasta 7 veces); clic o arrastre en la miniatura |
 | Registros técnicos | Tecla L o botón «Registros» |
-| Seleccionar | Clic o arrastre; Shift suma o quita; Esc limpia (el clic en un edificio, enemigo o recurso solo muestra su retrato e información) |
+| Seleccionar | Clic o arrastre; **doble clic** sobre una unidad propia selecciona las del mismo tipo a 12 celdas o menos; Shift suma o quita; Esc limpia (el clic en un edificio, enemigo o recurso solo muestra su retrato e información) |
 | Ventana final | Tab recorre los botones, Intro reinicia, Esc cierra la ventana; el botón «Resultado» la reabre |
 | Mover, recolectar, atacar, reanudar obra | Clic derecho según el objetivo |
 | Construir | Seleccionar aldeanos y usar el panel inferior |
 | Entrenar | Clic en un edificio propio |
 | Ayuda | Tecla H o botón «Ayuda» |
+| Modo batalla | E selecciona todo el ejército; C selecciona el comandante y centra la cámara |
 | Audio | Tecla M silencia o reactiva todo; los botones «Música» y «Efectos» activan cada uno por separado (se recuerdan en el navegador) |
 
 ## Puesta en marcha
@@ -191,6 +228,7 @@ Parámetros de URL útiles:
 |---|---|
 | `?ai=0` | Desactiva la IA |
 | `?welcome=0` | Omite la ventana de bienvenida |
+| `?mode=battle` | Preselecciona el Modo batalla en la bienvenida (por defecto, Modo villa) |
 | `?audio=0` | Desactiva todo el audio |
 | `?graphics=low` | Modo gráfico reducido (aspecto de la etapa 4): sin antialias, sombras, agua animada ni partículas, con menos decoración y flechas simples |
 | `?shadows=0` | Desactiva solo las sombras proyectadas del modo gráfico alto |
@@ -200,6 +238,8 @@ Parámetros de URL útiles:
 | `?fixture=sonidos&ai=0` | Escena breve para oír todos los efectos (martillo, espada, flecha e impacto de flecha incluidos); añade `&final=victoria` o `&final=derrota` para oír los sonidos de fin de partida |
 | `?fixture=artilleria&ai=0` | Escena de la etapa 9: establo y armería propios, tres caballeros que cabalgan, dos cañones que disparan sobre nueve aldeanos y dos edificios rivales |
 | `?fixture=objetivo` | Escena de carga con IA: 100 unidades, 20 edificios y combate |
+| `?fixture=batalla` | Escena de la etapa 10: los dos ejércitos completos del Modo batalla en sus posiciones iniciales |
+| `?fixture=comandante` | Escena de la etapa 10: un caballero y un comandante por bando, para comparar uniformes |
 | `?fixture=corridor20`, `crossing`, `crowd100`, `skirmish` | Escenas de prueba de navegación y combate, sin IA |
 
 ## Comandos
@@ -227,7 +267,7 @@ src/
   ui/           Panel de órdenes con tarjeta de selección, avisos temporales, miniatura, ventana final (end-dialog.ts), bienvenida (welcome.ts), pantalla completa (fullscreen.ts), barra de castillo y botones de ladrillo (castle-bar.ts)
   audio/        Efectos, aves de fondo (ambient.ts) y música sintetizados con Web Audio; solo lee los eventos de la simulación
   diagnostics/  Métricas de rendimiento e informe exportable
-python/policy/  Política de la IA (policy-0.6)
+python/policy/  Política de la IA (policy-0.9; battle.py es la del Modo batalla)
 contracts/      Esquemas y fixtures del contrato del worker
 tests/          Pruebas unitarias, de integración y de escenarios
 ```
@@ -238,9 +278,9 @@ Pila tecnológica: Vite 6, TypeScript 7 (modo estricto), Three.js 0.186, Pyodide
 
 ## Estado y mediciones
 
-Incrementos completados: etapas 0 y 1 (base, navegación, IA en worker, economía, combate, rival completo y estabilización) y etapas 2 a 9 (mejoras visuales, defensa y recursos, sonido, realismo audiovisual, interfaz y mundo, bosques, retratos y castillo, identidad y pantalla, caballería y artillería).
+Incrementos completados: etapas 0 y 1 (base, navegación, IA en worker, economía, combate, rival completo y estabilización) y etapas 2 a 10 (mejoras visuales, defensa y recursos, sonido, realismo audiovisual, interfaz y mundo, bosques, retratos y castillo, identidad y pantalla, caballería y artillería, Modo batalla).
 
-Pruebas: 504 de TypeScript y 73 de Python.
+Pruebas: 588 de TypeScript y 109 de Python.
 
 Medición en un equipo con Ryzen 5 5600H y RTX 3050, Chromium, 1366x768, escena `objetivo` durante unos 6 minutos (anterior a la etapa 2 y no repetida con el aspecto actual):
 
@@ -269,7 +309,8 @@ En la etapa 9 la IA usa las unidades nuevas, así que las cifras cambian: gana a
 - El audio es procedural y su mezcla está pendiente de la valoración auditiva del autor; el navegador solo lo activa tras el primer clic o tecla.
 - Existe un único nivel de IA; no se ha medido la dificultad ni la diversión.
 - La escena `objetivo` pierde unidades durante el combate, así que los p95 cubren toda la medición y no solo el pico de 100 unidades.
-- Fuera de alcance por ahora: mantener posición, mover atacando y niebla de guerra.
+- Fuera de alcance por ahora: mantener posición, mover atacando y, en el Modo villa, niebla de guerra (solo existe en el Modo batalla).
+- La IA del Modo batalla se verificó con pruebas y partidas sin interfaz; en el navegador solo se comprobó visualmente el arranque, la selección del comandante y la ventana final, no una batalla completa. El cuerno de guerra solo se probó con pruebas automáticas, no al oído.
 
 ## Licencia
 

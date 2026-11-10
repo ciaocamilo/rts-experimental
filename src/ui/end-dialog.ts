@@ -1,10 +1,14 @@
-import type { EndSummary, MatchResultLabel } from "../core/result";
+import type { ArmyRow, EndSummary, MatchResultLabel } from "../core/result";
+
+const UNIT_NAME = { villager: "Aldeanos", soldier: "Soldados", archer: "Arqueros", knight: "Caballeros", cannon: "Cañones", commander: "Comandante" } as const;
 
 export interface EndDialogActions {
   /** «Jugar de nuevo»: reinicia la partida. */
   restart(): void;
   /** «Ver el campo»: cierra la ventana y deja ver el campo con el resultado visible. */
   dismiss(): void;
+  /** «Volver al menú»: vuelve a la pantalla de inicio para elegir el modo. */
+  menu?(): void;
 }
 
 const SHIELD: Record<MatchResultLabel, { fill: string; mark: string }> = {
@@ -39,6 +43,7 @@ function node<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, 
 export class EndDialog {
   private readonly restartButton: HTMLButtonElement;
   private readonly closeButton: HTMLButtonElement;
+  private readonly menuButton: HTMLButtonElement;
   private readonly title: HTMLElement;
   private readonly reason: HTMLElement;
   private readonly crest: HTMLElement;
@@ -63,10 +68,14 @@ export class EndDialog {
     this.restartButton.type = "button";
     this.closeButton = node("button", "", "Ver el campo", buttons);
     this.closeButton.type = "button";
+    this.menuButton = node("button", "", "Volver al menú", buttons);
+    this.menuButton.type = "button";
+    this.menuButton.hidden = !actions.menu;
     root.setAttribute("aria-labelledby", "end-title");
     root.setAttribute("aria-describedby", "end-reason");
     this.restartButton.addEventListener("click", () => this.actions.restart());
     this.closeButton.addEventListener("click", () => this.actions.dismiss());
+    this.menuButton.addEventListener("click", () => this.actions.menu?.());
     root.addEventListener("keydown", (event) => {
       if (root.hidden) return;
       if (event.key === "Escape") {
@@ -78,7 +87,7 @@ export class EndDialog {
         event.stopPropagation();
         this.actions.restart();
       } else if (event.key === "Tab") {
-        const order = [this.restartButton, this.closeButton];
+        const order = [this.restartButton, this.closeButton, ...(this.menuButton.hidden ? [] : [this.menuButton])];
         const at = order.indexOf(document.activeElement as HTMLButtonElement);
         const next = order[(at + (event.shiftKey ? order.length - 1 : 1)) % order.length]!;
         event.preventDefault();
@@ -102,10 +111,21 @@ export class EndDialog {
       node("dd", "", value, this.stats);
     };
     row("Duración", summary.duration);
-    row("Bajas propias", `${summary.ownLosses.units} unidades · ${summary.ownLosses.buildings} edificios`);
-    row("Bajas rivales", `${summary.rivalLosses.units} unidades · ${summary.rivalLosses.buildings} edificios`);
-    row("Centro urbano propio", summary.centers.own);
-    row("Centro urbano rival", summary.centers.rival);
+    if (summary.armies) {
+      const text = (rows: readonly ArmyRow[]): string => {
+        const parts = rows.map((r) => `${UNIT_NAME[r.kind]} ${r.survivors}/${r.survivors + r.casualties}`);
+        return `${parts.slice(0, 2).join(" · ")}\n${parts.slice(2).join(" · ")}`;
+      };
+      row("Tu ejército (en pie)", text(summary.armies.own));
+      row("Ejército rival (en pie)", text(summary.armies.rival));
+      row("Bajas propias", `${summary.ownLosses.units} unidades`);
+      row("Bajas rivales", `${summary.rivalLosses.units} unidades`);
+    } else {
+      row("Bajas propias", `${summary.ownLosses.units} unidades · ${summary.ownLosses.buildings} edificios`);
+      row("Bajas rivales", `${summary.rivalLosses.units} unidades · ${summary.rivalLosses.buildings} edificios`);
+      row("Centro urbano propio", summary.centers.own);
+      row("Centro urbano rival", summary.centers.rival);
+    }
     if (this.root.hidden) this.opener = document.activeElement as HTMLElement | null;
     this.root.hidden = false;
     this.restartButton.focus();

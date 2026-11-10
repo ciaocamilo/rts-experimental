@@ -1,8 +1,9 @@
 import { FixedStepper } from "../core/fixed-step";
+import { createBattleState } from "../core/battle";
 import type { Fixture } from "../core/fixtures";
 import { createInitialState } from "../core/state";
 import { stepSimulation } from "../core/simulation";
-import type { BuildingDestroyedEvent, Command, CommandResult, DeathEvent, GameState, ImpactEvent, SpawnEvent, StrikeEvent, WorkEvent } from "../core/types";
+import type { BuildingDestroyedEvent, Command, CommandResult, DeathEvent, GameMode, GameState, ImpactEvent, SpawnEvent, StrikeEvent, WorkEvent } from "../core/types";
 
 /** Se conservan solo los ataques recientes: la vista los consume en el mismo cuadro. */
 const STRIKE_LOG_LIMIT = 256;
@@ -58,8 +59,8 @@ export class GameSession {
   private pending: Command[] = [];
   private seq = 0;
 
-  constructor(readonly seed: number, fixture?: Fixture) {
-    this.state = fixture ? fixture.state : createInitialState(seed);
+  constructor(readonly seed: number, fixture?: Fixture, mode: GameMode = "village") {
+    this.state = fixture ? fixture.state : mode === "battle" ? createBattleState(seed) : createInitialState(seed);
     for (const command of fixture?.commands ?? []) {
       this.submit(command);
       this.seq = Math.max(this.seq, command.seq);

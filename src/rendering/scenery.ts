@@ -3,7 +3,7 @@ export interface SceneryRect {
   z: number;
   w: number;
   h: number;
-  kind?: "water" | "bridge" | "forest";
+  kind?: "water" | "bridge" | "forest" | "mountain" | "valley" | "camp";
 }
 
 export interface TreeSpec {
@@ -64,7 +64,7 @@ export function planScenery(_width: number, _depth: number, terrain: readonly Sc
   const forestVariant = (): 0 | 1 | 2 => Math.min(2, Math.floor(forestRng() * 3)) as 0 | 1 | 2;
 
   for (const t of terrain) {
-    if (t.kind === "water" || t.kind === "bridge") continue;
+    if (t.kind === "water" || t.kind === "bridge" || t.kind === "mountain" || t.kind === "valley" || t.kind === "camp") continue;
     if (t.kind === "forest") {
       for (let i = 0; i < t.w; i++) {
         for (let j = 0; j < t.h; j++) {

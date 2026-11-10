@@ -75,6 +75,8 @@ export interface Unit {
   path: Vec2[];
   needsPath: boolean;
   stuckTicks: number;
+  /** Tope de velocidad (celdas/s) mientras avanza en bloque (modo batalla); ausente = su velocidad propia. */
+  pace?: number;
   repaths: number;
   blockedReason: BlockReason | null;
   carry: Carry | null;
@@ -92,7 +94,7 @@ export interface TerrainRect {
   w: number;
   h: number;
   /** El agua bloquea igual que la roca; el puente se camina pero no admite obras. Ausente = roca. */
-  kind?: "water" | "bridge" | "forest";
+  kind?: "water" | "bridge" | "forest" | "mountain" | "valley" | "camp";
 }
 
 export interface QueueItem {
@@ -129,6 +131,9 @@ export interface ResourceNode {
 
 export type MatchStatus = "playing" | "ended";
 
+/** P10: villa (aldea y centro urbano) o batalla (solo ejércitos, gana quien aniquila al rival). */
+export type GameMode = "village" | "battle";
+
 /** Instantánea del edificio principal de un bando, tomada en el tick terminal antes de retirar entidades. */
 export interface MainBuildingFinal {
   id: EntityId;
@@ -148,10 +153,10 @@ export interface Losses {
   buildings: [number, number];
 }
 
-/** `winner: null` es empate. */
+/** `winner: null` es empate. `ARMY_DESTROYED` solo en el modo batalla. */
 export interface MatchOutcome {
   winner: PlayerId | null;
-  reason: "TOWN_CENTER_DESTROYED" | "TIME_LIMIT";
+  reason: "TOWN_CENTER_DESTROYED" | "TIME_LIMIT" | "ARMY_DESTROYED";
   endTick: number;
   mainBuildings: MainBuildingFinal[];
   casualties: Losses;
@@ -159,6 +164,7 @@ export interface MatchOutcome {
 
 export interface GameState {
   schemaVersion: number;
+  mode: GameMode;
   seed: number;
   tick: number;
   matchStatus: MatchStatus;
@@ -245,7 +251,8 @@ export type RejectCode =
   | "BLOCKS_PATH"
   | "SITE_BUSY"
   | "NOT_COMPLETE"
-  | "NOT_IMPLEMENTED";
+  | "NOT_IMPLEMENTED"
+  | "NOT_IN_MODE";
 
 export type CommandResult =
   | { commandId: string; accepted: true; assigned?: number; total?: number }

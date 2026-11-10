@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { BALANCE, type BuildingKind, type ResourceKind, TICKS_PER_SECOND, type UnitKind } from "../content/balance";
-import type { Building, BuildingDestroyedEvent, GameState, ImpactEvent, ResourceNode, StrikeEvent, Unit } from "../core/types";
+import type { Building, BuildingDestroyedEvent, GameMode, GameState, ImpactEvent, ResourceNode, StrikeEvent, Unit } from "../core/types";
+import { visibleEnemies } from "../core/battle";
+import { maxHpOf } from "../core/state";
 import type { CameraRig } from "../input/camera-rig";
 import { AirborneTracker, LAND_RECOVER_S, type Launch, launchOffset, launchProfile } from "./airborne";
 import { AssetLibrary, type Quality } from "./assets";
@@ -15,8 +17,10 @@ import { Lighting } from "./lighting";
 import { buildBushGeometries, buildTreeGeometries, Materials, VISUAL } from "./models";
 import { NodeFactory, type NodeRig, setNodeSpent } from "./nodes";
 import type { PortraitKit } from "./portrait";
-import { CANNON, CREW, cannonPose, computePose, crewPose, deathPose, deathState, gallopPose, type WorkKind } from "./pose";
+import { CANNON, CREW, cannonPose, computePose, crewPose, deathPose, deathState, gallopPose, strideLength, type WorkKind } from "./pose";
 import { TerrainView } from "./terrain-view";
+import { FogOverlay } from "./fog-overlay";
+import type { VisionMap } from "../core/vision";
 import { type BridgeRect, walkHeight } from "./bridge";
 import { applyCannon, applyCrew, applyDeath, applyHorse, applyPose, setYaw, UnitFactory, type UnitRig } from "./units";
 
@@ -45,8 +49,6 @@ const DUST_PUFFS = 7;
 /** Velocidad (celdas/s) con la que el caballo está a galope completo, y rapidez con que se mezcla el aire de la marcha. */
 const GALLOP_SPEED = 5;
 const GAIT_BLEND_RATE = 5;
-/** Celdas recorridas por ciclo de zancada: a galope completo, 5 celdas/s dan unos 2,2 ciclos por segundo. */
-const STRIDE_LENGTH = 2.3;
 const REAR_S = 0.7;
 /** Velocidad con que el artillero cambia de puesto y baja la mecha (1/s). */
 const CREW_STATION_RATE = 7;
@@ -118,6 +120,8 @@ interface UnitEntry extends Base {
   cooldown: number;
   crewStation: number;
   crewLight: number;
+  /** Batalla: unidad rival fuera de la vista del jugador; no se dibuja ni se puede seleccionar. */
+  unseen: boolean;
 }
 interface BuildingEntry extends Base {
   type: "building";
@@ -157,6 +161,7 @@ interface Bar {
 /** Altura de la barra de vida, anchura y radio del anillo de selección de las unidades que no son de talla humana. */
 const UNIT_LOOK: Partial<Record<UnitKind, { barY: number; barWidth: number; ringScale: number }>> = {
   knight: { barY: 2.0, barWidth: 1.1, ringScale: 1.5 },
+  commander: { barY: 2.3, barWidth: 1.5, ringScale: 1.9 },
   cannon: { barY: 1.5, barWidth: 1.2, ringScale: 2.4 },
 };
 
@@ -175,6 +180,7 @@ export class SceneView {
   private readonly buildingProxyMaterial: THREE.MeshBasicMaterial;
   private readonly nodes: NodeFactory;
   private readonly terrain: TerrainView;
+  private fogOverlay: FogOverlay | null = null;
   private readonly lighting: Lighting;
   private readonly arrows: ArrowPool;
   private readonly cannonballs: CannonballPool;
@@ -341,6 +347,10 @@ export class SceneView {
   /** La unidad dejó de existir en el estado: su figura queda como cuerpo cosmético (P2-H09). */
   private layDown(entry: UnitEntry): void {
     entry.proxy.visible = false;
+    if (entry.unseen) {
+      this.entityRoot.remove(entry.rig.root);
+      return;
+    }
     const id = entry.proxy.userData["id"] as number;
     const launch = this.airborne.get(id) ?? null;
     const flying = launch !== null && this.animTime - launch.startedAt < launch.profile.duration;
@@ -373,9 +383,14 @@ export class SceneView {
       live.add(b.id);
       this.syncBuilding(b);
     }
+    const fog = state.mode === "battle" && state.matchStatus === "playing" ? new Set(visibleEnemies(state, 0).map((e) => e.id)) : null;
     for (const u of state.units) {
       live.add(u.id);
-      this.syncUnit(u);
+      this.syncUnit(u, state.mode);
+      const entry = this.entries.get(u.id) as UnitEntry;
+      entry.unseen = fog !== null && u.owner === 1 && !fog.has(u.id);
+      entry.root.visible = !entry.unseen;
+      entry.pickable = !entry.unseen;
     }
     // Antes de retirar entidades: las unidades muertas por la explosión aún existen aquí y heredan el lanzamiento.
     this.consumeImpacts(ctx.impacts ?? []);
@@ -439,7 +454,7 @@ export class SceneView {
   }
 
   private syncTerrain(state: GameState): void {
-    const key = `${state.mapWidth}x${state.mapDepth}:${state.terrain.length}`;
+    const key = `${state.mode}:${state.mapWidth}x${state.mapDepth}:${state.terrain.length}`;
     if (key === this.terrainKey) return;
     this.terrainKey = key;
     this.bridges = state.terrain.filter((t) => t.kind === "bridge");
@@ -504,8 +519,7 @@ export class SceneView {
     entry.complete = b.complete;
   }
 
-  private syncUnit(u: Unit): void {
-    const def = BALANCE.units[u.kind];
+  private syncUnit(u: Unit, mode: GameMode): void {
     let entry = this.entries.get(u.id) as UnitEntry | undefined;
     if (!entry) {
       const rig = this.units.create(u.kind, u.owner, this.quality === "high", u.gender === "female");
@@ -522,7 +536,7 @@ export class SceneView {
         root: rig.root,
         proxy: rig.proxy,
         hp: u.hp,
-        max: def.hp,
+        max: maxHpOf(u.kind, mode),
         barWidth: look?.barWidth ?? 0.9,
         barY: look?.barY ?? VISUAL.unitHeight + VISUAL.barOffset,
         ringScale: look?.ringScale ?? 1,
@@ -544,6 +558,7 @@ export class SceneView {
         cooldown: 0,
         crewStation: 0,
         crewLight: 0,
+        unseen: false,
       };
       this.entries.set(u.id, entry);
     }
@@ -657,7 +672,7 @@ export class SceneView {
         if (this.warnings.length < 20) this.warnings.push(`Barra de vida omitida: máximo inválido para la entidad ${id}`);
       }
       let bar = this.bars.get(id);
-      if (!state.visible) {
+      if (!state.visible || (entry.type === "unit" && entry.unseen)) {
         if (bar) bar.group.visible = false;
         continue;
       }
@@ -717,12 +732,14 @@ export class SceneView {
         if (elapsed < 1.2) combatPhase = Math.min(1, elapsed + (entry.kind === "soldier" ? 0.15 : 0));
       }
       const t = this.animTime + entry.phase;
-      if (entry.kind === "knight") {
+      if (entry.kind === "knight" || entry.kind === "commander") {
         const speed = animDt > 0 ? step / animDt : 0;
         entry.gait += (Math.min(1, speed / GALLOP_SPEED) - entry.gait) * blend;
-        entry.stride = (entry.stride + step / STRIDE_LENGTH) % 1;
+        entry.stride = (entry.stride + step / strideLength(entry.gait)) % 1;
       } else if (entry.kind === "cannon") entry.rolled += step;
       applyPose(entry.rig, computePose({ role: entry.kind, t, walking, work: entry.work, carrying: entry.carry !== null, combatPhase, gait: entry.gait }));
+      // La capa se tiende hacia atrás con la marcha y ondea con el viento.
+      if (entry.rig.cape) entry.rig.cape.rotation.x = 0.1 + entry.gait * 0.55 + Math.sin(t * 3.1) * (0.04 + entry.gait * 0.08);
       if (entry.rig.horse) {
         // Se encabrita al atacar parado; el relincho lo pone el audio.
         const sinceStrike = this.animTime - entry.strikeAt;
@@ -1061,6 +1078,15 @@ export class SceneView {
     };
   }
 
+  /** Niebla de guerra: el velo se crea al primer uso y solo se muestra con `active` (modo batalla en curso). */
+  setFog(vision: VisionMap, active: boolean): void {
+    if (!this.fogOverlay) {
+      this.fogOverlay = new FogOverlay(vision);
+      this.scene.add(this.fogOverlay.mesh);
+    }
+    this.fogOverlay.sync(active);
+  }
+
   render(): void {
     const now = performance.now();
     const dt = this.lastRender === null ? 0 : Math.min(0.1, (now - this.lastRender) / 1000);
@@ -1124,7 +1150,7 @@ export class SceneView {
   dispose(): void {
     this.reset();
     this.terrain.dispose();
-    this.lighting.dispose();
+    this.fogOverlay?.dispose();
     this.collapseFx?.dispose();
     this.assets.dispose();
     for (const d of this.disposables) d.dispose();

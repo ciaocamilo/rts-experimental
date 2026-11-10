@@ -1,5 +1,6 @@
 import { BALANCE, type UnitKind } from "../content/balance";
 import { activityOf, type Activity } from "../core/economy";
+import { maxHpOf } from "../core/state";
 import type { EntityId, Gender, GameState, PlayerId } from "../core/types";
 
 export interface Selection {
@@ -37,6 +38,24 @@ export function clickSelect(sel: Selection, state: GameState, hit: EntityId | nu
   sel.inspected = hit;
 }
 
+/** Doble clic: radio (celdas) en el que se agregan las unidades propias del mismo tipo que la pulsada. */
+export const SAME_TYPE_RADIUS = 12;
+
+/**
+ * Doble clic sobre una unidad propia: selecciona todas las propias del mismo tipo a menos de `radius` celdas de ella.
+ * Con shift se suman a la selección actual. Devuelve cuántas quedan seleccionadas por esta acción (0 si no era propia).
+ */
+export function selectSameTypeNearby(sel: Selection, state: GameState, hit: EntityId | null, shift: boolean, player: PlayerId, radius = SAME_TYPE_RADIUS): number {
+  const clicked = hit === null ? undefined : state.units.find((u) => u.id === hit && u.owner === player);
+  if (!clicked) return 0;
+  const near = state.units
+    .filter((u) => u.owner === player && u.kind === clicked.kind && Math.hypot(u.pos.x - clicked.pos.x, u.pos.z - clicked.pos.z) <= radius)
+    .map((u) => u.id);
+  sel.inspected = null;
+  sel.units = shift ? new Set([...sel.units, ...near]) : new Set(near);
+  return near.length;
+}
+
 export function boxSelect(sel: Selection, state: GameState, inside: readonly EntityId[], shift: boolean, player: PlayerId): void {
   const own = inside.filter((id) => ownUnit(state, id, player));
   sel.inspected = null;
@@ -53,6 +72,22 @@ export function boxSelect(sel: Selection, state: GameState, inside: readonly Ent
 export function clearSelection(sel: Selection): void {
   sel.units.clear();
   sel.inspected = null;
+}
+
+/** Atajo E del modo batalla: todo el ejército propio vivo. */
+export function selectArmy(sel: Selection, state: GameState, player: PlayerId): number {
+  sel.units = new Set(state.units.filter((u) => u.owner === player).map((u) => u.id));
+  sel.inspected = null;
+  return sel.units.size;
+}
+
+/** Atajo C del modo batalla: selecciona al comandante propio y devuelve su posición, o null si cayó. */
+export function selectCommander(sel: Selection, state: GameState, player: PlayerId): { x: number; z: number } | null {
+  const commander = state.units.find((u) => u.owner === player && u.kind === "commander");
+  if (!commander) return null;
+  sel.units = new Set([commander.id]);
+  sel.inspected = null;
+  return { x: commander.pos.x, z: commander.pos.z };
 }
 
 /** Retira de la selección entidades que ya no existen. */
@@ -80,7 +115,7 @@ export type Side = "player" | "enemy" | "nature";
 
 export const SIDE_LABEL: Record<Side, string> = { player: "JUGADOR", enemy: "ENEMIGO", nature: "NATURALEZA" };
 
-const UNIT_LABEL = { villager: "Aldeano", soldier: "Soldado", archer: "Arquero", knight: "Caballero", cannon: "Cañón" } as const;
+const UNIT_LABEL = { villager: "Aldeano", soldier: "Soldado", archer: "Arquero", knight: "Caballero", cannon: "Cañón", commander: "Comandante" } as const;
 const BUILDING_LABEL = { townCenter: "Centro urbano", house: "Casa", barracks: "Cuartel", tower: "Torre", stable: "Establo", armory: "Armería" } as const;
 const NODE_LABEL = { food: "Arbusto", wood: "Árbol", stone: "Roca" } as const;
 
@@ -121,7 +156,7 @@ function sideOf(owner: PlayerId, player: PlayerId): Side {
 export function describeSelection(state: GameState, id: EntityId, player: PlayerId = 0): SelectionInfo | null {
   const u = state.units.find((x) => x.id === id);
   if (u) {
-    const max = BALANCE.units[u.kind].hp;
+    const max = maxHpOf(u.kind, state.mode);
     const side = sideOf(u.owner, player);
     const activity = ACTIVITY_TEXT[activityOf(u)];
     const carry = u.carry ? ` · carga ${u.carry.amount} de ${RESOURCE_NAME[u.carry.kind]}` : "";
@@ -207,7 +242,7 @@ export function describeEntity(state: GameState, id: EntityId): string {
     const carry = u.carry ? ` carga ${u.carry.amount} ${RESOURCE_NAME[u.carry.kind]}` : "";
     const defending = u.job?.type === "attack" && u.job.defense ? " (defendiéndose)" : "";
     const idle = u.idleReason && activityOf(u) === "idle" ? ` (${IDLE_REASON_TEXT[u.idleReason]})` : "";
-    return `${u.kind} #${u.id} (jugador ${u.owner}) vida ${u.hp}/${BALANCE.units[u.kind].hp} ${ACTIVITY_TEXT[activityOf(u)]}${defending}${idle}${u.blockedReason ? ` [${u.blockedReason}]` : ""}${carry}`;
+    return `${u.kind} #${u.id} (jugador ${u.owner}) vida ${u.hp}/${maxHpOf(u.kind, state.mode)} ${ACTIVITY_TEXT[activityOf(u)]}${defending}${idle}${u.blockedReason ? ` [${u.blockedReason}]` : ""}${carry}`;
   }
   const b = state.buildings.find((x) => x.id === id);
   if (b) {

@@ -19,7 +19,8 @@ export type CueId =
   | "bird"
   | "cannon"
   | "blast"
-  | "neigh";
+  | "neigh"
+  | "horn";
 
 export interface CueSpec {
   readonly priority: number;
@@ -39,6 +40,8 @@ export const CUES: Readonly<Record<CueId, CueSpec>> = {
   bell: { priority: 5, cap: 1, minGap: 8, gain: 1, variants: 1, wet: 0.35 },
   victory: { priority: 6, cap: 1, minGap: 0, gain: 1, variants: 1, wet: 0.3 },
   defeat: { priority: 6, cap: 1, minGap: 0, gain: 1, variants: 1, wet: 0.3 },
+  // Modo batalla: variante 0 al comenzar y 1 cuando cae el comandante propio.
+  horn: { priority: 5, cap: 1, minGap: 0, gain: 1, variants: 2, wet: 0.3 },
   // Cuatro variantes: las pares son pequeñas y las impares grandes (ver `collapseVariant`).
   collapse: { priority: 4, cap: 3, minGap: 0.15, gain: 1, variants: 4, wet: 0.45 },
   // Tres variantes de aldeano (0 a 2), tres de militar (3 a 5) y tres de aldeana (6 a 8).
@@ -50,7 +53,7 @@ export const CUES: Readonly<Record<CueId, CueSpec>> = {
   blow: { priority: 2, cap: 4, minGap: 0.08, gain: 0.85, variants: 3, wet: 0.1 },
   cannon: { priority: 3, cap: 3, minGap: 0.1, gain: 1.1, variants: 3, wet: 0.35 },
   blast: { priority: 4, cap: 3, minGap: 0.08, gain: 1.2, variants: 3, wet: 0.4 },
-  neigh: { priority: 2, cap: 2, minGap: 0.25, gain: 0.7, variants: 3, wet: 0.2 },
+  neigh: { priority: 2, cap: 2, minGap: 0.25, gain: 0.7, variants: 4, wet: 0.2 },
   hammer: { priority: 1, cap: 6, minGap: 0.08, gain: 0.6, variants: 6, wet: 0.08 },
   axe: { priority: 1, cap: 1, minGap: 0.3, gain: 0.5, variants: 4, wet: 0.05 },
   pick: { priority: 1, cap: 1, minGap: 0.3, gain: 0.5, variants: 4, wet: 0.05 },

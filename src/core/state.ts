@@ -1,7 +1,7 @@
 import { BALANCE, type BuildingKind, type ResourceKind, type UnitKind } from "../content/balance";
 import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH } from "../content/map";
 import { STATE_SCHEMA_VERSION } from "../content/versions";
-import type { Building, Gender, GameState, PlayerId, PlayerState, ResourceNode, Unit } from "./types";
+import type { Building, GameMode, Gender, GameState, PlayerId, PlayerState, ResourceNode, Unit } from "./types";
 
 /** 50/50 determinista a partir de la semilla y el id de la unidad: la misma partida da los mismos aldeanos y aldeanas. */
 export function rollGender(seed: number, id: number): Gender {
@@ -12,14 +12,20 @@ export function rollGender(seed: number, id: number): Gender {
   return (h >>> 8) % 2 === 0 ? "male" : "female";
 }
 
-export function makeUnit(id: number, owner: PlayerId, kind: UnitKind, x: number, z: number, gender: Gender = "male"): Unit {
+/** Vida máxima de una unidad: en batalla las militares tienen un 50 % más (P10-1.1); en villa, la del balance. */
+export function maxHpOf(kind: UnitKind, mode: GameMode): number {
+  const base = BALANCE.units[kind].hp;
+  return mode === "battle" && kind !== "villager" ? Math.round(base * BALANCE.battle.hpMultiplier) : base;
+}
+
+export function makeUnit(id: number, owner: PlayerId, kind: UnitKind, x: number, z: number, gender: Gender = "male", mode: GameMode = "village"): Unit {
   return {
     id,
     owner,
     kind,
     gender,
     pos: { x, z },
-    hp: BALANCE.units[kind].hp,
+    hp: maxHpOf(kind, mode),
     task: "idle",
     dest: null,
     path: [],
@@ -37,7 +43,12 @@ export function makeUnit(id: number, owner: PlayerId, kind: UnitKind, x: number,
 }
 
 /** Estado vacío (sin entidades ni terreno) para fixtures y pruebas. */
-export function createEmptyState(seed: number, mapWidth: number = MAP_WIDTH, mapDepth: number = mapWidth === MAP_WIDTH ? MAP_DEPTH : mapWidth): GameState {
+export function createEmptyState(
+  seed: number,
+  mapWidth: number = MAP_WIDTH,
+  mapDepth: number = mapWidth === MAP_WIDTH ? MAP_DEPTH : mapWidth,
+  mode: GameMode = "village",
+): GameState {
   const players = ([0, 1] as const).map(
     (id): PlayerState => ({
       id,
@@ -50,6 +61,7 @@ export function createEmptyState(seed: number, mapWidth: number = MAP_WIDTH, map
 
   return {
     schemaVersion: STATE_SCHEMA_VERSION,
+    mode,
     seed,
     tick: 0,
     matchStatus: "playing",
@@ -92,6 +104,10 @@ export function createInitialState(seed: number, startBuildings = true): GameSta
   if (startBuildings) {
     for (const b of MAP_LAYOUT.startBuildings) addBuilding(state, b.owner, b.kind, b.cell.x, b.cell.z);
     for (const owner of [0, 1] as const satisfies readonly PlayerId[]) state.players[owner].popCapacity = capacityOf(state, owner);
+    // Militares iniciales de cada bando; van al final para no cambiar los ids de unidades, nodos y edificios.
+    for (const owner of [0, 1] as const satisfies readonly PlayerId[]) {
+      for (const u of MAP_LAYOUT.startArmy[owner]) addUnit(state, owner, u.kind, u.x, u.z);
+    }
   }
 
   return state;
@@ -130,7 +146,7 @@ export function addNode(state: GameState, kind: ResourceKind, x: number, z: numb
 }
 
 export function addUnit(state: GameState, owner: PlayerId, kind: UnitKind, x: number, z: number, gender: Gender = "male"): Unit {
-  const unit = makeUnit(state.nextEntityId++, owner, kind, x, z, gender);
+  const unit = makeUnit(state.nextEntityId++, owner, kind, x, z, gender, state.mode);
   state.units.push(unit);
   return unit;
 }
@@ -157,8 +173,9 @@ export function populationOf(state: GameState, owner: PlayerId): number {
   return livingOf(state, owner) + reservedOf(state, owner);
 }
 
-/** Capacidad derivada: inicial + vivienda de edificios completos, con tope global. */
+/** Capacidad derivada: inicial + vivienda de edificios completos, con tope global. En batalla basta para el ejército inicial. */
 export function capacityOf(state: GameState, owner: PlayerId): number {
+  if (state.mode === "battle") return Object.values(BALANCE.battle.roster).reduce((sum, n) => sum + n, 0);
   let cap = BALANCE.start.popCapacity;
   for (const b of state.buildings) {
     if (b.owner === owner && b.complete) cap += BALANCE.buildings[b.kind].housing;

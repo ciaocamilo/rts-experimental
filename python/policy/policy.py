@@ -1,10 +1,13 @@
-"""Política estratégica policy-0.6 (P9, sobre la de P6).
+"""Política estratégica policy-0.9 (P10, sobre la de P9).
 
 Función pura y sin estado: la misma observación produce los mismos comandos. No usa reloj ni azar.
 Prioridades, de mayor a menor: defender, reasignar aldeanos, casa, aldeanos, cuartel, establo, armería, torre,
 cañón, militares, ataque.
 Cada comando que se emite descuenta de una estimación local de recursos y población, de modo que
-varios comandos del mismo lote no gastan dos veces lo mismo. Como máximo se emiten 4 comandos.
+varios comandos del mismo lote no gastan dos veces lo mismo. En el Modo villa se emiten como máximo 4 comandos.
+
+Novedades de P10: si la observación es del Modo batalla (`mode == "battle"`) delega en `battle.decide`, que
+analiza el frente y genera estrategias de batalla con hasta 8 comandos. El Modo villa se comporta igual que en P9.
 
 Novedades de P3: recoge piedra y construye torres; solo ordena recolectar nodos a los que las unidades
 pueden llegar (así no repite órdenes que el núcleo rechazará con UNREACHABLE); y no saca de su defensa
@@ -23,7 +26,7 @@ adelantado esté a ESCORT_DISTANCE del objetivo. El caballero y el cañón del r
 import math
 from collections import deque
 
-VERSION = "policy-0.6"
+VERSION = "policy-0.9"
 
 MAX_COMMANDS = 4
 MAX_ENTITIES = 100
@@ -51,7 +54,7 @@ PLACEMENT_CHOICES = 4
 NODE_CHOICES = 3
 DECISION_TICKS = 20
 
-_MILITARY = ("soldier", "archer", "knight", "cannon")
+_MILITARY = ("soldier", "archer", "knight", "cannon", "commander")
 _IDLE_ACTIVITIES = ("idle", "blocked")
 _NEIGHBORS = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
 
@@ -337,6 +340,10 @@ def _assign_gatherers(plan, villagers, idle, nodes, tc_center, builders_busy, or
 
 def decide(observation):
     """Devuelve (comandos sin command_id, reason_codes)."""
+    if observation.get("mode") == "battle":
+        from . import battle
+
+        return battle.decide(observation)
     plan = _Plan(observation)
     player_id = plan.player_id
     rules = plan.rules

@@ -110,9 +110,9 @@ describe("banco de efectos", () => {
     }
   });
 
-  it("la memoria total del banco queda por debajo de 7,5 MB (presupuesto de P6)", () => {
+  it("la memoria total del banco queda por debajo de 8,5 MB (7,5 MB en P6, cuerno de P10 y relincho de 4 variantes)", () => {
     let bytes = 0;
     for (const id of Object.keys(CUES) as CueId[]) for (const v of bank[id].variants) bytes += v.byteLength;
-    expect(bytes).toBeLessThan(7.5 * 1024 * 1024);
+    expect(bytes).toBeLessThan(8.5 * 1024 * 1024);
   });
 });

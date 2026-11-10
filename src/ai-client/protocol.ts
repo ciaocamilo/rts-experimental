@@ -3,11 +3,11 @@
 export const PROTOCOL_VERSION = 2;
 export const PYODIDE_VERSION = "0.27.7";
 export const PYTHON_VERSION_PREFIX = "3.12";
-export const POLICY_VERSION = "policy-0.6";
+export const POLICY_VERSION = "policy-0.9";
 
 export const MAX_OBSERVATION_BYTES = 1024 * 1024;
 export const MAX_RESPONSE_BYTES = 64 * 1024;
-export const MAX_COMMANDS = 4;
+export const MAX_COMMANDS = 8;
 
 export type ErrorCode =
   | "INVALID_MESSAGE"
@@ -19,6 +19,9 @@ export type ErrorCode =
   | "TIMEOUT";
 
 export type PlayerIdWire = 0 | 1;
+export type UnitKindWire = "villager" | "soldier" | "archer" | "knight" | "cannon" | "commander";
+export type TerrainKindWire = "water" | "bridge" | "forest" | "mountain" | "valley" | "camp";
+export type GameModeWire = "village" | "battle";
 
 export interface Versions {
   pyodide: string;
@@ -47,7 +50,7 @@ export interface ReadyMessage {
 export interface UnitView {
   id: number;
   owner: PlayerIdWire;
-  kind: "villager" | "soldier" | "archer" | "knight" | "cannon";
+  kind: UnitKindWire;
   x: number;
   z: number;
   hp: number;
@@ -63,7 +66,7 @@ export interface UnitView {
 
 export interface QueueItemView {
   id: number;
-  kind: "villager" | "soldier" | "archer" | "knight" | "cannon";
+  kind: UnitKindWire;
   remaining: number;
 }
 
@@ -89,7 +92,7 @@ export interface RulesView {
   max_population: number;
   queue_limit: number;
   house_housing: number;
-  unit_cost: Record<"villager" | "soldier" | "archer" | "knight" | "cannon", CostView>;
+  unit_cost: Record<UnitKindWire, CostView>;
   building_cost: Record<"house" | "barracks" | "tower" | "stable" | "armory", CostView>;
   footprint: Record<"townCenter" | "house" | "barracks" | "tower" | "stable" | "armory", number>;
 }
@@ -120,11 +123,13 @@ export interface ObserveMessage {
   game_version: string;
   map_version: string;
   balance_version: string;
+  /** Modo de juego: en batalla no hay edificios ni recursos y solo se ve al rival dentro del radio de visión. */
+  mode: GameModeWire;
   players: { id: PlayerIdWire; food: number; wood: number; stone: number; pop: number; pop_capacity: number }[];
   units: UnitView[];
   buildings: BuildingView[];
   resource_nodes: ResourceNodeView[];
-  map: { width: number; depth: number; terrain: { x: number; z: number; w: number; h: number }[] };
+  map: { width: number; depth: number; terrain: { x: number; z: number; w: number; h: number; kind?: TerrainKindWire }[] };
   rules: RulesView;
   previous_results: OrderResult[];
 }
@@ -139,7 +144,7 @@ export type WireCommand =
   | (CommandBase & { type: "Stop"; payload: Record<string, never> })
   | (CommandBase & { type: "Gather" | "Attack" | "ResumeBuild"; payload: { target_id: number } })
   | (CommandBase & { type: "Build"; payload: { building_kind: "townCenter" | "house" | "barracks" | "tower" | "stable" | "armory"; cell_x: number; cell_z: number } })
-  | (CommandBase & { type: "Train"; payload: { unit_kind: "villager" | "soldier" | "archer" | "knight" | "cannon" } })
+  | (CommandBase & { type: "Train"; payload: { unit_kind: UnitKindWire } })
   | (CommandBase & { type: "CancelBuild"; payload: Record<string, never> })
   | (CommandBase & { type: "CancelTraining"; payload: { queue_item_id: number } });
 

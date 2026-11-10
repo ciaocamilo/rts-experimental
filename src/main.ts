@@ -5,15 +5,17 @@ import { AudioDirector } from "./audio/director";
 import { AudioEngine } from "./audio/engine";
 import { loadMusicInWorker } from "./audio/music-loader";
 import { loadSettings } from "./audio/settings";
-import { BALANCE, MAX_ACTIVE_TICKS, validateBalance } from "./content/balance";
-import { MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH, homeView, validateMapLayout } from "./content/map";
+import { BALANCE, MAX_ACTIVE_TICKS, validateBalance, type UnitKind } from "./content/balance";
+import { BATTLE_LAYOUT, MAP_DEPTH, MAP_LAYOUT, MAP_WIDTH, battleHomeView, homeView, validateBattleLayout, validateMapLayout } from "./content/map";
 import { AUDIO_VERSION, BALANCE_VERSION, GAME_VERSION, GRAPHICS_VERSION, MAP_VERSION } from "./content/versions";
 import { createFixture, type FixtureName } from "./core/fixtures";
 import { hashState } from "./core/hash";
-import { validateInitialReachability } from "./core/map-check";
+import { armyCounts, createBattleState, visibleEnemies } from "./core/battle";
+import { VisionMap } from "./core/vision";
+import { validateBattleReachability, validateInitialReachability } from "./core/map-check";
 import { endSummary } from "./core/result";
 import { createInitialState, livingOf, reservedOf } from "./core/state";
-import type { Command } from "./core/types";
+import type { Command, GameMode } from "./core/types";
 import { PerfRecorder } from "./diagnostics/recorder";
 import { buildReport } from "./diagnostics/report";
 import { CameraRig, INITIAL_ZOOM } from "./input/camera-rig";
@@ -24,13 +26,14 @@ import { SceneView } from "./rendering/scene-view";
 import { CommandPanel } from "./ui/command-panel";
 import { applyBrickButtons, applyCastleBar } from "./ui/castle-bar";
 import { EndDialog } from "./ui/end-dialog";
+import { EXIT_CONFIRM_LABEL, EXIT_CONFIRM_MS, EXIT_LABEL, ExitGuard } from "./ui/exit-guard";
 import { FullscreenToggle } from "./ui/fullscreen";
 import { describeResult, REJECT_TEXT, toastKind } from "./ui/messages";
 import { Minimap } from "./ui/minimap";
 import { ToastCenter } from "./ui/toasts";
 import { WelcomeDialog } from "./ui/welcome";
 
-const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos", "realismo", "rio", "retratos", "artilleria"];
+const FIXTURES: readonly FixtureName[] = ["corridor20", "crossing", "crowd100", "skirmish", "objetivo", "defensa", "sonidos", "realismo", "rio", "retratos", "artilleria", "batalla", "comandante"];
 
 function supported(): boolean {
   if (typeof Worker === "undefined" || typeof WebAssembly === "undefined") return false;
@@ -69,6 +72,8 @@ function start(): void {
   validateBalance(BALANCE);
   validateMapLayout(MAP_LAYOUT);
   validateInitialReachability(createInitialState(0));
+  validateBattleLayout(BATTLE_LAYOUT);
+  validateBattleReachability(createBattleState(0));
   applyCastleBar(el("bottom-bar"));
   applyBrickButtons(el("controls"));
 
@@ -78,18 +83,20 @@ function start(): void {
   const aiEnabled = params.get("ai") !== "0" && (!fixtureName || fixtureName === "objetivo");
   let perf = new PerfRecorder();
   const errors: string[] = [];
+  // Modo de la partida: `?mode=battle` lo preselecciona y las escenas de batalla lo imponen; el menú inicial lo cambia.
+  let mode: GameMode = params.get("mode") === "battle" || fixtureName === "batalla" || fixtureName === "comandante" ? "battle" : "village";
   const newSession = (): GameSession => {
     const finalParam = params.get("final");
     const final = finalParam === "victoria" || finalParam === "derrota" ? finalParam : undefined;
-    const created = new GameSession(1, fixtureName ? createFixture(fixtureName, { final }) : undefined);
+    const created = new GameSession(1, fixtureName ? createFixture(fixtureName, { final }) : undefined, mode);
     created.tickObserver = (ms) => perf.recordTick(ms);
     return created;
   };
 
-  // Las escenas `?fixture=` conservan la cámara de siempre; la partida normal arranca sobre la ciudad del jugador.
+  // Las escenas `?fixture=` conservan la cámara de siempre; la partida normal arranca sobre su ciudad (villa) o su ejército (batalla).
   const fixtureView = { x: 16, z: MAP_DEPTH / 2 };
-  const startView = fixtureName ? fixtureView : { ...homeView(MAP_LAYOUT), zoom: INITIAL_ZOOM };
-  const rig = new CameraRig(MAP_WIDTH, MAP_DEPTH, startView);
+  const viewFor = (m: GameMode) => (fixtureName ? fixtureView : { ...(m === "battle" ? battleHomeView(BATTLE_LAYOUT) : homeView(MAP_LAYOUT)), zoom: INITIAL_ZOOM });
+  const rig = new CameraRig(MAP_WIDTH, MAP_DEPTH, viewFor(mode));
   // `?graphics=low` desactiva sombras, antialiasing, decoración fina y animación del agua; `?shadows=0` solo las sombras.
   const quality = params.get("graphics") === "low" ? "low" : "high";
   const view = new SceneView(el<HTMLCanvasElement>("view"), MAP_WIDTH, MAP_DEPTH, rig, quality, params.get("shadows") !== "0");
@@ -97,6 +104,18 @@ function start(): void {
   const overlay = el("overlay");
   const toasts = new ToastCenter(el("toasts"));
   const resourceBar = { food: el("res-food"), wood: el("res-wood"), stone: el("res-stone"), pop: el("res-pop") };
+  const resourcesBox = el("resources");
+  const armyBox = el("army");
+  const helpBox = el("help");
+  const ARMY_KINDS = ["commander", "knight", "soldier", "archer", "cannon"] as const satisfies readonly UnitKind[];
+  const armyBar = {
+    commander: el("army-commander"),
+    knight: el("army-knight"),
+    soldier: el("army-soldier"),
+    archer: el("army-archer"),
+    cannon: el("army-cannon"),
+    foes: el("army-foes"),
+  };
   const setText = (node: HTMLElement, text: string): void => {
     if (node.textContent !== text) node.textContent = text;
   };
@@ -229,9 +248,26 @@ function start(): void {
   };
   for (const warning of portrait.warnings) notify(warning);
   const minimap = new Minimap(el<HTMLCanvasElement>("minimap"), MAP_WIDTH, MAP_DEPTH, { centerOn: (x, z) => rig.centerOn(x, z) });
+  // Niebla de guerra del modo batalla: se recalcula cada pocos ticks y se reinicia con cada partida.
+  const vision = new VisionMap(MAP_WIDTH, MAP_DEPTH);
+  const fogEnabled = params.get("fog") !== "0";
+  let visionTick = -Infinity;
+  const VISION_EVERY_TICKS = 4;
 
   const resultButton = el<HTMLButtonElement>("btn-result");
   let endDismissed = false;
+  const hasWelcome = !fixtureName && params.get("welcome") !== "0";
+  let welcome: WelcomeDialog | null = null;
+  // Tras «Salir al menú» la partida se abandona: elegir cualquier modo (incluso el mismo) empieza una nueva.
+  let abandoned = false;
+  const leaveToMenu = (): void => {
+    abandoned = true;
+    endDismissed = true;
+    session.pause();
+    ai?.director.suspend();
+    refreshOverlay();
+    welcome?.show(mode);
+  };
   const endDialog = new EndDialog(el("end-dialog"), {
     restart: () => restartGame(),
     dismiss: () => {
@@ -239,6 +275,7 @@ function start(): void {
       refreshOverlay();
       resultButton.focus();
     },
+    ...(hasWelcome ? { menu: leaveToMenu } : {}),
   });
   resultButton.addEventListener("click", () => {
     endDismissed = false;
@@ -307,11 +344,21 @@ function start(): void {
     }
 
     const p = s.players[0];
-    const reserved = reservedOf(s, 0);
-    setText(resourceBar.food, String(p.food));
-    setText(resourceBar.wood, String(p.wood));
-    setText(resourceBar.stone, String(p.stone));
-    setText(resourceBar.pop, `${livingOf(s, 0)}${reserved > 0 ? ` (+${reserved})` : ""} / ${p.popCapacity}`);
+    const battle = s.mode === "battle";
+    if (resourcesBox.hidden !== battle) resourcesBox.hidden = battle;
+    if (armyBox.hidden !== !battle) armyBox.hidden = !battle;
+    if (helpBox.dataset.mode !== s.mode) helpBox.dataset.mode = s.mode;
+    if (battle) {
+      const counts = armyCounts(s, 0);
+      for (const kind of ARMY_KINDS) setText(armyBar[kind], String(counts[kind]));
+      setText(armyBar.foes, String(visibleEnemies(s, 0).length));
+    } else {
+      const reserved = reservedOf(s, 0);
+      setText(resourceBar.food, String(p.food));
+      setText(resourceBar.wood, String(p.wood));
+      setText(resourceBar.stone, String(p.stone));
+      setText(resourceBar.pop, `${livingOf(s, 0)}${reserved > 0 ? ` (+${reserved})` : ""} / ${p.popCapacity}`);
+    }
     toasts.update();
     if (logsVisible)
       hud.textContent =
@@ -327,8 +374,14 @@ function start(): void {
 
     panel.refresh(s, selection, controller.placing, session.paused);
 
+    const fogActive = fogEnabled && battle && s.matchStatus === "playing";
+    if (fogActive && Math.abs(s.tick - visionTick) >= VISION_EVERY_TICKS) {
+      vision.update(s);
+      visionTick = s.tick;
+    }
     view.setSelection(selection.units, selection.inspected);
-    minimap.draw(s, view.viewFootprint());
+    view.setFog(vision, fogActive);
+    minimap.draw(s, view.viewFootprint(), fogActive ? vision : null);
     view.sync(s, { frozen: session.paused || s.matchStatus === "ended", paused: session.paused, strikes: session.strikeLog, destroyed: session.destroyedLog, impacts: session.impactLog, alpha: session.alpha });
     if (audio && engine && !audioFault) {
       // Un fallo del audio nunca detiene ni pausa la partida.
@@ -389,8 +442,10 @@ function start(): void {
     perf = new PerfRecorder();
     errors.length = 0;
     session = newSession();
+    vision.reset();
+    visionTick = -Infinity;
     view.reset();
-    if (!fixtureName) rig.reset(startView);
+    if (!fixtureName) rig.reset(viewFor(mode));
     audio?.reset();
     ai = aiEnabled ? createAI(session) : null;
     ai?.director.start();
@@ -403,6 +458,26 @@ function start(): void {
     refreshOverlay();
   };
   el("btn-restart").addEventListener("click", restartGame);
+  // «Salir al menú»: pide confirmar una partida en curso y vuelve a la pantalla de elección de modo.
+  const menuButton = el<HTMLButtonElement>("btn-menu");
+  menuButton.hidden = !hasWelcome;
+  const exitGuard = new ExitGuard();
+  let exitTimer: ReturnType<typeof setTimeout> | undefined;
+  const resetMenuButton = (): void => {
+    clearTimeout(exitTimer);
+    exitGuard.reset();
+    menuButton.textContent = EXIT_LABEL;
+  };
+  menuButton.addEventListener("click", () => {
+    if (exitGuard.press(performance.now(), endSummary(session.state) !== null)) {
+      resetMenuButton();
+      leaveToMenu();
+      return;
+    }
+    menuButton.textContent = EXIT_CONFIRM_LABEL;
+    clearTimeout(exitTimer);
+    exitTimer = setTimeout(resetMenuButton, EXIT_CONFIRM_MS);
+  });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       session.pause();
@@ -422,17 +497,23 @@ function start(): void {
 
   // La bienvenida aparece en cada carga normal (sin casilla ni almacenamiento); `?welcome=0` y las escenas `?fixture=` la omiten.
   // La partida queda en pausa hasta pulsar Comenzar; la IA ya carga mientras tanto.
-  if (!fixtureName && params.get("welcome") !== "0") {
-    const welcome = new WelcomeDialog(el("welcome"), {
-      start: (openHelp) => {
-        welcome.hide();
+  if (hasWelcome) {
+    welcome = new WelcomeDialog(el("welcome"), {
+      start: (chosen, openHelp) => {
+        welcome?.hide();
         if (openHelp) help.classList.add("visible");
         void engine?.unlock();
+        // Cambiar de modo, abandonar la partida o volver tras un final crea una partida nueva; si no, se reanuda la que esperaba.
+        if (abandoned || chosen !== mode || session.state.matchStatus === "ended") {
+          abandoned = false;
+          mode = chosen;
+          restartGame();
+        }
         session.resume();
         ai?.director.resume();
         refreshOverlay();
       },
-    });
+    }, undefined, mode);
     session.pause();
     refreshOverlay();
     welcome.show();

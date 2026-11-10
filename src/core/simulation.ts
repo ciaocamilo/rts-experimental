@@ -11,7 +11,10 @@ function reject(command: Command, code: RejectCode): CommandResult {
   return { commandId: command.id, accepted: false, code };
 }
 
+const VILLAGE_ONLY = new Set<Command["type"]>(["Gather", "Build", "ResumeBuild", "CancelBuild", "Train", "CancelTraining"]);
+
 function route(state: GameState, grid: NavGrid, command: Command): OrderOutcome {
+  if (state.mode === "battle" && VILLAGE_ONLY.has(command.type)) return { code: "NOT_IN_MODE" };
   switch (command.type) {
     case "Move":
       return issueMove(state, grid, command);

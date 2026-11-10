@@ -165,6 +165,8 @@ export function issueAttack(state: GameState, grid: NavGrid, command: Command): 
   if (able.length === 0) return fail("UNREACHABLE");
 
   for (const unit of able) {
+    // Repetir la misma orden no reinicia la persecución: se conserva la ruta en curso.
+    if (unit.job?.type === "attack" && unit.job.targetId === target.id && !unit.job.defense) continue;
     clearTask(unit);
     unit.job = { type: "attack", targetId: target.id, anchor: null, retries: 0, defense: false, resume: null, back: null };
     unit.idleReason = null;

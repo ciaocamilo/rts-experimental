@@ -7,9 +7,11 @@ import type { DecisionMessage, OrderResult } from "../../src/ai-client/protocol"
 import { checkDecisionSemantics, validateMessage } from "../../src/ai-client/validate";
 import { POLICY_FILES } from "../../src/ai-worker/policy-bundle";
 import { GameSession } from "../../src/app/session";
+import { visibleEnemies } from "../../src/core/battle";
+import { activityOf } from "../../src/core/economy";
 import { hashState } from "../../src/core/hash";
 import { populationOf } from "../../src/core/state";
-import type { Command, GameState, PlayerId } from "../../src/core/types";
+import type { Command, GameMode, GameState, PlayerId } from "../../src/core/types";
 
 const SESSION = "3f2b8c1e-5a7d-4e9b-8c3a-1d2e3f4a5b6c";
 const ROOT = path.resolve(__dirname, "..", "..");
@@ -35,6 +37,10 @@ export interface MatchOptions {
   maxTicks: number;
   /** Jugadores gobernados por la política; el resto permanece pasivo. */
   ais: readonly PlayerId[];
+  /** Modo de la partida; por defecto, villa. */
+  mode?: GameMode;
+  /** Jugadores que cargan con todo el ejército (Modo batalla): referencia ingenua para medir la estrategia. */
+  naive?: readonly PlayerId[];
   /** Modifica el estado inicial; debe aplicarse igual al reproducir. */
   setup?: (state: GameState) => void;
 }
@@ -52,10 +58,30 @@ export interface MatchRun {
   hash: string;
 }
 
-/** Partida sin navegador: consulta a la política cada 20 ticks y aplica sus órdenes en el tick siguiente. */
+/** Todas las unidades atacan al enemigo visible más cercano; si no ven ninguno, marchan hacia el campamento rival. */
+function naiveCharge(session: GameSession, player: PlayerId, seq: () => string): void {
+  const state = session.state;
+  const mine = state.units.filter((u) => u.owner === player && u.hp > 0);
+  const foes = visibleEnemies(state, player);
+  const goal = { x: player === 0 ? state.mapWidth - 20 : 20, z: state.mapDepth / 2 };
+  for (const unit of mine) {
+    if (activityOf(unit) === "attacking") continue;
+    let best: (typeof foes)[number] | undefined;
+    for (const foe of foes) {
+      if (!best || Math.hypot(foe.pos.x - unit.pos.x, foe.pos.z - unit.pos.z) < Math.hypot(best.pos.x - unit.pos.x, best.pos.z - unit.pos.z)) best = foe;
+    }
+    const id = seq();
+    if (best) session.issue({ id, player, type: "Attack", entityIds: [unit.id], target: { entityId: best.id } });
+    else session.issue({ id, player, type: "Move", entityIds: [unit.id], target: goal });
+  }
+}
+
+/** Partida sin navegador: consulta a la política cada 20 ticks (10 en batalla) y aplica sus órdenes en el tick siguiente. */
 export function runMatch(runtime: PolicyRuntime, options: MatchOptions): MatchRun {
-  const session = new GameSession(options.seed);
+  const session = new GameSession(options.seed, undefined, options.mode ?? "village");
+  const decisionTicks = options.mode === "battle" ? 10 : DECISION_TICKS;
   options.setup?.(session.state);
+  let naiveSeq = 0;
   // Cada jugador numera sus peticiones en un rango propio para que los command_id no choquen.
   const requestIds: Record<number, number> = { 0: 0, 1: 100_000_000 };
   const unreported: Record<number, OrderResult[]> = { 0: [], 1: [] };
@@ -74,7 +100,8 @@ export function runMatch(runtime: PolicyRuntime, options: MatchOptions): MatchRu
 
   while (session.state.tick < options.maxTicks && session.state.matchStatus === "playing") {
     const tick = session.state.tick;
-    if (tick % DECISION_TICKS === 0) {
+    if (tick % decisionTicks === 0) {
+      for (const player of options.naive ?? []) naiveCharge(session, player, () => `n:${++naiveSeq}`);
       for (const player of options.ais) {
         const requestId = ++requestIds[player]!;
         const results = unreported[player]!.splice(0, 64);
@@ -130,8 +157,8 @@ export function runMatch(runtime: PolicyRuntime, options: MatchOptions): MatchRu
 }
 
 /** Reproduce una partida a partir del registro de comandos, sin política ni worker. */
-export function replayMatch(seed: number, log: readonly { appliedTick: number; command: Command }[], ticks: number, setup?: (state: GameState) => void): string {
-  const session = new GameSession(seed);
+export function replayMatch(seed: number, log: readonly { appliedTick: number; command: Command }[], ticks: number, setup?: (state: GameState) => void, mode: GameMode = "village"): string {
+  const session = new GameSession(seed, undefined, mode);
   setup?.(session.state);
   let next = 0;
   while (session.state.tick < ticks && session.state.matchStatus === "playing") {
